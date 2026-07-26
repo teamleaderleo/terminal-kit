@@ -11,7 +11,12 @@ selection-background = #30364A
 selection-foreground = #F4F6FB
 split-divider-color = #2A2F3E
 minimum-contrast = 3
-background-opacity = 1
+
+# Barely-there translucency: enough depth to feel native without reducing
+# readability. macOS 26 uses the system's regular Liquid Glass material.
+background-opacity = 0.975
+background-blur = macos-glass-regular
+background-opacity-cells = false
 unfocused-split-opacity = 1
 
 # Menlo gives this a lighter, compact macOS Terminal feel on Retina displays.
