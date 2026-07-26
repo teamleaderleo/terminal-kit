@@ -2,14 +2,13 @@
 
 A small public MIT-licensed macOS dotfiles repo for Ghostty, cmux, tmux, and Zsh.
 
-The Git checkout stays in `~/Projects/terminal-kit`. The installer adds tiny managed include blocks to your existing config files, so personal settings can live beside the managed settings.
+The Git checkout stays in `~/Projects/terminal-kit`. The installer adds tiny managed include blocks to your existing shell, tmux, and Ghostty files. cmux does not support config includes, so the repo owns `~/.config/cmux/cmux.json` and backs up the previous copy before replacing changed settings.
 
 ## Install from the ZIP
 
 ```sh
-mkdir -p ~/Projects \
-unzip -q ~/Downloads/terminal-kit.zip -d ~/Projects \
-cd ~/Projects/terminal-kit \
+unzip -q ~/Downloads/terminal-kit.zip -d ~/Projects
+cd ~/Projects/terminal-kit
 ./install.sh
 ```
 
@@ -66,10 +65,11 @@ terminal-kit uninstall    Remove the managed include blocks
 
 | Repo file | Loaded by |
 | --- | --- |
-| `config/ghostty/config` | Ghostty and cmux |
+| `config/ghostty/config` | Ghostty and cmux behaviour and keybindings |
+| `config/ghostty/appearance` | Ghostty and cmux colours and typography |
 | `config/tmux/tmux.conf` | `~/.tmux.conf` |
 | `config/zsh/terminal.zsh` | `~/.zshrc` |
-| `config/cmux/cmux.json.example` | Starter cmux settings when no cmux file exists |
+| `config/cmux/cmux.json.example` | Synced to `~/.config/cmux/cmux.json` |
 
 Backups go to `~/.config/terminal-kit-backups/`.
 
@@ -81,13 +81,17 @@ Backups go to `~/.config/terminal-kit-backups/`.
 
 Keep machine credentials and private values outside this repo. Avoid committing tokens, SSH private keys, cloud credentials, work-only hostnames, private aliases, and command history. Put machine-specific private additions in your existing local config files outside the managed include blocks.
 
-## Blue theme
+## Calm lavender theme
 
-The current theme is deep blue with white text:
+The current appearance uses Catppuccin Macchiato as its ANSI palette with a darker, desaturated lavender base:
 
 ```ini
-background = #0B2D4D
-foreground = #FFFFFF
+theme = Catppuccin Macchiato
+background = #1E1A2B
+foreground = #DAD7E5
+cursor-color = #C6A0F6
 ```
 
-Edit `config/ghostty/config`, commit, push, and run `tk` on each Mac.
+The cmux sidebar uses a matching lavender tint and a subdued selected-workspace wash. The beta TextBox is hidden by default, removing the large `Prompt or command` field.
+
+Edit the managed files, commit, push, and run `tk` on each Mac.
