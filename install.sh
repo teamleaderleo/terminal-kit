@@ -44,8 +44,8 @@ EOF_TMUX
 
 replace_managed_block "$HOME/.zshrc" "zsh" <<EOF_ZSH
 export PATH="\$HOME/.local/bin:\$PATH"
-if [[ -r "$ROOT/config/zsh/terminal.zsh" ]]; then
-  source "$ROOT/config/zsh/terminal.zsh"
+if [[ -r "$ROOT/config/zsh/init.zsh" ]]; then
+  source "$ROOT/config/zsh/init.zsh"
 fi
 EOF_ZSH
 
