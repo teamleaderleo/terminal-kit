@@ -26,6 +26,7 @@ tk                        Same update, then refresh the current Zsh
 terminal-kit apply        Apply local files without pulling Git
 terminal-kit theme        Browse, test, set, rotate, or automate cmux themes
 terminal-kit glass        Switch native macOS glass presets
+terminal-kit scroll       Tune cmux wheel and trackpad scroll speed
 terminal-kit tools        Install missing Homebrew tools
 terminal-kit doctor       Check files, commands, and syntax
 terminal-kit test         Run the repo tests
@@ -65,6 +66,22 @@ terminal-kit glass cycle        Rotate through the four presets
 
 The default is regular native glass at 90% opacity. `Cmd+Shift+O` remains a quick temporary opacity toggle. A complete cmux restart may be required when changing the underlying macOS material.
 
+## Scroll controls
+
+Scroll speed lives in `~/.config/terminal-kit/scroll-speed`, outside Git. cmux applies this multiplier to mouse-wheel and trackpad deltas; Mos can continue providing the smoothing and inertia curve.
+
+```text
+terminal-kit scroll current     Show the saved and active multiplier
+terminal-kit scroll precise     0.9x for close reading
+terminal-kit scroll balanced    1.0x cmux default
+terminal-kit scroll brisk       1.4x terminal-kit default
+terminal-kit scroll fast        1.8x for long logs
+terminal-kit scroll set 1.55    Set a custom value
+terminal-kit scroll cycle       Rotate through the four presets
+```
+
+Use cmux's multiplier as the main speed control rather than stacking it immediately with Ghostty's mouse-scroll multiplier. A Mos per-app profile can then adjust gain and duration for cmux without making Apple Terminal or browsers too fast.
+
 ## Managed files
 
 | Repo file | Loaded by |
@@ -72,7 +89,8 @@ The default is regular native glass at 90% opacity. `Cmd+Shift+O` remains a quic
 | `config/ghostty/config` | Ghostty and cmux behaviour and keybindings |
 | `config/ghostty/appearance` | Ghostty and cmux theme fallback and typography |
 | `~/.config/terminal-kit/glass.ghostty` | Machine-local native glass preset |
-| `config/cmux/cmux.json.example` | Synced to `~/.config/cmux/cmux.json` |
+| `~/.config/terminal-kit/scroll-speed` | Machine-local cmux scroll multiplier |
+| `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll speed |
 | `config/tmux/tmux.conf` | `~/.tmux.conf` |
 | `config/zsh/env.zsh` | `~/.zshenv`; restores standard macOS and Homebrew command paths early |
 | `config/zsh/init.zsh` | Per-shell helper and plugin bootstrap |
@@ -98,7 +116,7 @@ The slightly larger, gently thickened text is intended to improve character sepa
 
 The base configuration does not fix its own background, foreground, cursor, or selection hex values, so Rosé Pine, Vesper, Catppuccin, and other selected themes can display their full palettes. The cmux sidebar and tmux use theme-responsive backgrounds and ANSI colours. `bat` uses its `base16` theme and Delta follows `BAT_THEME` where possible.
 
-cmux's Command Palette also includes entries for browsing themes, selecting the next favourite, opening the readability test, and cycling glass. The built-in Markdown viewer uses a 16-point body size and a narrower reading column, and the plain-text editor wraps long lines.
+cmux's Command Palette also includes entries for browsing themes, selecting the next favourite, opening the readability test, cycling glass, and cycling scroll speed. The built-in Markdown viewer uses a 16-point body size and a narrower reading column, and the plain-text editor wraps long lines.
 
 ## Shell experience
 
