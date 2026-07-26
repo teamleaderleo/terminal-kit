@@ -80,6 +80,78 @@ show_shortlist() {
   done
 }
 
+print_colour_row() {
+  local first="$1"
+  local last="$2"
+  local index
+  for ((index = first; index <= last; index++)); do
+    printf '\033[48;5;%sm  %2s  \033[0m' "$index" "$index"
+  done
+  printf '\n'
+}
+
+theme_test() {
+  local current sample
+  current="$(current_dark_theme || true)"
+
+  printf '\nTheme readability test'
+  [[ -n "$current" ]] && printf ' — %s' "$current"
+  printf '\n\nANSI background palette\n'
+  print_colour_row 0 7
+  print_colour_row 8 15
+
+  printf '\nANSI foreground palette\n'
+  local index
+  for ((index = 0; index <= 15; index++)); do
+    printf '\033[38;5;%sm%2s Aa09[]{}\033[0m  ' "$index" "$index"
+    if (( index == 7 || index == 15 )); then
+      printf '\n'
+    fi
+  done
+
+  printf '\nConfigured command-line semantics\n'
+  printf '\033[38;2;169;193;165mvalid-command\033[0m  '
+  printf '\033[38;2;183;127;121minvalid-command\033[0m  '
+  printf '\033[38;2;174;184;215m~/Projects/terminal-kit\033[0m  '
+  printf '\033[38;2;155;167;200m--long-option\033[0m\n'
+  printf '\033[38;2;199;205;220m"quoted argument with punctuation"\033[0m  '
+  printf '\033[38;2;101;109;130m# dim comment and autosuggestion\033[0m\n'
+
+  printf '\nText stress sample\n'
+  printf 'Il1| O0Q  rn/m  {}[]()  != == =>  --  aa ee  0123456789\n'
+  printf 'The quick brown fox jumps over the lazy dog.  ERROR warning success pending\n'
+
+  if command -v bat >/dev/null 2>&1; then
+    sample="$(mktemp -t terminal-kit-theme-test)"
+    cat >"$sample" <<'EOF_SAMPLE'
+export function readableTheme(name: string, contrast = 3): boolean {
+  const status = contrast >= 3 ? "usable" : "too soft";
+  console.log(`${name}: ${status}`);
+  return status === "usable";
+}
+EOF_SAMPLE
+    printf '\nbat / source-code sample\n'
+    bat --color=always --paging=never --style=plain --language=typescript "$sample"
+    rm -f "$sample"
+  fi
+
+  if command -v delta >/dev/null 2>&1; then
+    printf '\nDelta / diff sample\n'
+    cat <<'EOF_DIFF' | delta --paging=never
+--- a/theme.conf
++++ b/theme.conf
+@@ -1,4 +1,4 @@
+-theme = Generic Dark
+-background-opacity = 0.96
++theme = Catppuccin Mocha
++background-opacity = 0.90
+ minimum-contrast = 3
+EOF_DIFF
+  fi
+
+  printf '\nCompare from your normal viewing distance. Watch character edges, dim text, red/green separation, and bright colour bloom.\n'
+}
+
 next_theme() {
   local current index next_index count
   current="$(current_dark_theme || true)"
@@ -189,6 +261,7 @@ Usage: terminal-kit theme <command>
   browse              Open cmux's interactive theme browser
   current             Show the active light/dark themes
   shortlist           Show the saved ranked shortlist
+  test                Render one repeatable readability comparison screen
   set <name>          Set one theme for light and dark appearance
   next                Move to the next top-ranked theme
   random              Pick a random top-ranked theme
@@ -212,6 +285,9 @@ case "$command_name" in
     ;;
   shortlist|list)
     show_shortlist
+    ;;
+  test)
+    theme_test
     ;;
   set)
     [[ $# -gt 0 ]] || fail "theme set requires a name"
