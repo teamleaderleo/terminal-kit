@@ -1,0 +1,14 @@
+⌘⇧P Commands
+⌘D Split right
+⌘⇧D Split down
+⌘T New surface
+⌘N New workspace
+⌘B Toggle sidebar
+⌘K Clear output
+⌘↑ Previous prompt
+y Browse files
+lg Git dashboard
+bt System monitor
+tk keys Cheat sheet
+tk status Git state
+tk theme next
