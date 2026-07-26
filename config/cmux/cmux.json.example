@@ -84,6 +84,18 @@
       "command": "terminal-kit scroll cycle"
     },
     {
+      "name": "Sidebar: Compact Minimum",
+      "description": "Allow the workspace sidebar to shrink to 180 points after restart",
+      "keywords": ["sidebar", "tabs", "compact", "width"],
+      "command": "terminal-kit sidebar compact"
+    },
+    {
+      "name": "Editor: Toggle Word Wrap",
+      "description": "Switch the built-in editor between wrapping and horizontal scrolling",
+      "keywords": ["editor", "wrap", "horizontal", "scroll", "wide"],
+      "command": "terminal-kit editor toggle"
+    },
+    {
       "name": "Files: Yazi",
       "description": "Open the fast terminal file manager in this directory",
       "keywords": ["files", "browse", "manager", "yazi"],
