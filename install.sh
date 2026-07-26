@@ -14,14 +14,16 @@ for arg in "$@"; do
   esac
 done
 
-chmod +x "$ROOT/install.sh" "$ROOT/bin/terminal-kit" "$ROOT/scripts/"*.sh
+# Only the two public entry points need executable bits. Helper scripts are run
+# explicitly through Bash so installation never changes tracked file modes.
+chmod +x "$ROOT/install.sh" "$ROOT/bin/terminal-kit"
 
 BACKUP_DIR="$HOME/.config/terminal-kit-backups/$(date +%Y%m%d-%H%M%S)"
 export BACKUP_DIR
 mkdir -p "$BACKUP_DIR"
 
 if [[ "$install_tools" == true ]]; then
-  "$ROOT/scripts/install-tools.sh"
+  /bin/bash "$ROOT/scripts/install-tools.sh"
 fi
 
 # Keep changeable glass state outside Git so switching presets never dirties the
@@ -128,7 +130,7 @@ if [[ ! -e "$dock_target" ]] || ! cmp -s "$dock_source" "$dock_target"; then
   log "synced cmux Dock controls"
 fi
 
-"$ROOT/scripts/apply.sh"
+/bin/bash "$ROOT/scripts/apply.sh"
 
 log "installed from $ROOT"
 log "backups: $BACKUP_DIR"
