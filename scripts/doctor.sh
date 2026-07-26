@@ -26,6 +26,7 @@ check_command() {
 }
 
 check_file "$HOME/.config/ghostty/config"
+check_file "$HOME/.config/terminal-kit/glass.ghostty"
 check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.tmux.conf"
 check_file "$HOME/.zshenv"
@@ -38,6 +39,8 @@ check_file "$ROOT/config/zsh/env.zsh"
 check_file "$ROOT/config/zsh/init.zsh"
 check_file "$ROOT/config/zsh/terminal.zsh"
 check_file "$ROOT/config/zsh/highlight.zsh"
+check_file "$ROOT/scripts/theme.sh"
+check_file "$ROOT/scripts/glass.sh"
 
 # Standard macOS commands should never disappear from PATH.
 check_command uname
@@ -54,7 +57,6 @@ check_command eza
 check_command bat
 check_command grc
 check_command delta
-check_command ghostty
 check_command cmux
 
 if command -v zsh >/dev/null 2>&1; then
