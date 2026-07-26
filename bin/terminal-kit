@@ -42,6 +42,9 @@ case "$command_name" in
   theme|themes)
     exec "$ROOT/scripts/theme.sh" "$@"
     ;;
+  glass)
+    exec "$ROOT/scripts/glass.sh" "$@"
+    ;;
   tools)
     exec "$ROOT/scripts/install-tools.sh" "$@"
     ;;
@@ -74,7 +77,8 @@ Usage: terminal-kit <command>
   update       Pull Git changes, install new tools, and reload terminal settings
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
-  theme        Browse, set, rotate, or automate cmux themes
+  theme        Browse, test, set, rotate, or automate cmux themes
+  glass        Switch native macOS glass presets
   tools        Install recommended Homebrew packages
   doctor       Check files and commands
   test         Run repository checks
@@ -84,7 +88,7 @@ Usage: terminal-kit <command>
   path         Print the repository location
 
 After Zsh loads the kit, `tk` updates the checkout and refreshes the current shell.
-Run `terminal-kit theme help` for theme commands.
+Run `terminal-kit theme help` or `terminal-kit glass help` for appearance commands.
 HELP
     ;;
   *)
