@@ -29,6 +29,7 @@ check_file "$HOME/.config/ghostty/config"
 check_file "$HOME/.config/terminal-kit/glass.ghostty"
 check_file "$HOME/.config/terminal-kit/scroll-speed"
 check_file "$HOME/.config/terminal-kit/prompt"
+check_file "$HOME/.config/terminal-kit/hints"
 check_file "$HOME/.config/terminal-kit/editor-wrap"
 check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.config/cmux/dock.json"
@@ -39,18 +40,21 @@ check_file "$ROOT/config/ghostty/config"
 check_file "$ROOT/config/ghostty/appearance"
 check_file "$ROOT/config/cmux/cmux.json.example"
 check_file "$ROOT/config/cmux/dock.json.example"
+check_file "$ROOT/config/hints.txt"
 check_file "$ROOT/config/starship/terminal-kit.toml"
 check_file "$ROOT/config/tmux/tmux.conf"
 check_file "$ROOT/config/zsh/env.zsh"
 check_file "$ROOT/config/zsh/init.zsh"
 check_file "$ROOT/config/zsh/terminal.zsh"
 check_file "$ROOT/config/zsh/tools.zsh"
+check_file "$ROOT/config/zsh/hints.zsh"
 check_file "$ROOT/config/zsh/highlight.zsh"
 check_file "$ROOT/scripts/theme.sh"
 check_file "$ROOT/scripts/glass.sh"
 check_file "$ROOT/scripts/scroll.sh"
 check_file "$ROOT/scripts/sidebar.sh"
 check_file "$ROOT/scripts/editor.sh"
+check_file "$ROOT/scripts/hints.sh"
 check_file "$ROOT/scripts/prompt.sh"
 
 # Standard macOS commands should never disappear from PATH.
@@ -83,8 +87,14 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/init.zsh" \
     "$ROOT/config/zsh/terminal.zsh" \
     "$ROOT/config/zsh/tools.zsh" \
+    "$ROOT/config/zsh/hints.zsh" \
     "$ROOT/config/zsh/highlight.zsh"
   printf 'OK   Zsh settings parse cleanly\n'
+fi
+
+if [[ -r "$HOME/.config/terminal-kit/hints" ]]; then
+  hints_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/hints")"
+  printf 'OK   fresh-shell hints         %s\n' "$hints_state"
 fi
 
 if command -v plutil >/dev/null 2>&1; then
