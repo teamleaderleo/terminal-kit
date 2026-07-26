@@ -42,8 +42,15 @@ replace_managed_block "$HOME/.tmux.conf" "tmux" <<EOF_TMUX
 source-file "$ROOT/config/tmux/tmux.conf"
 EOF_TMUX
 
+# .zshenv runs before .zshrc, so standard macOS tools remain available to NVM,
+# Bun, completion scripts, and the rest of the user's existing startup file.
+replace_managed_block "$HOME/.zshenv" "environment" <<EOF_ZSHENV
+if [[ -r "$ROOT/config/zsh/env.zsh" ]]; then
+  source "$ROOT/config/zsh/env.zsh"
+fi
+EOF_ZSHENV
+
 replace_managed_block "$HOME/.zshrc" "zsh" <<EOF_ZSH
-export PATH="\$HOME/.local/bin:\$PATH"
 if [[ -r "$ROOT/config/zsh/init.zsh" ]]; then
   source "$ROOT/config/zsh/init.zsh"
 fi
