@@ -29,7 +29,6 @@ if command -v zoxide >/dev/null 2>&1; then
   fi
 fi
 
-source "$_terminal_kit_zsh_dir/terminal.zsh"
 source "$_terminal_kit_zsh_dir/tools.zsh"
 
 # The compact Starship prompt is enabled by default, but a machine-local switch
@@ -47,7 +46,9 @@ if [[ "$_terminal_kit_prompt_state" != "off" ]] \
   eval "$(starship init zsh)"
 fi
 
-# Syntax highlighting stays after prompt and widget setup.
+# terminal.zsh defines all ZLE widgets and deliberately loads syntax highlighting
+# at its end. Keep it after Starship so highlighting remains the final widget wrapper.
+source "$_terminal_kit_zsh_dir/terminal.zsh"
 source "$_terminal_kit_zsh_dir/highlight.zsh"
 
 # Remove export attributes applied by older revisions so new cmux workspaces
