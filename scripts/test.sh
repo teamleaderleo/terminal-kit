@@ -12,11 +12,13 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/env.zsh" \
     "$ROOT/config/zsh/init.zsh" \
     "$ROOT/config/zsh/terminal.zsh" \
+    "$ROOT/config/zsh/tools.zsh" \
     "$ROOT/config/zsh/highlight.zsh"
 fi
 
 if command -v plutil >/dev/null 2>&1; then
   plutil -lint "$ROOT/config/cmux/cmux.json.example" >/dev/null
+  plutil -lint "$ROOT/config/cmux/dock.json.example" >/dev/null
 fi
 
 # Exercise repeated installs from a repo that stays inside ~/Projects.
@@ -40,7 +42,9 @@ before="$(shasum \
   "$test_root/home/.config/ghostty/config" \
   "$test_root/home/.config/terminal-kit/glass.ghostty" \
   "$test_root/home/.config/terminal-kit/scroll-speed" \
-  "$test_root/home/.config/cmux/cmux.json")"
+  "$test_root/home/.config/terminal-kit/prompt" \
+  "$test_root/home/.config/cmux/cmux.json" \
+  "$test_root/home/.config/cmux/dock.json")"
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/Projects/terminal-kit/install.sh" --skip-tools >/dev/null
 after="$(shasum \
@@ -50,7 +54,9 @@ after="$(shasum \
   "$test_root/home/.config/ghostty/config" \
   "$test_root/home/.config/terminal-kit/glass.ghostty" \
   "$test_root/home/.config/terminal-kit/scroll-speed" \
-  "$test_root/home/.config/cmux/cmux.json")"
+  "$test_root/home/.config/terminal-kit/prompt" \
+  "$test_root/home/.config/cmux/cmux.json" \
+  "$test_root/home/.config/cmux/dock.json")"
 
 [[ "$before" == "$after" ]]
 [[ "$(grep -c '^# >>> terminal-kit: environment >>>$' "$test_root/home/.zshenv")" == 1 ]]
@@ -63,12 +69,16 @@ grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$tes
 grep -Fq "$test_root/home/.config/terminal-kit/glass.ghostty" "$test_root/home/.config/ghostty/config"
 grep -Fq 'background-blur = macos-glass-regular' "$test_root/home/.config/terminal-kit/glass.ghostty"
 grep -Fxq '1.4' "$test_root/home/.config/terminal-kit/scroll-speed"
+grep -Fxq 'on' "$test_root/home/.config/terminal-kit/prompt"
 grep -Fq '"scrollSpeed": 1.4' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/tmux/tmux.conf" "$test_root/home/.tmux.conf"
 cmp -s \
   "$test_root/home/Projects/terminal-kit/config/cmux/cmux.json.example" \
   "$test_root/home/.config/cmux/cmux.json"
+cmp -s \
+  "$test_root/home/Projects/terminal-kit/config/cmux/dock.json.example" \
+  "$test_root/home/.config/cmux/dock.json"
 [[ "$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" path)" == "$test_root/home/Projects/terminal-kit" ]]
 
 printf 'terminal-kit tests passed\n'
