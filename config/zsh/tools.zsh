@@ -26,3 +26,14 @@ fi
 if command -v fd >/dev/null 2>&1; then
   alias findf='fd --hidden --exclude .git'
 fi
+
+# Ordinary terminal output should keep wrapping. `wide` is the deliberate escape
+# hatch for long table rows, logs, source lines, and diffs. less -S keeps each
+# input line on one row; Left/Right or horizontal trackpad gestures move sideways.
+wide() {
+  if (( $# > 0 )); then
+    command less -R -S -- "$@"
+  else
+    command less -R -S
+  fi
+}
