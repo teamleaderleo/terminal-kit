@@ -5,20 +5,23 @@
 # masking the selected theme.
 theme = Catppuccin Mocha
 minimum-contrast = 3
-
-# Noticeable but still readable native macOS glass. Ghostty maps this special
-# blur value to the macOS 26 system glass material rather than a third-party
-# shader or imitation effect.
-background-opacity = 0.94
-background-blur = macos-glass-regular
-background-opacity-cells = false
 unfocused-split-opacity = 1
 
-# Menlo gives this a lighter, compact macOS Terminal feel on Retina displays.
+# Slightly larger and thicker macOS text improves distance legibility without
+# turning the terminal into a bold display face.
 font-family = Menlo
-font-size = 12.5
-font-thicken = false
-window-padding-x = 10
+font-size = 13
+font-thicken = true
+font-thicken-strength = 32
+sidebar-font-size = 14
+surface-tab-bar-font-size = 11
+
+# Balanced padding keeps the grid centred as panes are resized.
+window-padding-x = 12
 window-padding-y = 10
+window-padding-balance = true
+window-padding-color = extend
+window-inherit-font-size = true
+
 cursor-style = block
 cursor-style-blink = false
