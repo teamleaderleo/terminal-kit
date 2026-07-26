@@ -39,8 +39,10 @@ terminal-kit uninstall    Remove the managed include blocks
 | `config/ghostty/appearance` | Ghostty and cmux colours, glass, and typography |
 | `config/cmux/cmux.json.example` | Synced to `~/.config/cmux/cmux.json` |
 | `config/tmux/tmux.conf` | `~/.tmux.conf` |
-| `config/zsh/init.zsh` | Per-shell bootstrap, completions, and plugin loading |
-| `config/zsh/terminal.zsh` | Editing widgets, history, aliases, and highlighting |
+| `config/zsh/env.zsh` | `~/.zshenv`; restores standard macOS and Homebrew command paths early |
+| `config/zsh/init.zsh` | Per-shell helper and plugin bootstrap |
+| `config/zsh/terminal.zsh` | Editing widgets, history, and aliases |
+| `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
 
 Backups go to `~/.config/terminal-kit-backups/`.
 
@@ -52,26 +54,29 @@ The terminal uses a dark, desaturated indigo derived from GitHub Dark Default:
 theme = GitHub Dark Default
 background = #171923
 foreground = #D8DBE8
-background-opacity = 0.975
+background-opacity = 0.94
 background-blur = macos-glass-regular
 font-family = Menlo
 font-size = 12.5
 ```
 
-The transparency is intentionally slight. On macOS 26, Ghostty uses the native regular Liquid Glass material. A complete app restart may be required after changing opacity.
+On macOS 26, Ghostty uses the native regular Liquid Glass material. A complete app restart may be required after changing opacity. `Cmd+Shift+O` toggles between the configured glass background and an opaque background.
 
 ## Shell experience
 
 The prompt supports Mac-like selection, cut, copy, paste, deletion, undo, and redo while preserving standard Unix control keys such as `Ctrl+C` for process interruption.
 
+Valid commands use muted sage, invalid tokens use subdued salmon, and paths and options use restrained indigo-grey accents.
+
 The kit also installs:
 
 - `zsh-syntax-highlighting` and `zsh-autosuggestions`
-- `zsh-completions` for broader Tab completion
 - `atuin` and `fzf` for searchable history
 - `zoxide` for ranked directory jumping with `z` and `zi`
 - `eza`, `bat`, and `grc` for restrained colour in ordinary command output
 - `delta` for syntax-aware Git diffs and logs
+
+Completion initialisation remains owned by the user's existing shell setup; terminal-kit does not run `compinit` a second time.
 
 The beta cmux TextBox stays hidden for new terminals. The normal Zsh prompt is the primary command editor.
 
