@@ -29,8 +29,8 @@
   },
   "workspaceColors": {
     "indicatorStyle": "washRail",
-    "selectionColor": "#2C3348",
-    "notificationBadgeColor": "#93A4E8",
+    "selectionColor": "#343744",
+    "notificationBadgeColor": "#9AA4C8",
     "colors": {
       "Indigo": "#6876A5",
       "Periwinkle": "#7885B5",
@@ -40,10 +40,7 @@
     }
   },
   "sidebarAppearance": {
-    "matchTerminalBackground": false,
-    "tintColor": "#1A1D29",
-    "darkModeTintColor": "#1A1D29",
-    "lightModeTintColor": "#E9EBF2",
-    "tintOpacity": 0.82
+    "matchTerminalBackground": true,
+    "tintOpacity": 0.88
   }
 }
