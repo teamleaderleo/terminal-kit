@@ -19,7 +19,7 @@ if command -v tmux >/dev/null 2>&1; then
 
   if tmux list-sessions >/dev/null 2>&1; then
     tmux source-file "$HOME/.tmux.conf"
-    log "reloaded the live tmux server; sessions and running programs stayed open"
+    log "reloaded tmux without closing sessions"
   fi
 fi
 
@@ -39,7 +39,7 @@ APPLESCRIPT
   then
     log "reloaded Ghostty"
   else
-    warn "Ghostty kept running; press Command-Shift-, once to reload its settings"
+    warn "Ghostty is still open; press Command-Shift-, to reload"
   fi
 fi
 
