@@ -68,19 +68,22 @@ if command -v delta >/dev/null 2>&1; then
   export GIT_PAGER='delta --navigate'
 fi
 
-# `tk` with no arguments performs the normal update. Arguments dispatch directly
-# to terminal-kit, so `tk theme next`, `tk doctor`, and similar commands work.
+# Plain `tk` and explicit `tk update` both update the kit. Updates replace the
+# current shell process instead of sourcing the full bootstrap into an active
+# prompt; this prevents duplicated prompts and stale cursor cells after Starship
+# or ZLE changes. Other subcommands return to the existing shell normally.
 terminal-update() {
-  if (( $# > 0 )); then
-    command terminal-kit "$@"
-    return
+  local _terminal_kit_command="${1:-update}"
+  if (( $# == 0 )); then
+    set -- update
   fi
 
-  command terminal-kit update || return
-  local _terminal_kit_root
-  _terminal_kit_root="$(command terminal-kit path)" || return
-  source "$_terminal_kit_root/config/zsh/init.zsh"
-  unset _terminal_kit_root
+  command terminal-kit "$@" || return
+  case "$_terminal_kit_command" in
+    update|install)
+      exec zsh
+      ;;
+  esac
 }
 alias tk='terminal-update'
 
