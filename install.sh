@@ -61,6 +61,13 @@ if [[ ! -e "$prompt_target" ]]; then
   printf 'on\n' >"$prompt_target"
 fi
 
+# Fresh terminal surfaces show one low-priority cmux sidebar hint until the first
+# command runs. Keep the preference local so it can be disabled without Git edits.
+hints_target="$HOME/.config/terminal-kit/hints"
+if [[ ! -e "$hints_target" ]]; then
+  printf 'on\n' >"$hints_target"
+fi
+
 # cmux's built-in text editor wraps by default. Wide mode is stored locally so
 # enabling horizontal scrolling survives updates without changing tracked JSON.
 editor_wrap_target="$HOME/.config/terminal-kit/editor-wrap"
