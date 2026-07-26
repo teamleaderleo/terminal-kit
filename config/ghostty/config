@@ -3,6 +3,8 @@
 scrollback-limit = 10000000
 mouse-hide-while-typing = true
 cursor-click-to-move = true
+shell-integration = zsh
+link-previews = osc8
 
 # Clipboard and screen selection.
 # Dragging output copies it immediately. Cmd+Shift+C is the explicit screen-copy key.
@@ -33,6 +35,11 @@ keybind = option+left=esc:b
 keybind = option+right=esc:f
 keybind = option+shift+left=csi:1;4D
 keybind = option+shift+right=csi:1;4C
+
+# Shell integration marks command boundaries. Jump through previous output blocks
+# rather than manually hunting through a long scrollback buffer.
+keybind = cmd+up=jump_to_prompt:-1
+keybind = cmd+down=jump_to_prompt:1
 
 # Deletion.
 keybind = cmd+backspace=text:\x15
