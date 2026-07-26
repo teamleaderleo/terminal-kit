@@ -1,0 +1,49 @@
+# terminal-kit: Ghostty and cmux terminal settings
+
+# Calm, solid blue with crisp white text.
+background = #0B2D4D
+foreground = #FFFFFF
+cursor-color = #FFFFFF
+cursor-text = #0B2D4D
+selection-background = #2F80ED
+selection-foreground = #FFFFFF
+split-divider-color = #4A90C2
+minimum-contrast = 3
+background-opacity = 1
+unfocused-split-opacity = 1
+
+font-family = JetBrains Mono
+font-size = 14
+window-padding-x = 8
+window-padding-y = 8
+scrollback-limit = 10000000
+cursor-style = block
+cursor-style-blink = false
+mouse-hide-while-typing = true
+
+# Clipboard and selection.
+clipboard-read = ask
+clipboard-write = allow
+copy-on-select = clipboard
+right-click-action = copy-or-paste
+mouse-shift-capture = never
+selection-clear-on-typing = true
+selection-clear-on-copy = false
+
+# macOS-style command-line movement and editing.
+keybind = cmd+a=text:\x01
+keybind = cmd+left=text:\x01
+keybind = cmd+right=text:\x05
+keybind = cmd+backspace=text:\x15
+keybind = option+left=esc:b
+keybind = option+right=esc:f
+keybind = option+backspace=text:\x17
+keybind = cmd+z=text:\x1f
+keybind = cmd+shift+z=esc:Z
+
+# Keep the macOS clipboard on Command keys and process interrupts on Ctrl+C.
+keybind = cmd+c=copy_to_clipboard
+keybind = cmd+v=paste_from_clipboard
+
+# Reload this file without closing terminals.
+keybind = cmd+shift+,=reload_config

@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+resolve_script_dir() {
+  local source_path="${BASH_SOURCE[0]}"
+  while [[ -L "$source_path" ]]; do
+    local directory
+    directory="$(cd -P "$(dirname "$source_path")" && pwd)"
+    source_path="$(readlink "$source_path")"
+    [[ "$source_path" = /* ]] || source_path="$directory/$source_path"
+  done
+  cd -P "$(dirname "$source_path")" && pwd
+}
+
+BIN_DIR="$(resolve_script_dir)"
+ROOT="$(cd "$BIN_DIR/.." && pwd)"
+[[ -d "$ROOT" ]] || {
+  printf 'terminal-kit: repository missing at %s\n' "$ROOT" >&2
+  exit 1
+}
+
+command_name="${1:-help}"
+shift || true
+
+case "$command_name" in
+  install)
+    exec "$ROOT/install.sh" "$@"
+    ;;
+  apply|reload)
+    exec "$ROOT/scripts/apply.sh" "$@"
+    ;;
+  update)
+    if [[ -d "$ROOT/.git" ]]; then
+      git -C "$ROOT" pull --ff-only
+    else
+      printf 'terminal-kit: this checkout has no Git history; applying current files\n'
+    fi
+    "$ROOT/install.sh" --skip-tools
+    ;;
+  tools)
+    exec "$ROOT/scripts/install-tools.sh" "$@"
+    ;;
+  doctor)
+    exec "$ROOT/scripts/doctor.sh" "$@"
+    ;;
+  test)
+    exec "$ROOT/scripts/test.sh" "$@"
+    ;;
+  publish)
+    exec "$ROOT/scripts/publish.sh" "$@"
+    ;;
+  uninstall)
+    exec "$ROOT/scripts/uninstall.sh" "$@"
+    ;;
+  edit)
+    if [[ -n "${EDITOR:-}" ]]; then
+      exec "$EDITOR" "$ROOT"
+    else
+      exec open "$ROOT"
+    fi
+    ;;
+  path)
+    printf '%s\n' "$ROOT"
+    ;;
+  help|-h|--help)
+    cat <<'HELP'
+Usage: terminal-kit <command>
+
+  update       Pull Git changes and reload terminal settings
+  apply        Reload current files without pulling Git
+  install      Repair includes and install missing tools
+  tools        Install recommended Homebrew packages
+  doctor       Check files and commands
+  test         Run repository checks
+  publish      Create or push a public GitHub repository
+  uninstall    Remove managed include blocks and command link
+  edit         Open the repository
+  path         Print the repository location
+
+After Zsh loads the kit, `tk` updates the checkout and refreshes the current shell.
+HELP
+    ;;
+  *)
+    printf 'terminal-kit: unknown command: %s\n' "$command_name" >&2
+    exit 2
+    ;;
+esac
