@@ -29,6 +29,7 @@ if command -v zoxide >/dev/null 2>&1; then
 fi
 
 source "$_terminal_kit_zsh_dir/terminal.zsh"
+source "$_terminal_kit_zsh_dir/highlight.zsh"
 
 # Remove export attributes applied by older revisions so new cmux workspaces
 # load their own helper and highlighting hooks.
