@@ -33,16 +33,23 @@ check_file "$ROOT/config/ghostty/config"
 check_file "$ROOT/config/ghostty/appearance"
 check_file "$ROOT/config/cmux/cmux.json.example"
 check_file "$ROOT/config/tmux/tmux.conf"
+check_file "$ROOT/config/zsh/init.zsh"
 check_file "$ROOT/config/zsh/terminal.zsh"
 
 check_command zsh
 check_command tmux
 check_command fzf
 check_command atuin
+check_command zoxide
+check_command eza
+check_command bat
+check_command grc
+check_command delta
 check_command ghostty
 check_command cmux
 
 if command -v zsh >/dev/null 2>&1; then
+  zsh -n "$ROOT/config/zsh/init.zsh"
   zsh -n "$ROOT/config/zsh/terminal.zsh"
   printf 'OK   Zsh settings parse cleanly\n'
 fi
