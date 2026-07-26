@@ -12,28 +12,31 @@ git clone https://github.com/teamleaderleo/terminal-kit.git ~/Projects/terminal-
 exec zsh
 ```
 
-Future updates use one command:
+Future updates use either form:
 
 ```sh
 tk
+tk update
 ```
 
 ## Commands
 
 ```text
-terminal-kit update       Pull Git changes, install new tools, and reload everything
-tk                        Same update, then refresh the current Zsh
-terminal-kit apply        Apply local files without pulling Git
-terminal-kit theme        Browse, test, set, rotate, or automate cmux themes
-terminal-kit glass        Switch native macOS glass presets
-terminal-kit scroll       Tune cmux wheel and trackpad scroll speed
-terminal-kit prompt       Enable or disable the contextual prompt
-terminal-kit tools        Install missing Homebrew tools
-terminal-kit doctor       Check files, commands, and syntax
-terminal-kit test         Run the repo tests
-terminal-kit edit         Open the repository
-terminal-kit uninstall    Remove the managed include blocks
+tk / tk update              Pull Git changes, install tools, reload, and refresh Zsh
+tk status                   Explain the branch, stash count, and working-tree state
+tk apply                    Apply local files without pulling Git
+tk theme                    Browse, test, set, rotate, or automate cmux themes
+tk glass                    Switch native macOS glass presets
+tk scroll                   Tune cmux wheel and trackpad scroll speed
+tk prompt                   Enable or disable the contextual prompt
+tk tools                    Install missing Homebrew tools
+tk doctor                   Check files, commands, and syntax
+tk test                     Run the repo tests
+tk edit                     Open the repository
+tk uninstall                Remove the managed include blocks
 ```
+
+In the Starship prompt, `*1` means one Git stash and `!4` means four modified files. `tk status` expands those compact symbols into a readable report.
 
 ## Theme controls
 
