@@ -8,6 +8,7 @@ for file in "$ROOT/install.sh" "$ROOT/bin/terminal-kit" "$ROOT/scripts/"*.sh; do
 done
 
 if command -v zsh >/dev/null 2>&1; then
+  zsh -n "$ROOT/config/zsh/init.zsh"
   zsh -n "$ROOT/config/zsh/terminal.zsh"
 fi
 
@@ -48,7 +49,7 @@ after="$(shasum \
 [[ "$(grep -c '^# >>> terminal-kit: ghostty >>>$' "$test_root/home/.config/ghostty/config")" == 1 ]]
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/config" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$test_root/home/.config/ghostty/config"
-grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/terminal.zsh" "$test_root/home/.zshrc"
+grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/tmux/tmux.conf" "$test_root/home/.tmux.conf"
 cmp -s \
   "$test_root/home/Projects/terminal-kit/config/cmux/cmux.json.example" \
