@@ -28,6 +28,8 @@ tk apply                    Apply local files without pulling Git
 tk theme                    Browse, test, set, rotate, or automate cmux themes
 tk glass                    Switch native macOS glass presets
 tk scroll                   Tune cmux wheel and trackpad scroll speed
+tk sidebar                  Tune the left workspace sidebar's minimum width
+tk editor                   Toggle wrapping or horizontal editor scrolling
 tk prompt                   Enable or disable the contextual prompt
 tk tools                    Install missing Homebrew tools
 tk doctor                   Check files, commands, and syntax
@@ -86,6 +88,44 @@ terminal-kit scroll cycle       Rotate through the four presets
 
 Use cmux's multiplier as the main speed control rather than stacking it immediately with Ghostty's mouse-scroll multiplier. A Mos per-app profile can then adjust gain and duration for cmux without making Apple Terminal or browsers too fast.
 
+## Sidebar width
+
+cmux's left workspace sidebar is draggable, but its normal minimum is 240 points. terminal-kit can lower that resize limit without patching cmux:
+
+```text
+tk sidebar current    Show the current minimum
+tk sidebar compact    Allow shrinking to 180 points
+tk sidebar tiny       Allow shrinking to 140 points
+tk sidebar normal     Restore 240 points
+tk sidebar set 165    Set a custom 120–260 point minimum
+tk sidebar reset      Remove the override
+```
+
+The setting changes the lower limit rather than forcing a width. Fully quit and reopen cmux, then drag the divider between the sidebar and terminal.
+
+## Horizontal views
+
+Normal terminal output keeps wrapping because that is the most readable and compatible behaviour for shells, tmux, and TUIs. Use the opt-in `wide` pager for long rows:
+
+```sh
+wide report.txt
+ps aux | wide
+git diff --stat | wide
+```
+
+`wide` runs `less -R -S`; use Left/Right arrows or a horizontal trackpad gesture to move sideways and `q` to close it.
+
+cmux's built-in text editor has a separate persistent mode:
+
+```text
+tk editor current     Show the active mode
+tk editor wrap        Wrap long lines at the right edge
+tk editor wide        Keep one row per line and scroll horizontally
+tk editor toggle      Switch modes
+```
+
+The editor preference lives in `~/.config/terminal-kit/editor-wrap`, outside Git, and is reapplied during updates.
+
 ## Contextual prompt
 
 The compact Starship prompt is enabled by default and uses ordinary ANSI colours so it follows the active terminal theme. It shows the current path, Git branch and state, command duration, background jobs, and failures without Powerline blocks or Nerd Font dependencies.
@@ -105,10 +145,11 @@ The kit installs a restrained terminal-native toolbelt:
 - `lg` opens Lazygit in the current repository.
 - `bt` opens btop.
 - `rg`, `fd`, and `jq` provide fast content search, file search, and JSON processing.
+- `wide` opens files or piped output without wrapping long rows.
 
 Yazi image previews can pass through tmux into Ghostty-compatible terminals. In cmux, `Cmd+Up` and `Cmd+Down` jump between shell prompts instead of scrolling line-by-line through command output.
 
-cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, and readability testing. The global Dock provides System and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
+cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, and readability testing. The global Dock provides System and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
 
 ## Managed files
 
@@ -119,14 +160,15 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, a
 | `~/.config/terminal-kit/glass.ghostty` | Machine-local native glass preset |
 | `~/.config/terminal-kit/scroll-speed` | Machine-local cmux scroll multiplier |
 | `~/.config/terminal-kit/prompt` | Machine-local prompt switch |
-| `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll speed |
+| `~/.config/terminal-kit/editor-wrap` | Machine-local cmux editor mode |
+| `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll and editor settings |
 | `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
 | `config/starship/terminal-kit.toml` | Compact contextual prompt |
 | `config/tmux/tmux.conf` | `~/.tmux.conf` |
 | `config/zsh/env.zsh` | `~/.zshenv`; restores standard macOS and Homebrew command paths early |
 | `config/zsh/init.zsh` | Per-shell helper, prompt, and plugin bootstrap |
 | `config/zsh/terminal.zsh` | Editing widgets, history, and aliases |
-| `config/zsh/tools.zsh` | Yazi and modern-tool wrappers |
+| `config/zsh/tools.zsh` | Yazi, wide view, and modern-tool wrappers |
 | `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
 
 Backups go to `~/.config/terminal-kit-backups/`.
@@ -148,7 +190,7 @@ The slightly larger, gently thickened text is intended to improve character sepa
 
 The base configuration does not fix its own background, foreground, cursor, or selection hex values, so Rosé Pine, Vesper, Catppuccin, and other selected themes can display their full palettes. The cmux sidebar and tmux use theme-responsive backgrounds and ANSI colours. `bat` uses its `base16` theme and Delta follows `BAT_THEME` where possible.
 
-The built-in Markdown viewer uses a 16-point body size and a narrower reading column, and the plain-text editor wraps long lines.
+The built-in Markdown viewer uses a 16-point body size and a narrower reading column, and the plain-text editor defaults to wrapping long lines.
 
 ## Shell experience
 
