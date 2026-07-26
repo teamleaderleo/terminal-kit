@@ -27,7 +27,10 @@ if [[ -z "${TERMINAL_KIT_PRELUDE_LOADED:-}" ]]; then
 
   autoload -Uz compinit
   if [[ -z "${_comps+x}" ]]; then
-    compinit -d "$HOME/.zcompdump"
+    # -i ignores completion directories that fail Zsh's ownership/permission
+    # audit instead of stopping shell startup with an interactive prompt.
+    # This keeps compdef available for Bun and other completion scripts.
+    compinit -i -d "$HOME/.zcompdump"
   fi
   zstyle ':completion:*' menu select
   zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
