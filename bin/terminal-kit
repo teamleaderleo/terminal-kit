@@ -35,7 +35,9 @@ case "$command_name" in
     else
       printf 'terminal-kit: this checkout has no Git history; applying current files\n'
     fi
-    "$ROOT/install.sh" --skip-tools
+    # Run the normal installer so additions to the Brewfile arrive through the
+    # same one-command update. Homebrew skips packages that are already present.
+    "$ROOT/install.sh"
     ;;
   tools)
     exec "$ROOT/scripts/install-tools.sh" "$@"
@@ -66,7 +68,7 @@ case "$command_name" in
     cat <<'HELP'
 Usage: terminal-kit <command>
 
-  update       Pull Git changes and reload terminal settings
+  update       Pull Git changes, install new tools, and reload terminal settings
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
   tools        Install recommended Homebrew packages
