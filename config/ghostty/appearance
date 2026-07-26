@@ -1,15 +1,9 @@
-# terminal-kit: deep indigo appearance shared by Ghostty and cmux
+# terminal-kit: theme-responsive appearance shared by Ghostty and cmux
 
-# GitHub Dark Default supplies the ANSI palette; the overrides pull the base
-# toward a quieter, desaturated indigo.
-theme = GitHub Dark Default
-background = #171923
-foreground = #D8DBE8
-cursor-color = #93A4E8
-cursor-text = #171923
-selection-background = #30364A
-selection-foreground = #F4F6FB
-split-divider-color = #2A2F3E
+# Catppuccin Mocha is the fallback. `terminal-kit theme ...` writes cmux's
+# managed override so the complete palette can rotate without these settings
+# masking the selected theme.
+theme = Catppuccin Mocha
 minimum-contrast = 3
 
 # Noticeable but still readable native macOS glass. Ghostty maps this special
