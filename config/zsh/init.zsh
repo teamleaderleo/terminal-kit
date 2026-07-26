@@ -13,6 +13,8 @@ if [[ "${TERMINAL_KIT_SHELL_PID:-}" != "$$" ]]; then
   unset TERMINAL_KIT_HELPERS_LOADED
   unset TERMINAL_KIT_HIGHLIGHTING_LOADED
   unset TERMINAL_KIT_STARSHIP_LOADED
+  unset TERMINAL_KIT_HINT_ACTIVE
+  unset TERMINAL_KIT_HINT_WORKSPACE
 fi
 
 typeset -g TERMINAL_KIT_SHELL_PID="$$"
@@ -51,11 +53,16 @@ fi
 source "$_terminal_kit_zsh_dir/terminal.zsh"
 source "$_terminal_kit_zsh_dir/highlight.zsh"
 
+# A fresh cmux surface gets one quiet workspace-row hint. Its preexec hook removes
+# the hint as soon as the user runs a command, so it never becomes permanent UI.
+source "$_terminal_kit_zsh_dir/hints.zsh"
+
 # Remove export attributes applied by older revisions so new cmux workspaces
-# load their own helper, prompt, and highlighting hooks.
+# load their own helper, prompt, highlighting, and hint hooks.
 typeset +x TERMINAL_KIT_HELPERS_LOADED 2>/dev/null || true
 typeset +x TERMINAL_KIT_HIGHLIGHTING_LOADED 2>/dev/null || true
 typeset +x TERMINAL_KIT_STARSHIP_LOADED 2>/dev/null || true
+typeset +x TERMINAL_KIT_HINT_ACTIVE TERMINAL_KIT_HINT_WORKSPACE 2>/dev/null || true
 
 # bat's base16 theme uses the terminal ANSI palette, so files and Markdown adapt
 # when cmux rotates themes. Respect an explicit user choice when one already exists.
