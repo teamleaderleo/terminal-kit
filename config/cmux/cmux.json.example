@@ -9,6 +9,7 @@
   "terminal": {
     "copyOnSelect": true,
     "showScrollBar": false,
+    "scrollSpeed": 1.4,
     "showTextBoxOnNewTerminals": false,
     "focusTextBoxOnNewTerminals": false,
     "textBoxMaxLines": 6
@@ -75,6 +76,12 @@
       "description": "Cycle regular, clear, immersive, and opaque presets",
       "keywords": ["glass", "opacity", "blur", "liquid"],
       "command": "terminal-kit glass cycle"
+    },
+    {
+      "name": "Scroll: Cycle Speed",
+      "description": "Cycle precise, balanced, brisk, and fast terminal scrolling",
+      "keywords": ["scroll", "mouse", "wheel", "speed", "mos"],
+      "command": "terminal-kit scroll cycle"
     }
   ]
 }
