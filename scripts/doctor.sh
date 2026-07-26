@@ -27,6 +27,7 @@ check_command() {
 
 check_file "$HOME/.config/ghostty/config"
 check_file "$HOME/.config/terminal-kit/glass.ghostty"
+check_file "$HOME/.config/terminal-kit/scroll-speed"
 check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.tmux.conf"
 check_file "$HOME/.zshenv"
@@ -41,6 +42,7 @@ check_file "$ROOT/config/zsh/terminal.zsh"
 check_file "$ROOT/config/zsh/highlight.zsh"
 check_file "$ROOT/scripts/theme.sh"
 check_file "$ROOT/scripts/glass.sh"
+check_file "$ROOT/scripts/scroll.sh"
 
 # Standard macOS commands should never disappear from PATH.
 check_command uname
@@ -71,6 +73,10 @@ fi
 if command -v plutil >/dev/null 2>&1; then
   plutil -lint "$ROOT/config/cmux/cmux.json.example" >/dev/null
   printf 'OK   managed cmux JSON parses cleanly\n'
+  if [[ -r "$HOME/.config/cmux/cmux.json" ]]; then
+    scroll_speed="$(plutil -extract terminal.scrollSpeed raw "$HOME/.config/cmux/cmux.json" 2>/dev/null || true)"
+    [[ -n "$scroll_speed" ]] && printf 'OK   cmux scroll speed         %sx\n' "$scroll_speed"
+  fi
 fi
 
 if command -v cmux >/dev/null 2>&1; then
