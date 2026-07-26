@@ -29,21 +29,21 @@
   },
   "workspaceColors": {
     "indicatorStyle": "washRail",
-    "selectionColor": "#3A324A",
-    "notificationBadgeColor": "#C6A0F6",
+    "selectionColor": "#2C3348",
+    "notificationBadgeColor": "#93A4E8",
     "colors": {
-      "Lavender": "#8F7AAE",
-      "Mauve": "#765D8F",
-      "Rose": "#A96D87",
-      "Sage": "#657B6D",
-      "Slate": "#566074"
+      "Indigo": "#6876A5",
+      "Periwinkle": "#7885B5",
+      "Slate": "#566074",
+      "Sage": "#60756D",
+      "Rose": "#8B6878"
     }
   },
   "sidebarAppearance": {
     "matchTerminalBackground": false,
-    "tintColor": "#241F31",
-    "darkModeTintColor": "#241F31",
-    "lightModeTintColor": "#EEEAF4",
-    "tintOpacity": 0.78
+    "tintColor": "#1A1D29",
+    "darkModeTintColor": "#1A1D29",
+    "lightModeTintColor": "#E9EBF2",
+    "tintOpacity": 0.82
   }
 }
