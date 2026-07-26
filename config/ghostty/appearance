@@ -14,10 +14,10 @@ minimum-contrast = 3
 background-opacity = 1
 unfocused-split-opacity = 1
 
-# JetBrains Mono is free, crisp on Retina displays, and already installed.
-font-family = JetBrains Mono
-font-size = 14
-font-thicken = true
+# Menlo gives this a lighter, compact macOS Terminal feel on Retina displays.
+font-family = Menlo
+font-size = 12.5
+font-thicken = false
 window-padding-x = 10
 window-padding-y = 10
 cursor-style = block
