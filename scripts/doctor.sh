@@ -29,6 +29,7 @@ check_file "$HOME/.config/ghostty/config"
 check_file "$HOME/.config/terminal-kit/glass.ghostty"
 check_file "$HOME/.config/terminal-kit/scroll-speed"
 check_file "$HOME/.config/terminal-kit/prompt"
+check_file "$HOME/.config/terminal-kit/editor-wrap"
 check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.config/cmux/dock.json"
 check_file "$HOME/.tmux.conf"
@@ -48,6 +49,8 @@ check_file "$ROOT/config/zsh/highlight.zsh"
 check_file "$ROOT/scripts/theme.sh"
 check_file "$ROOT/scripts/glass.sh"
 check_file "$ROOT/scripts/scroll.sh"
+check_file "$ROOT/scripts/sidebar.sh"
+check_file "$ROOT/scripts/editor.sh"
 check_file "$ROOT/scripts/prompt.sh"
 
 # Standard macOS commands should never disappear from PATH.
@@ -91,6 +94,11 @@ if command -v plutil >/dev/null 2>&1; then
   if [[ -r "$HOME/.config/cmux/cmux.json" ]]; then
     scroll_speed="$(plutil -extract terminal.scrollSpeed raw "$HOME/.config/cmux/cmux.json" 2>/dev/null || true)"
     [[ -n "$scroll_speed" ]] && printf 'OK   cmux scroll speed         %sx\n' "$scroll_speed"
+    editor_wrap="$(plutil -extract fileEditor.wordWrap raw "$HOME/.config/cmux/cmux.json" 2>/dev/null || true)"
+    case "$editor_wrap" in
+      true|1) printf 'OK   cmux editor mode          wrap\n' ;;
+      false|0) printf 'OK   cmux editor mode          horizontal\n' ;;
+    esac
   fi
 fi
 
