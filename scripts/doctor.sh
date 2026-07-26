@@ -28,14 +28,23 @@ check_command() {
 check_file "$HOME/.config/ghostty/config"
 check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.tmux.conf"
+check_file "$HOME/.zshenv"
 check_file "$HOME/.zshrc"
 check_file "$ROOT/config/ghostty/config"
 check_file "$ROOT/config/ghostty/appearance"
 check_file "$ROOT/config/cmux/cmux.json.example"
 check_file "$ROOT/config/tmux/tmux.conf"
+check_file "$ROOT/config/zsh/env.zsh"
 check_file "$ROOT/config/zsh/init.zsh"
 check_file "$ROOT/config/zsh/terminal.zsh"
+check_file "$ROOT/config/zsh/highlight.zsh"
 
+# Standard macOS commands should never disappear from PATH.
+check_command uname
+check_command awk
+check_command grep
+check_command mv
+check_command tty
 check_command zsh
 check_command tmux
 check_command fzf
@@ -49,8 +58,11 @@ check_command ghostty
 check_command cmux
 
 if command -v zsh >/dev/null 2>&1; then
-  zsh -n "$ROOT/config/zsh/init.zsh"
-  zsh -n "$ROOT/config/zsh/terminal.zsh"
+  zsh -n \
+    "$ROOT/config/zsh/env.zsh" \
+    "$ROOT/config/zsh/init.zsh" \
+    "$ROOT/config/zsh/terminal.zsh" \
+    "$ROOT/config/zsh/highlight.zsh"
   printf 'OK   Zsh settings parse cleanly\n'
 fi
 
