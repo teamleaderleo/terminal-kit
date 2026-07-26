@@ -1,27 +1,11 @@
-# terminal-kit: Ghostty and cmux terminal settings
+# terminal-kit: Ghostty and cmux terminal behaviour
 
-# Calm, solid blue with crisp white text.
-background = #0B2D4D
-foreground = #FFFFFF
-cursor-color = #FFFFFF
-cursor-text = #0B2D4D
-selection-background = #2F80ED
-selection-foreground = #FFFFFF
-split-divider-color = #4A90C2
-minimum-contrast = 3
-background-opacity = 1
-unfocused-split-opacity = 1
-
-font-family = JetBrains Mono
-font-size = 14
-window-padding-x = 8
-window-padding-y = 8
 scrollback-limit = 10000000
-cursor-style = block
-cursor-style-blink = false
 mouse-hide-while-typing = true
+cursor-click-to-move = true
 
-# Clipboard and selection.
+# Clipboard and screen selection.
+# Dragging output copies it immediately. Cmd+Shift+C is the explicit screen-copy key.
 clipboard-read = ask
 clipboard-write = allow
 copy-on-select = clipboard
@@ -30,20 +14,36 @@ mouse-shift-capture = never
 selection-clear-on-typing = true
 selection-clear-on-copy = false
 
-# macOS-style command-line movement and editing.
-keybind = cmd+a=text:\x01
+# macOS-style prompt editing. Zsh owns the custom CSI sequences below.
+# Cmd+A/C/X/Z and Cmd+Shift+Z act on the editable command line.
+keybind = cmd+a=csi:25~
+keybind = cmd+c=csi:26~
+keybind = cmd+x=csi:28~
+keybind = cmd+z=csi:29~
+keybind = cmd+shift+z=csi:31~
+
+# Cursor movement and selection.
 keybind = cmd+left=text:\x01
 keybind = cmd+right=text:\x05
-keybind = cmd+backspace=text:\x15
+keybind = cmd+shift+left=csi:1;2H
+keybind = cmd+shift+right=csi:1;2F
+keybind = shift+left=csi:1;2D
+keybind = shift+right=csi:1;2C
 keybind = option+left=esc:b
 keybind = option+right=esc:f
+keybind = option+shift+left=csi:1;4D
+keybind = option+shift+right=csi:1;4C
+
+# Deletion.
+keybind = cmd+backspace=text:\x15
+keybind = cmd+delete=text:\x0b
 keybind = option+backspace=text:\x17
-keybind = cmd+z=text:\x1f
-keybind = cmd+shift+z=esc:Z
+keybind = option+delete=esc:d
 
-# Keep the macOS clipboard on Command keys and process interrupts on Ctrl+C.
-keybind = cmd+c=copy_to_clipboard
+# Cmd+V remains a real terminal paste, so it also works inside running programs.
+# Mouse-selected output is already copied automatically; this key is the manual fallback.
 keybind = cmd+v=paste_from_clipboard
+keybind = performable:cmd+shift+c=copy_to_clipboard
 
-# Reload this file without closing terminals.
+# Reload without closing terminals.
 keybind = cmd+shift+,=reload_config
