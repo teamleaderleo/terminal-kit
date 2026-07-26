@@ -1,0 +1,16 @@
+{
+  "controls": [
+    {
+      "id": "system",
+      "title": "System",
+      "command": "btop",
+      "height": 340
+    },
+    {
+      "id": "feed",
+      "title": "Feed",
+      "command": "cmux feed tui --opentui",
+      "height": 280
+    }
+  ]
+}
