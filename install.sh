@@ -24,18 +24,35 @@ if [[ "$install_tools" == true ]]; then
   "$ROOT/scripts/install-tools.sh"
 fi
 
-# Ghostty and cmux both read this path. Load behaviour first, then appearance,
-# so the visual layer can override the older base colours cleanly.
+# Keep changeable glass state outside Git so switching presets never dirties the
+# checkout or blocks a later `tk` pull.
+glass_target="$HOME/.config/terminal-kit/glass.ghostty"
+mkdir -p "$(dirname "$glass_target")"
+if [[ ! -e "$glass_target" ]]; then
+  cat >"$glass_target" <<'EOF_GLASS'
+# terminal-kit glass preset: regular
+# Local machine state; intentionally kept outside the Git repository.
+background-opacity = 0.90
+background-blur = macos-glass-regular
+background-opacity-cells = false
+EOF_GLASS
+fi
+
+# Ghostty and cmux both read this path. Load behaviour, shared appearance, then
+# the machine-local glass preset so theme and glass rotation remain independent.
 ghostty_behaviour_include="config-file = \"$ROOT/config/ghostty/config\""
 ghostty_appearance_include="config-file = \"$ROOT/config/ghostty/appearance\""
+ghostty_glass_include="config-file = \"$glass_target\""
 replace_managed_block "$HOME/.config/ghostty/config" "ghostty" <<EOF_GHOSTTY
 $ghostty_behaviour_include
 $ghostty_appearance_include
+$ghostty_glass_include
 EOF_GHOSTTY
 
 replace_managed_block "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "ghostty" <<EOF_GHOSTTY_MAC
 $ghostty_behaviour_include
 $ghostty_appearance_include
+$ghostty_glass_include
 EOF_GHOSTTY_MAC
 
 replace_managed_block "$HOME/.tmux.conf" "tmux" <<EOF_TMUX
