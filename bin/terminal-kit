@@ -45,6 +45,9 @@ case "$command_name" in
   glass)
     exec "$ROOT/scripts/glass.sh" "$@"
     ;;
+  scroll)
+    exec "$ROOT/scripts/scroll.sh" "$@"
+    ;;
   tools)
     exec "$ROOT/scripts/install-tools.sh" "$@"
     ;;
@@ -79,6 +82,7 @@ Usage: terminal-kit <command>
   install      Repair includes and install missing tools
   theme        Browse, test, set, rotate, or automate cmux themes
   glass        Switch native macOS glass presets
+  scroll       Tune cmux mouse-wheel and trackpad scroll speed
   tools        Install recommended Homebrew packages
   doctor       Check files and commands
   test         Run repository checks
@@ -88,7 +92,7 @@ Usage: terminal-kit <command>
   path         Print the repository location
 
 After Zsh loads the kit, `tk` updates the checkout and refreshes the current shell.
-Run `terminal-kit theme help` or `terminal-kit glass help` for appearance commands.
+Run `terminal-kit theme help`, `terminal-kit glass help`, or `terminal-kit scroll help` for appearance and input controls.
 HELP
     ;;
   *)
