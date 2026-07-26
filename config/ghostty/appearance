@@ -1,20 +1,20 @@
-# terminal-kit: calm lavender appearance shared by Ghostty and cmux
+# terminal-kit: deep indigo appearance shared by Ghostty and cmux
 
-# Catppuccin supplies balanced ANSI colours; these overrides make the base
-# quieter, darker, and a little more Apple-like.
-theme = Catppuccin Macchiato
-background = #1E1A2B
-foreground = #DAD7E5
-cursor-color = #C6A0F6
-cursor-text = #1E1A2B
-selection-background = #4A405B
-selection-foreground = #F4F1FA
-split-divider-color = #3A3348
+# Ben Davis uses GitHub Dark Default in his editor. Start from the matching
+# terminal palette, then pull the base toward a quieter, desaturated indigo.
+theme = GitHub Dark Default
+background = #171923
+foreground = #D8DBE8
+cursor-color = #93A4E8
+cursor-text = #171923
+selection-background = #30364A
+selection-foreground = #F4F6FB
+split-divider-color = #2A2F3E
 minimum-contrast = 3
 background-opacity = 1
 unfocused-split-opacity = 1
 
-# JetBrains Mono ships with Ghostty and stays crisp on Retina displays.
+# JetBrains Mono is free, crisp on Retina displays, and already installed.
 font-family = JetBrains Mono
 font-size = 14
 font-thicken = true
