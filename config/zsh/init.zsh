@@ -1,4 +1,4 @@
-# terminal-kit: per-shell bootstrap for helpers and highlighting.
+# terminal-kit: per-shell bootstrap for helpers, prompt, and highlighting.
 
 _terminal_kit_zsh_dir="${${(%):-%N}:A:h}"
 
@@ -12,6 +12,7 @@ source "$_terminal_kit_zsh_dir/env.zsh"
 if [[ "${TERMINAL_KIT_SHELL_PID:-}" != "$$" ]]; then
   unset TERMINAL_KIT_HELPERS_LOADED
   unset TERMINAL_KIT_HIGHLIGHTING_LOADED
+  unset TERMINAL_KIT_STARSHIP_LOADED
 fi
 
 typeset -g TERMINAL_KIT_SHELL_PID="$$"
@@ -29,12 +30,31 @@ if command -v zoxide >/dev/null 2>&1; then
 fi
 
 source "$_terminal_kit_zsh_dir/terminal.zsh"
+source "$_terminal_kit_zsh_dir/tools.zsh"
+
+# The compact Starship prompt is enabled by default, but a machine-local switch
+# lets it be disabled without editing or dirtying the repository.
+_terminal_kit_prompt_state="on"
+if [[ -r "$HOME/.config/terminal-kit/prompt" ]]; then
+  _terminal_kit_prompt_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/prompt")"
+fi
+if [[ "$_terminal_kit_prompt_state" != "off" ]] \
+  && command -v starship >/dev/null 2>&1 \
+  && [[ -z "${TERMINAL_KIT_STARSHIP_LOADED:-}" ]]; then
+  typeset -g TERMINAL_KIT_STARSHIP_LOADED=1
+  typeset +x TERMINAL_KIT_STARSHIP_LOADED 2>/dev/null || true
+  export STARSHIP_CONFIG="$_terminal_kit_zsh_dir/../starship/terminal-kit.toml"
+  eval "$(starship init zsh)"
+fi
+
+# Syntax highlighting stays after prompt and widget setup.
 source "$_terminal_kit_zsh_dir/highlight.zsh"
 
 # Remove export attributes applied by older revisions so new cmux workspaces
-# load their own helper and highlighting hooks.
+# load their own helper, prompt, and highlighting hooks.
 typeset +x TERMINAL_KIT_HELPERS_LOADED 2>/dev/null || true
 typeset +x TERMINAL_KIT_HIGHLIGHTING_LOADED 2>/dev/null || true
+typeset +x TERMINAL_KIT_STARSHIP_LOADED 2>/dev/null || true
 
 # bat's base16 theme uses the terminal ANSI palette, so files and Markdown adapt
 # when cmux rotates themes. Respect an explicit user choice when one already exists.
@@ -63,4 +83,4 @@ terminal-update() {
 }
 alias tk='terminal-update'
 
-unset _terminal_kit_zsh_dir
+unset _terminal_kit_prompt_state _terminal_kit_zsh_dir
