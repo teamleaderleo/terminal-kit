@@ -38,6 +38,7 @@ before="$(shasum \
   "$test_root/home/.zshrc" \
   "$test_root/home/.tmux.conf" \
   "$test_root/home/.config/ghostty/config" \
+  "$test_root/home/.config/terminal-kit/glass.ghostty" \
   "$test_root/home/.config/cmux/cmux.json")"
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/Projects/terminal-kit/install.sh" --skip-tools >/dev/null
@@ -46,6 +47,7 @@ after="$(shasum \
   "$test_root/home/.zshrc" \
   "$test_root/home/.tmux.conf" \
   "$test_root/home/.config/ghostty/config" \
+  "$test_root/home/.config/terminal-kit/glass.ghostty" \
   "$test_root/home/.config/cmux/cmux.json")"
 
 [[ "$before" == "$after" ]]
@@ -56,6 +58,8 @@ after="$(shasum \
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/env.zsh" "$test_root/home/.zshenv"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/config" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$test_root/home/.config/ghostty/config"
+grep -Fq "$test_root/home/.config/terminal-kit/glass.ghostty" "$test_root/home/.config/ghostty/config"
+grep -Fq 'background-blur = macos-glass-regular' "$test_root/home/.config/terminal-kit/glass.ghostty"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/tmux/tmux.conf" "$test_root/home/.tmux.conf"
 cmp -s \
