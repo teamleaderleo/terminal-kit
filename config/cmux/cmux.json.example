@@ -26,6 +26,7 @@
     "showLog": true,
     "showProgress": true,
     "showAgentActivity": true,
+    "showCustomMetadata": true,
     "loadingSpinnerPosition": "trailing",
     "notificationBadgePosition": "trailing"
   },
@@ -94,6 +95,24 @@
       "description": "Switch the built-in editor between wrapping and horizontal scrolling",
       "keywords": ["editor", "wrap", "horizontal", "scroll", "wide"],
       "command": "terminal-kit editor toggle"
+    },
+    {
+      "name": "Hints: Show Next",
+      "description": "Place the next compact shortcut hint in the current workspace row",
+      "keywords": ["hints", "keys", "shortcuts", "learn", "sidebar"],
+      "command": "terminal-kit hints next"
+    },
+    {
+      "name": "Hints: Clear",
+      "description": "Remove the temporary terminal-kit hint from this workspace",
+      "keywords": ["hints", "clear", "sidebar"],
+      "command": "terminal-kit hints clear"
+    },
+    {
+      "name": "Keys: Cheat Sheet",
+      "description": "Preview the compact terminal-kit and cmux key list",
+      "keywords": ["keys", "shortcuts", "commands", "help", "cheat sheet"],
+      "command": "terminal-kit keys | less -R"
     },
     {
       "name": "Files: Yazi",
