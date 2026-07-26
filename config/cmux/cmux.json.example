@@ -82,6 +82,24 @@
       "description": "Cycle precise, balanced, brisk, and fast terminal scrolling",
       "keywords": ["scroll", "mouse", "wheel", "speed", "mos"],
       "command": "terminal-kit scroll cycle"
+    },
+    {
+      "name": "Files: Yazi",
+      "description": "Open the fast terminal file manager in this directory",
+      "keywords": ["files", "browse", "manager", "yazi"],
+      "command": "y"
+    },
+    {
+      "name": "Git: Lazygit",
+      "description": "Open an interactive Git dashboard for this repository",
+      "keywords": ["git", "status", "commit", "branch", "lazygit"],
+      "command": "lazygit"
+    },
+    {
+      "name": "System: btop",
+      "description": "Open the interactive system and process monitor",
+      "keywords": ["system", "cpu", "memory", "process", "btop"],
+      "command": "btop"
     }
   ]
 }
