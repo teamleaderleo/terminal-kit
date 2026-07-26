@@ -30,6 +30,8 @@ tk glass                    Switch native macOS glass presets
 tk scroll                   Tune cmux wheel and trackpad scroll speed
 tk sidebar                  Tune the left workspace sidebar's minimum width
 tk editor                   Toggle wrapping or horizontal editor scrolling
+tk hints                    Control temporary hints in cmux workspace rows
+tk keys                     Print the compact hotkey and command cheat sheet
 tk prompt                   Enable or disable the contextual prompt
 tk tools                    Install missing Homebrew tools
 tk doctor                   Check files, commands, and syntax
@@ -126,6 +128,22 @@ tk editor toggle      Switch modes
 
 The editor preference lives in `~/.config/terminal-kit/editor-wrap`, outside Git, and is reapplied during updates.
 
+## Ambient sidebar hints
+
+A fresh cmux terminal surface shows one compact hint in its workspace row, such as `⌘⇧P Commands`, `⌘D Split right`, or `y Browse files`. The hint is deliberately temporary: the shell removes it as soon as the first command starts. Opening another terminal surface advances to the next hint.
+
+```text
+tk hints current      Show whether fresh-shell hints are enabled
+tk hints on           Enable automatic hints
+tk hints off          Disable hints and clear the current one
+tk hints next         Show the next hint now
+tk hints clear        Remove the current workspace hint
+tk hints list         Print the full compact list
+tk keys               Short alias for the full list
+```
+
+The preference lives in `~/.config/terminal-kit/hints`, and the rotation index lives beside it. Both stay outside Git. The cmux Command Palette includes **Hints: Show Next**, **Hints: Clear**, and **Keys: Cheat Sheet**.
+
 ## Contextual prompt
 
 The compact Starship prompt is enabled by default and uses ordinary ANSI colours so it follows the active terminal theme. It shows the current path, Git branch and state, command duration, background jobs, and failures without Powerline blocks or Nerd Font dependencies.
@@ -149,7 +167,7 @@ The kit installs a restrained terminal-native toolbelt:
 
 Yazi image previews can pass through tmux into Ghostty-compatible terminals. In cmux, `Cmd+Up` and `Cmd+Down` jump between shell prompts instead of scrolling line-by-line through command output.
 
-cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, and readability testing. The global Dock provides System and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
+cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, ambient hints, key previews, and readability testing. The global Dock provides System and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
 
 ## Managed files
 
@@ -160,15 +178,19 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, e
 | `~/.config/terminal-kit/glass.ghostty` | Machine-local native glass preset |
 | `~/.config/terminal-kit/scroll-speed` | Machine-local cmux scroll multiplier |
 | `~/.config/terminal-kit/prompt` | Machine-local prompt switch |
+| `~/.config/terminal-kit/hints` | Machine-local fresh-shell hint switch |
+| `~/.config/terminal-kit/hint-index` | Machine-local hint rotation position |
 | `~/.config/terminal-kit/editor-wrap` | Machine-local cmux editor mode |
 | `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll and editor settings |
 | `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
+| `config/hints.txt` | Compact cmux and terminal-kit hint catalogue |
 | `config/starship/terminal-kit.toml` | Compact contextual prompt |
 | `config/tmux/tmux.conf` | `~/.tmux.conf` |
 | `config/zsh/env.zsh` | `~/.zshenv`; restores standard macOS and Homebrew command paths early |
-| `config/zsh/init.zsh` | Per-shell helper, prompt, and plugin bootstrap |
+| `config/zsh/init.zsh` | Per-shell helper, prompt, hint, and plugin bootstrap |
 | `config/zsh/terminal.zsh` | Editing widgets, history, and aliases |
 | `config/zsh/tools.zsh` | Yazi, wide view, and modern-tool wrappers |
+| `config/zsh/hints.zsh` | Fresh-surface hint display and first-command cleanup hook |
 | `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
 
 Backups go to `~/.config/terminal-kit-backups/`.
