@@ -151,6 +151,8 @@ fi
 
 /bin/bash "$ROOT/scripts/apply.sh"
 
-log "installed from $ROOT"
-log "backups: $BACKUP_DIR"
-log "open one fresh shell, then use 'tk' for future updates"
+display_root="${ROOT/#$HOME/\~}"
+display_backup="${BACKUP_DIR/#$HOME/\~}"
+log "installed from $display_root"
+log "backup: $display_backup"
+log "open a fresh shell once after first install"
