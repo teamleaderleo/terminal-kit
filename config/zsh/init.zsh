@@ -26,10 +26,10 @@ if [[ -z "${TERMINAL_KIT_PRELUDE_LOADED:-}" ]]; then
   done
 
   autoload -Uz compinit
-  if [[ -z "${_comps+x}" ]]; then
+  if ! (( $+functions[compdef] )); then
     # -i ignores completion directories that fail Zsh's ownership/permission
     # audit instead of stopping shell startup with an interactive prompt.
-    # This keeps compdef available for Bun and other completion scripts.
+    # Test compdef itself because an aborted compinit can leave _comps behind.
     compinit -i -d "$HOME/.zcompdump"
   fi
   zstyle ':completion:*' menu select
