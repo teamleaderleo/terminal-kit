@@ -36,10 +36,15 @@ source "$_terminal_kit_zsh_dir/highlight.zsh"
 typeset +x TERMINAL_KIT_HELPERS_LOADED 2>/dev/null || true
 typeset +x TERMINAL_KIT_HIGHLIGHTING_LOADED 2>/dev/null || true
 
-# Delta adds restrained syntax and word-level highlighting to Git diffs while
-# preserving ordinary Git commands and paging behaviour.
+# bat's base16 theme uses the terminal ANSI palette, so files and Markdown adapt
+# when cmux rotates themes. Respect an explicit user choice when one already exists.
+if [[ -z "${BAT_THEME:-}" ]]; then
+  export BAT_THEME=base16
+fi
+
+# Delta uses BAT_THEME for syntax colours and can detect the terminal background.
 if command -v delta >/dev/null 2>&1; then
-  export GIT_PAGER='delta --dark --navigate'
+  export GIT_PAGER='delta --navigate'
 fi
 
 # Keep tk refreshing the complete bootstrap rather than only the legacy file.
