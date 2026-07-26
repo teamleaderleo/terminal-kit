@@ -8,8 +8,11 @@ for file in "$ROOT/install.sh" "$ROOT/bin/terminal-kit" "$ROOT/scripts/"*.sh; do
 done
 
 if command -v zsh >/dev/null 2>&1; then
-  zsh -n "$ROOT/config/zsh/init.zsh"
-  zsh -n "$ROOT/config/zsh/terminal.zsh"
+  zsh -n \
+    "$ROOT/config/zsh/env.zsh" \
+    "$ROOT/config/zsh/init.zsh" \
+    "$ROOT/config/zsh/terminal.zsh" \
+    "$ROOT/config/zsh/highlight.zsh"
 fi
 
 if command -v plutil >/dev/null 2>&1; then
@@ -31,6 +34,7 @@ HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/Projects/terminal-kit/install.sh" --skip-tools >/dev/null
 
 before="$(shasum \
+  "$test_root/home/.zshenv" \
   "$test_root/home/.zshrc" \
   "$test_root/home/.tmux.conf" \
   "$test_root/home/.config/ghostty/config" \
@@ -38,15 +42,18 @@ before="$(shasum \
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/Projects/terminal-kit/install.sh" --skip-tools >/dev/null
 after="$(shasum \
+  "$test_root/home/.zshenv" \
   "$test_root/home/.zshrc" \
   "$test_root/home/.tmux.conf" \
   "$test_root/home/.config/ghostty/config" \
   "$test_root/home/.config/cmux/cmux.json")"
 
 [[ "$before" == "$after" ]]
+[[ "$(grep -c '^# >>> terminal-kit: environment >>>$' "$test_root/home/.zshenv")" == 1 ]]
 [[ "$(grep -c '^# >>> terminal-kit: zsh >>>$' "$test_root/home/.zshrc")" == 1 ]]
 [[ "$(grep -c '^# >>> terminal-kit: tmux >>>$' "$test_root/home/.tmux.conf")" == 1 ]]
 [[ "$(grep -c '^# >>> terminal-kit: ghostty >>>$' "$test_root/home/.config/ghostty/config")" == 1 ]]
+grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/env.zsh" "$test_root/home/.zshenv"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/config" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
