@@ -24,10 +24,10 @@ shift || true
 
 case "$command_name" in
   install)
-    exec "$ROOT/install.sh" "$@"
+    exec /bin/bash "$ROOT/install.sh" "$@"
     ;;
   apply|reload)
-    exec "$ROOT/scripts/apply.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/apply.sh" "$@"
     ;;
   update)
     if [[ -d "$ROOT/.git" ]]; then
@@ -37,34 +37,53 @@ case "$command_name" in
     fi
     # Run the normal installer so additions to the Brewfile arrive through the
     # same one-command update. Homebrew skips packages that are already present.
-    "$ROOT/install.sh"
+    /bin/bash "$ROOT/install.sh"
+    ;;
+  status)
+    if [[ ! -d "$ROOT/.git" ]]; then
+      printf 'terminal-kit: checkout has no Git history at %s\n' "$ROOT"
+      exit 0
+    fi
+
+    branch="$(git -C "$ROOT" branch --show-current 2>/dev/null || true)"
+    changes="$(git -C "$ROOT" status --short)"
+    stash_count="$(git -C "$ROOT" stash list | wc -l | tr -d '[:space:]')"
+
+    printf 'terminal-kit: %s\n' "$ROOT"
+    printf 'branch: %s\n' "${branch:-detached}"
+    printf 'stashes: %s\n' "${stash_count:-0}"
+    if [[ -n "$changes" ]]; then
+      printf 'working tree:\n%s\n' "$changes"
+    else
+      printf 'working tree: clean\n'
+    fi
     ;;
   theme|themes)
-    exec "$ROOT/scripts/theme.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/theme.sh" "$@"
     ;;
   glass)
-    exec "$ROOT/scripts/glass.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/glass.sh" "$@"
     ;;
   scroll)
-    exec "$ROOT/scripts/scroll.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/scroll.sh" "$@"
     ;;
   prompt)
-    exec "$ROOT/scripts/prompt.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/prompt.sh" "$@"
     ;;
   tools)
-    exec "$ROOT/scripts/install-tools.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/install-tools.sh" "$@"
     ;;
   doctor)
-    exec "$ROOT/scripts/doctor.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/doctor.sh" "$@"
     ;;
   test)
-    exec "$ROOT/scripts/test.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/test.sh" "$@"
     ;;
   publish)
-    exec "$ROOT/scripts/publish.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/publish.sh" "$@"
     ;;
   uninstall)
-    exec "$ROOT/scripts/uninstall.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/uninstall.sh" "$@"
     ;;
   edit)
     if [[ -n "${EDITOR:-}" ]]; then
@@ -81,6 +100,7 @@ case "$command_name" in
 Usage: terminal-kit <command>
 
   update       Pull Git changes, install new tools, and reload terminal settings
+  status       Show the terminal-kit branch, stashes, and working-tree state
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
   theme        Browse, test, set, rotate, or automate cmux themes
@@ -95,8 +115,8 @@ Usage: terminal-kit <command>
   edit         Open the repository
   path         Print the repository location
 
-After Zsh loads the kit, `tk` updates the checkout and refreshes the current shell.
-Run `terminal-kit theme help`, `terminal-kit glass help`, or `terminal-kit scroll help` for appearance and input controls.
+After Zsh loads the kit, plain `tk` updates everything. `tk update` is the explicit form.
+Run `tk status` to explain the Git symbols shown in the prompt.
 HELP
     ;;
   *)
