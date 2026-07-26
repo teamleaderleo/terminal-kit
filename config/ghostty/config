@@ -45,5 +45,8 @@ keybind = option+delete=esc:d
 keybind = cmd+v=paste_from_clipboard
 keybind = performable:cmd+shift+c=copy_to_clipboard
 
+# Toggle between the configured glass background and an opaque background.
+keybind = cmd+shift+o=toggle_background_opacity
+
 # Reload without closing terminals.
 keybind = cmd+shift+,=reload_config
