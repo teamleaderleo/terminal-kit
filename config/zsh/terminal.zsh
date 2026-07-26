@@ -3,6 +3,8 @@
 bindkey -e
 KEYTIMEOUT=1
 WORDCHARS=''
+autoload -Uz select-word-style
+select-word-style bash
 
 # Persistent history shared across interactive shells.
 HISTFILE="$HOME/.zsh_history"
@@ -42,8 +44,16 @@ ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=#A4AFD0'
 ZSH_HIGHLIGHT_STYLES[comment]='fg=#656D82'
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#596074'
 
+# Use the same restrained indigo selection colour as the terminal theme.
+zle_highlight=(
+  ${zle_highlight:#region:*}
+  ${zle_highlight:#paste:*}
+  'region:bg=#30364A,fg=#F4F6FB'
+  'paste:none'
+)
+
 # Load interactive helpers once per shell. Re-sourcing this file still refreshes
-# colours, aliases, and all key bindings below.
+# colours, widgets, aliases, and bindings below.
 if [[ -z "${TERMINAL_KIT_HELPERS_LOADED:-}" ]]; then
   export TERMINAL_KIT_HELPERS_LOADED=1
 
@@ -85,15 +95,251 @@ if command -v bat >/dev/null 2>&1; then
   alias cat='bat --paging=never --style=plain'
 fi
 
+# -----------------------------------------------------------------------------
+# Native-ish macOS editing inside the Zsh command buffer.
+# -----------------------------------------------------------------------------
+
+_terminal_kit_select_backward_char() {
+  (( REGION_ACTIVE )) || zle set-mark-command
+  zle backward-char
+}
+zle -N _terminal_kit_select_backward_char
+
+_terminal_kit_select_forward_char() {
+  (( REGION_ACTIVE )) || zle set-mark-command
+  zle forward-char
+}
+zle -N _terminal_kit_select_forward_char
+
+_terminal_kit_select_backward_word() {
+  (( REGION_ACTIVE )) || zle set-mark-command
+  zle backward-word
+}
+zle -N _terminal_kit_select_backward_word
+
+_terminal_kit_select_forward_word() {
+  (( REGION_ACTIVE )) || zle set-mark-command
+  zle forward-word
+}
+zle -N _terminal_kit_select_forward_word
+
+_terminal_kit_select_beginning_of_line() {
+  (( REGION_ACTIVE )) || zle set-mark-command
+  zle beginning-of-line
+}
+zle -N _terminal_kit_select_beginning_of_line
+
+_terminal_kit_select_end_of_line() {
+  (( REGION_ACTIVE )) || zle set-mark-command
+  zle end-of-line
+}
+zle -N _terminal_kit_select_end_of_line
+
+_terminal_kit_select_all() {
+  MARK=0
+  CURSOR=${#BUFFER}
+  REGION_ACTIVE=1
+}
+zle -N _terminal_kit_select_all
+
+_terminal_kit_copy_region() {
+  (( REGION_ACTIVE )) || return 0
+  zle copy-region-as-kill
+  print -rn -- "$CUTBUFFER" | command pbcopy
+  zle deactivate-region
+}
+zle -N _terminal_kit_copy_region
+
+_terminal_kit_cut_region() {
+  (( REGION_ACTIVE )) || return 0
+  zle kill-region
+  zle -f kill
+  print -rn -- "$CUTBUFFER" | command pbcopy
+}
+zle -N _terminal_kit_cut_region
+
+_terminal_kit_backward_delete_char_or_region() {
+  if (( REGION_ACTIVE )); then
+    zle kill-region
+  else
+    zle backward-delete-char
+  fi
+}
+zle -N _terminal_kit_backward_delete_char_or_region
+
+_terminal_kit_delete_char_or_region() {
+  if (( REGION_ACTIVE )); then
+    zle kill-region
+  else
+    zle delete-char
+  fi
+}
+zle -N _terminal_kit_delete_char_or_region
+
+_terminal_kit_backward_kill_word_or_region() {
+  if (( REGION_ACTIVE )); then
+    zle kill-region
+  else
+    zle backward-kill-word
+  fi
+}
+zle -N _terminal_kit_backward_kill_word_or_region
+
+_terminal_kit_kill_word_or_region() {
+  if (( REGION_ACTIVE )); then
+    zle kill-region
+  else
+    zle kill-word
+  fi
+}
+zle -N _terminal_kit_kill_word_or_region
+
+_terminal_kit_backward_kill_line_or_region() {
+  if (( REGION_ACTIVE )); then
+    zle kill-region
+  else
+    zle backward-kill-line
+  fi
+}
+zle -N _terminal_kit_backward_kill_line_or_region
+
+_terminal_kit_kill_line_or_region() {
+  if (( REGION_ACTIVE )); then
+    zle kill-region
+  else
+    zle kill-line
+  fi
+}
+zle -N _terminal_kit_kill_line_or_region
+
+# Typing over an active region replaces it, like a native text field.
+_terminal_kit_self_insert_or_region() {
+  (( REGION_ACTIVE )) && zle kill-region
+  zle .self-insert
+}
+zle -N self-insert _terminal_kit_self_insert_or_region
+
+# Plain movement collapses a selection to the appropriate edge.
+_terminal_kit_collapse_region_left() {
+  if (( REGION_ACTIVE )); then
+    (( CURSOR > MARK )) && CURSOR=$MARK
+    zle deactivate-region
+  else
+    zle backward-char
+  fi
+}
+zle -N _terminal_kit_collapse_region_left
+
+_terminal_kit_collapse_region_right() {
+  if (( REGION_ACTIVE )); then
+    (( CURSOR < MARK )) && CURSOR=$MARK
+    zle deactivate-region
+  else
+    zle forward-char
+  fi
+}
+zle -N _terminal_kit_collapse_region_right
+
+_terminal_kit_beginning_or_collapse() {
+  if (( REGION_ACTIVE )); then
+    (( CURSOR > MARK )) && CURSOR=$MARK
+    zle deactivate-region
+  else
+    zle beginning-of-line
+  fi
+}
+zle -N _terminal_kit_beginning_or_collapse
+
+_terminal_kit_end_or_collapse() {
+  if (( REGION_ACTIVE )); then
+    (( CURSOR < MARK )) && CURSOR=$MARK
+    zle deactivate-region
+  else
+    zle end-of-line
+  fi
+}
+zle -N _terminal_kit_end_or_collapse
+
+_terminal_kit_backward_word_or_collapse() {
+  if (( REGION_ACTIVE )); then
+    (( CURSOR > MARK )) && CURSOR=$MARK
+    zle deactivate-region
+  else
+    zle backward-word
+  fi
+}
+zle -N _terminal_kit_backward_word_or_collapse
+
+_terminal_kit_forward_word_or_collapse() {
+  if (( REGION_ACTIVE )); then
+    (( CURSOR < MARK )) && CURSOR=$MARK
+    zle deactivate-region
+  else
+    zle forward-word
+  fi
+}
+zle -N _terminal_kit_forward_word_or_collapse
+
+_terminal_kit_up_or_deselect() {
+  (( REGION_ACTIVE )) && zle deactivate-region
+  zle up-line-or-history
+}
+zle -N _terminal_kit_up_or_deselect
+
+_terminal_kit_down_or_deselect() {
+  (( REGION_ACTIVE )) && zle deactivate-region
+  zle down-line-or-history
+}
+zle -N _terminal_kit_down_or_deselect
+
 # Command-key sequences sent by Ghostty and cmux.
-bindkey '^A' beginning-of-line
-bindkey '^E' end-of-line
-bindkey '^[b' backward-word
-bindkey '^[f' forward-word
-bindkey '^U' backward-kill-line
-bindkey '^W' backward-kill-word
-bindkey '^_' undo
-bindkey '^[Z' redo
+bindkey '\e[25~' _terminal_kit_select_all
+bindkey '\e[26~' _terminal_kit_copy_region
+bindkey '\e[28~' _terminal_kit_cut_region
+bindkey '\e[29~' undo
+bindkey '\e[31~' redo
+
+# Cmd+Left/Right and their Ctrl+A/Ctrl+E shell equivalents.
+bindkey '^A' _terminal_kit_beginning_or_collapse
+bindkey '^E' _terminal_kit_end_or_collapse
+
+# Shift+Arrow, Option+Shift+Arrow, and Cmd+Shift+Arrow selection.
+bindkey '\e[1;2D' _terminal_kit_select_backward_char
+bindkey '\e[1;2C' _terminal_kit_select_forward_char
+bindkey '\e[1;4D' _terminal_kit_select_backward_word
+bindkey '\e[1;4C' _terminal_kit_select_forward_word
+bindkey '\e[1;2H' _terminal_kit_select_beginning_of_line
+bindkey '\e[1;2F' _terminal_kit_select_end_of_line
+
+# Plain arrows in normal and application cursor modes.
+bindkey '\e[D' _terminal_kit_collapse_region_left
+bindkey '\e[C' _terminal_kit_collapse_region_right
+bindkey '\e[A' _terminal_kit_up_or_deselect
+bindkey '\e[B' _terminal_kit_down_or_deselect
+bindkey '\eOD' _terminal_kit_collapse_region_left
+bindkey '\eOC' _terminal_kit_collapse_region_right
+bindkey '\eOA' _terminal_kit_up_or_deselect
+bindkey '\eOB' _terminal_kit_down_or_deselect
+
+# Option+Left/Right plus CSI fallbacks used by other terminals.
+bindkey '\eb' _terminal_kit_backward_word_or_collapse
+bindkey '\ef' _terminal_kit_forward_word_or_collapse
+bindkey '\e[1;3D' _terminal_kit_backward_word_or_collapse
+bindkey '\e[1;3C' _terminal_kit_forward_word_or_collapse
+
+# Backspace/Delete and word/line deletion remove an active selection first.
+bindkey '^?' _terminal_kit_backward_delete_char_or_region
+bindkey '^H' _terminal_kit_backward_delete_char_or_region
+bindkey '\e[3~' _terminal_kit_delete_char_or_region
+bindkey '^W' _terminal_kit_backward_kill_word_or_region
+bindkey '\ed' _terminal_kit_kill_word_or_region
+bindkey '^U' _terminal_kit_backward_kill_line_or_region
+bindkey '^K' _terminal_kit_kill_line_or_region
+
+# Autosuggestions wraps ZLE widgets. Refresh its wrappers after redefining self-insert.
+if (( $+functions[_zsh_autosuggest_bind_widgets] )); then
+  _zsh_autosuggest_bind_widgets
+fi
 
 # One command updates the checkout, installs newly-added tools, reloads apps, and
 # refreshes this shell.
