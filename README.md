@@ -113,7 +113,7 @@ ps aux | wide
 git diff --stat | wide
 ```
 
-`wide` runs `less -R -S`; use Left/Right arrows or a horizontal trackpad gesture to move sideways and `q` to close it.
+`wide` runs `less -R -S`; use Left/Right arrows to move sideways and `q` to close it.
 
 cmux's built-in text editor has a separate persistent mode:
 
