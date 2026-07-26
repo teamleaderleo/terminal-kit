@@ -13,6 +13,7 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/init.zsh" \
     "$ROOT/config/zsh/terminal.zsh" \
     "$ROOT/config/zsh/tools.zsh" \
+    "$ROOT/config/zsh/hints.zsh" \
     "$ROOT/config/zsh/highlight.zsh"
 fi
 
@@ -43,6 +44,7 @@ before="$(shasum \
   "$test_root/home/.config/terminal-kit/glass.ghostty" \
   "$test_root/home/.config/terminal-kit/scroll-speed" \
   "$test_root/home/.config/terminal-kit/prompt" \
+  "$test_root/home/.config/terminal-kit/hints" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
@@ -56,6 +58,7 @@ after="$(shasum \
   "$test_root/home/.config/terminal-kit/glass.ghostty" \
   "$test_root/home/.config/terminal-kit/scroll-speed" \
   "$test_root/home/.config/terminal-kit/prompt" \
+  "$test_root/home/.config/terminal-kit/hints" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
@@ -72,9 +75,13 @@ grep -Fq "$test_root/home/.config/terminal-kit/glass.ghostty" "$test_root/home/.
 grep -Fq 'background-blur = macos-glass-regular' "$test_root/home/.config/terminal-kit/glass.ghostty"
 grep -Fxq '1.4' "$test_root/home/.config/terminal-kit/scroll-speed"
 grep -Fxq 'on' "$test_root/home/.config/terminal-kit/prompt"
+grep -Fxq 'on' "$test_root/home/.config/terminal-kit/hints"
 grep -Fxq 'wrap' "$test_root/home/.config/terminal-kit/editor-wrap"
+grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.txt"
+grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
 grep -Fq '"scrollSpeed": 1.4' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"wordWrap": true' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"showCustomMetadata": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/tmux/tmux.conf" "$test_root/home/.tmux.conf"
 cmp -s \
@@ -84,5 +91,6 @@ cmp -s \
   "$test_root/home/Projects/terminal-kit/config/cmux/dock.json.example" \
   "$test_root/home/.config/cmux/dock.json"
 [[ "$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" path)" == "$test_root/home/Projects/terminal-kit" ]]
+HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" keys | grep -Fq 'tk keys Cheat sheet'
 
 printf 'terminal-kit tests passed\n'
