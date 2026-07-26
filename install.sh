@@ -38,6 +38,20 @@ background-opacity-cells = false
 EOF_GLASS
 fi
 
+# Scroll speed is machine-local for the same reason: Mos settings, mice, and
+# trackpads vary, and choosing a preset should never create a Git conflict.
+scroll_target="$HOME/.config/terminal-kit/scroll-speed"
+if [[ ! -e "$scroll_target" ]]; then
+  printf '1.4\n' >"$scroll_target"
+fi
+scroll_speed="$(tr -d '[:space:]' <"$scroll_target")"
+if ! [[ "$scroll_speed" =~ ^[0-9]+([.][0-9]+)?$ ]] \
+  || ! awk -v speed="$scroll_speed" 'BEGIN { exit !(speed >= 0.25 && speed <= 4) }'; then
+  warn "invalid saved scroll speed; resetting to 1.4"
+  scroll_speed=1.4
+  printf '1.4\n' >"$scroll_target"
+fi
+
 # Ghostty and cmux both read this path. Load behaviour, shared appearance, then
 # the machine-local glass preset so theme and glass rotation remain independent.
 ghostty_behaviour_include="config-file = \"$ROOT/config/ghostty/config\""
@@ -76,18 +90,24 @@ EOF_ZSH
 mkdir -p "$HOME/.local/bin"
 ln -sfn "$ROOT/bin/terminal-kit" "$HOME/.local/bin/terminal-kit"
 
-# cmux has no include mechanism, so this repo owns its UI preferences. Preserve
-# the previous file in the timestamped backup before replacing changed content.
+# cmux has no include mechanism, so render its managed config with the local
+# scroll multiplier before comparing or installing it.
 cmux_source="$ROOT/config/cmux/cmux.json.example"
 cmux_target="$HOME/.config/cmux/cmux.json"
+cmux_rendered="$(mktemp -t terminal-kit-cmux)"
+cp "$cmux_source" "$cmux_rendered"
+if [[ "$scroll_speed" != "1.4" ]]; then
+  /usr/bin/plutil -replace terminal.scrollSpeed -float "$scroll_speed" "$cmux_rendered"
+fi
 mkdir -p "$(dirname "$cmux_target")"
-if [[ ! -e "$cmux_target" ]] || ! cmp -s "$cmux_source" "$cmux_target"; then
+if [[ ! -e "$cmux_target" ]] || ! cmp -s "$cmux_rendered" "$cmux_target"; then
   if [[ -e "$cmux_target" ]]; then
     backup_file "$cmux_target"
   fi
-  cp "$cmux_source" "$cmux_target"
+  cp "$cmux_rendered" "$cmux_target"
   log "synced cmux settings"
 fi
+rm -f "$cmux_rendered"
 
 "$ROOT/scripts/apply.sh"
 
