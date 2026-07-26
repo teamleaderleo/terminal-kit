@@ -3,7 +3,8 @@
   "schemaVersion": 1,
   "app": {
     "hideTabCloseButton": true,
-    "commandPaletteSearchesAllSurfaces": true
+    "commandPaletteSearchesAllSurfaces": true,
+    "windowTitleTemplate": "{activeWorkspace} — {activeDirectory}"
   },
   "terminal": {
     "copyOnSelect": true,
@@ -42,5 +43,38 @@
   "sidebarAppearance": {
     "matchTerminalBackground": true,
     "tintOpacity": 0.88
-  }
+  },
+  "markdown": {
+    "fontSize": 16,
+    "maxWidth": 860
+  },
+  "fileEditor": {
+    "wordWrap": true
+  },
+  "commands": [
+    {
+      "name": "Theme: Browse",
+      "description": "Preview and select a cmux terminal theme",
+      "keywords": ["theme", "appearance", "colour"],
+      "command": "terminal-kit theme browse"
+    },
+    {
+      "name": "Theme: Next Favourite",
+      "description": "Move to the next theme in the saved top group",
+      "keywords": ["theme", "cycle", "next"],
+      "command": "terminal-kit theme next"
+    },
+    {
+      "name": "Theme: Readability Test",
+      "description": "Render ANSI, source code, and diff samples",
+      "keywords": ["theme", "contrast", "accessibility", "test"],
+      "command": "terminal-kit theme test"
+    },
+    {
+      "name": "Glass: Cycle",
+      "description": "Cycle regular, clear, immersive, and opaque presets",
+      "keywords": ["glass", "opacity", "blur", "liquid"],
+      "command": "terminal-kit glass cycle"
+    }
+  ]
 }
