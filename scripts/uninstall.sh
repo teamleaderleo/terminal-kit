@@ -11,6 +11,7 @@ mkdir -p "$BACKUP_DIR"
 remove_managed_block "$HOME/.config/ghostty/config" "ghostty"
 remove_managed_block "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "ghostty"
 remove_managed_block "$HOME/.tmux.conf" "tmux"
+remove_managed_block "$HOME/.zshenv" "environment"
 remove_managed_block "$HOME/.zshrc" "zsh"
 
 if [[ -L "$HOME/.local/bin/terminal-kit" ]]; then
