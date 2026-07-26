@@ -47,9 +47,15 @@ if command -v delta >/dev/null 2>&1; then
   export GIT_PAGER='delta --navigate'
 fi
 
-# Keep tk refreshing the complete bootstrap rather than only the legacy file.
+# `tk` with no arguments performs the normal update. Arguments dispatch directly
+# to terminal-kit, so `tk theme next`, `tk doctor`, and similar commands work.
 terminal-update() {
-  command terminal-kit update "$@" || return
+  if (( $# > 0 )); then
+    command terminal-kit "$@"
+    return
+  fi
+
+  command terminal-kit update || return
   local _terminal_kit_root
   _terminal_kit_root="$(command terminal-kit path)" || return
   source "$_terminal_kit_root/config/zsh/init.zsh"
