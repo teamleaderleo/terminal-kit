@@ -26,9 +26,12 @@ check_command() {
 }
 
 check_file "$HOME/.config/ghostty/config"
+check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.tmux.conf"
 check_file "$HOME/.zshrc"
 check_file "$ROOT/config/ghostty/config"
+check_file "$ROOT/config/ghostty/appearance"
+check_file "$ROOT/config/cmux/cmux.json.example"
 check_file "$ROOT/config/tmux/tmux.conf"
 check_file "$ROOT/config/zsh/terminal.zsh"
 
@@ -42,6 +45,11 @@ check_command cmux
 if command -v zsh >/dev/null 2>&1; then
   zsh -n "$ROOT/config/zsh/terminal.zsh"
   printf 'OK   Zsh settings parse cleanly\n'
+fi
+
+if command -v plutil >/dev/null 2>&1; then
+  plutil -lint "$ROOT/config/cmux/cmux.json.example" >/dev/null
+  printf 'OK   managed cmux JSON parses cleanly\n'
 fi
 
 if command -v cmux >/dev/null 2>&1; then
