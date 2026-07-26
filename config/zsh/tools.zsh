@@ -29,7 +29,7 @@ fi
 
 # Ordinary terminal output should keep wrapping. `wide` is the deliberate escape
 # hatch for long table rows, logs, source lines, and diffs. less -S keeps each
-# input line on one row; Left/Right or horizontal trackpad gestures move sideways.
+# input line on one row; Left/Right move the viewport sideways.
 wide() {
   if (( $# > 0 )); then
     command less -R -S -- "$@"
