@@ -61,6 +61,22 @@ if [[ ! -e "$prompt_target" ]]; then
   printf 'on\n' >"$prompt_target"
 fi
 
+# cmux's built-in text editor wraps by default. Wide mode is stored locally so
+# enabling horizontal scrolling survives updates without changing tracked JSON.
+editor_wrap_target="$HOME/.config/terminal-kit/editor-wrap"
+if [[ ! -e "$editor_wrap_target" ]]; then
+  printf 'wrap\n' >"$editor_wrap_target"
+fi
+editor_wrap_mode="$(tr -d '[:space:]' <"$editor_wrap_target")"
+case "$editor_wrap_mode" in
+  wrap|wide) ;;
+  *)
+    warn "invalid editor mode; resetting to wrap"
+    editor_wrap_mode=wrap
+    printf 'wrap\n' >"$editor_wrap_target"
+    ;;
+esac
+
 # Ghostty and cmux both read this path. Load behaviour, shared appearance, then
 # the machine-local glass preset so theme and glass rotation remain independent.
 ghostty_behaviour_include="config-file = \"$ROOT/config/ghostty/config\""
@@ -99,14 +115,17 @@ EOF_ZSH
 mkdir -p "$HOME/.local/bin"
 ln -sfn "$ROOT/bin/terminal-kit" "$HOME/.local/bin/terminal-kit"
 
-# cmux has no include mechanism, so render its managed config with the local
-# scroll multiplier before comparing or installing it.
+# cmux has no include mechanism, so render its managed config with machine-local
+# scroll and editor preferences before comparing or installing it.
 cmux_source="$ROOT/config/cmux/cmux.json.example"
 cmux_target="$HOME/.config/cmux/cmux.json"
 cmux_rendered="$(mktemp -t terminal-kit-cmux)"
 cp "$cmux_source" "$cmux_rendered"
 if [[ "$scroll_speed" != "1.4" ]]; then
   /usr/bin/plutil -replace terminal.scrollSpeed -float "$scroll_speed" "$cmux_rendered"
+fi
+if [[ "$editor_wrap_mode" == "wide" ]]; then
+  /usr/bin/plutil -replace fileEditor.wordWrap -bool false "$cmux_rendered"
 fi
 mkdir -p "$(dirname "$cmux_target")"
 if [[ ! -e "$cmux_target" ]] || ! cmp -s "$cmux_rendered" "$cmux_target"; then
