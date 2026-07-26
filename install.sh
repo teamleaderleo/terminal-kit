@@ -52,6 +52,13 @@ if ! [[ "$scroll_speed" =~ ^[0-9]+([.][0-9]+)?$ ]] \
   printf '1.4\n' >"$scroll_target"
 fi
 
+# The prompt is enabled for this installation by default, while the local state
+# file lets the user opt out without changing a tracked shell file.
+prompt_target="$HOME/.config/terminal-kit/prompt"
+if [[ ! -e "$prompt_target" ]]; then
+  printf 'on\n' >"$prompt_target"
+fi
+
 # Ghostty and cmux both read this path. Load behaviour, shared appearance, then
 # the machine-local glass preset so theme and glass rotation remain independent.
 ghostty_behaviour_include="config-file = \"$ROOT/config/ghostty/config\""
@@ -108,6 +115,18 @@ if [[ ! -e "$cmux_target" ]] || ! cmp -s "$cmux_rendered" "$cmux_target"; then
   log "synced cmux settings"
 fi
 rm -f "$cmux_rendered"
+
+# The personal Dock is deliberately generic. Project-local .cmux/dock.json files
+# can replace it with repo-specific logs, tests, servers, and Git controls.
+dock_source="$ROOT/config/cmux/dock.json.example"
+dock_target="$HOME/.config/cmux/dock.json"
+if [[ ! -e "$dock_target" ]] || ! cmp -s "$dock_source" "$dock_target"; then
+  if [[ -e "$dock_target" ]]; then
+    backup_file "$dock_target"
+  fi
+  cp "$dock_source" "$dock_target"
+  log "synced cmux Dock controls"
+fi
 
 "$ROOT/scripts/apply.sh"
 
