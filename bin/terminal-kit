@@ -67,6 +67,12 @@ case "$command_name" in
   scroll)
     exec /bin/bash "$ROOT/scripts/scroll.sh" "$@"
     ;;
+  sidebar)
+    exec /bin/bash "$ROOT/scripts/sidebar.sh" "$@"
+    ;;
+  editor)
+    exec /bin/bash "$ROOT/scripts/editor.sh" "$@"
+    ;;
   prompt)
     exec /bin/bash "$ROOT/scripts/prompt.sh" "$@"
     ;;
@@ -106,6 +112,8 @@ Usage: terminal-kit <command>
   theme        Browse, test, set, rotate, or automate cmux themes
   glass        Switch native macOS glass presets
   scroll       Tune cmux mouse-wheel and trackpad scroll speed
+  sidebar      Tune the minimum width of cmux's left workspace sidebar
+  editor       Toggle wrapping or horizontal scrolling in cmux's text editor
   prompt       Enable or disable the compact contextual prompt
   tools        Install recommended Homebrew packages
   doctor       Check files and commands
