@@ -1,4 +1,10 @@
-# terminal-kit: per-shell bootstrap for completions, helpers, and highlighting.
+# terminal-kit: per-shell bootstrap for helpers and highlighting.
+
+_terminal_kit_zsh_dir="${${(%):-%N}:A:h}"
+
+# Also load the baseline here so `source init.zsh` repairs the current shell,
+# even before the installer has added the ~/.zshenv include.
+source "$_terminal_kit_zsh_dir/env.zsh"
 
 # Older versions exported these sentinels. A child shell inherited them and
 # incorrectly assumed its own plugins were already loaded. Reset them once per
@@ -6,47 +12,26 @@
 if [[ "${TERMINAL_KIT_SHELL_PID:-}" != "$$" ]]; then
   unset TERMINAL_KIT_HELPERS_LOADED
   unset TERMINAL_KIT_HIGHLIGHTING_LOADED
-  unset TERMINAL_KIT_PRELUDE_LOADED
 fi
 
 typeset -g TERMINAL_KIT_SHELL_PID="$$"
 typeset +x TERMINAL_KIT_SHELL_PID 2>/dev/null || true
 
-# Completion setup and zoxide must run before zsh-syntax-highlighting, which is
-# sourced at the end of terminal.zsh.
-if [[ -z "${TERMINAL_KIT_PRELUDE_LOADED:-}" ]]; then
-  typeset -g TERMINAL_KIT_PRELUDE_LOADED=1
-  typeset +x TERMINAL_KIT_PRELUDE_LOADED 2>/dev/null || true
-
-  for _terminal_kit_brew_prefix in /opt/homebrew /usr/local; do
-    _terminal_kit_completion_dir="$_terminal_kit_brew_prefix/share/zsh-completions"
-    if [[ -d "$_terminal_kit_completion_dir" ]] && (( ${fpath[(Ie)$_terminal_kit_completion_dir]} == 0 )); then
-      fpath=("$_terminal_kit_completion_dir" $fpath)
-    fi
-  done
-
-  autoload -Uz compinit
-  if ! (( $+functions[compdef] )); then
-    # -i ignores completion directories that fail Zsh's ownership/permission
-    # audit instead of stopping shell startup with an interactive prompt.
-    # Test compdef itself because an aborted compinit can leave _comps behind.
-    compinit -i -d "$HOME/.zcompdump"
-  fi
-  zstyle ':completion:*' menu select
-  zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
-
-  if command -v zoxide >/dev/null 2>&1; then
+# Do not call compinit here. Existing frameworks, Bun, and other user startup
+# files often own completion already; running it twice caused security prompts
+# and half-initialised `compdef` state. terminal-kit stays out of that path.
+if command -v zoxide >/dev/null 2>&1; then
+  if [[ -z "${TERMINAL_KIT_ZOXIDE_LOADED:-}" ]]; then
+    typeset -g TERMINAL_KIT_ZOXIDE_LOADED=1
+    typeset +x TERMINAL_KIT_ZOXIDE_LOADED 2>/dev/null || true
     eval "$(zoxide init zsh)"
   fi
-
-  unset _terminal_kit_brew_prefix _terminal_kit_completion_dir
 fi
 
-_terminal_kit_zsh_dir="${${(%):-%N}:A:h}"
 source "$_terminal_kit_zsh_dir/terminal.zsh"
 
-# Remove the export attribute applied by older terminal.zsh revisions so new
-# cmux workspaces load their own helper and highlighting hooks.
+# Remove export attributes applied by older revisions so new cmux workspaces
+# load their own helper and highlighting hooks.
 typeset +x TERMINAL_KIT_HELPERS_LOADED 2>/dev/null || true
 typeset +x TERMINAL_KIT_HIGHLIGHTING_LOADED 2>/dev/null || true
 
