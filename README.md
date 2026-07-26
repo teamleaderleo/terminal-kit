@@ -2,7 +2,7 @@
 
 A small public MIT-licensed macOS dotfiles repo for Ghostty, cmux, tmux, and Zsh.
 
-The Git checkout stays in `~/Projects/terminal-kit`. The installer adds small managed include blocks to your existing shell, tmux, and Ghostty files. cmux does not support config includes, so the repo owns `~/.config/cmux/cmux.json` and backs up the previous copy before replacing changed settings.
+The Git checkout stays in `~/Projects/terminal-kit`. The installer adds small managed include blocks to your existing shell, tmux, and Ghostty files. cmux does not support config includes, so the repo owns `~/.config/cmux/cmux.json` and `~/.config/cmux/dock.json`, backing up previous copies before replacing changed settings.
 
 ## Install
 
@@ -27,6 +27,7 @@ terminal-kit apply        Apply local files without pulling Git
 terminal-kit theme        Browse, test, set, rotate, or automate cmux themes
 terminal-kit glass        Switch native macOS glass presets
 terminal-kit scroll       Tune cmux wheel and trackpad scroll speed
+terminal-kit prompt       Enable or disable the contextual prompt
 terminal-kit tools        Install missing Homebrew tools
 terminal-kit doctor       Check files, commands, and syntax
 terminal-kit test         Run the repo tests
@@ -82,6 +83,30 @@ terminal-kit scroll cycle       Rotate through the four presets
 
 Use cmux's multiplier as the main speed control rather than stacking it immediately with Ghostty's mouse-scroll multiplier. A Mos per-app profile can then adjust gain and duration for cmux without making Apple Terminal or browsers too fast.
 
+## Contextual prompt
+
+The compact Starship prompt is enabled by default and uses ordinary ANSI colours so it follows the active terminal theme. It shows the current path, Git branch and state, command duration, background jobs, and failures without Powerline blocks or Nerd Font dependencies.
+
+```text
+terminal-kit prompt status
+terminal-kit prompt on
+terminal-kit prompt off
+exec zsh                       Apply a prompt-state change
+```
+
+## Modern terminal tools
+
+The kit installs a restrained terminal-native toolbelt:
+
+- `y` opens Yazi and changes the shell directory to the folder selected on exit.
+- `lg` opens Lazygit in the current repository.
+- `bt` opens btop.
+- `rg`, `fd`, and `jq` provide fast content search, file search, and JSON processing.
+
+Yazi image previews can pass through tmux into Ghostty-compatible terminals. In cmux, `Cmd+Up` and `Cmd+Down` jump between shell prompts instead of scrolling line-by-line through command output.
+
+cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, and readability testing. The global Dock provides System and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
+
 ## Managed files
 
 | Repo file | Loaded by |
@@ -90,11 +115,15 @@ Use cmux's multiplier as the main speed control rather than stacking it immediat
 | `config/ghostty/appearance` | Ghostty and cmux theme fallback and typography |
 | `~/.config/terminal-kit/glass.ghostty` | Machine-local native glass preset |
 | `~/.config/terminal-kit/scroll-speed` | Machine-local cmux scroll multiplier |
+| `~/.config/terminal-kit/prompt` | Machine-local prompt switch |
 | `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll speed |
+| `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
+| `config/starship/terminal-kit.toml` | Compact contextual prompt |
 | `config/tmux/tmux.conf` | `~/.tmux.conf` |
 | `config/zsh/env.zsh` | `~/.zshenv`; restores standard macOS and Homebrew command paths early |
-| `config/zsh/init.zsh` | Per-shell helper and plugin bootstrap |
+| `config/zsh/init.zsh` | Per-shell helper, prompt, and plugin bootstrap |
 | `config/zsh/terminal.zsh` | Editing widgets, history, and aliases |
+| `config/zsh/tools.zsh` | Yazi and modern-tool wrappers |
 | `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
 
 Backups go to `~/.config/terminal-kit-backups/`.
@@ -116,7 +145,7 @@ The slightly larger, gently thickened text is intended to improve character sepa
 
 The base configuration does not fix its own background, foreground, cursor, or selection hex values, so Rosé Pine, Vesper, Catppuccin, and other selected themes can display their full palettes. The cmux sidebar and tmux use theme-responsive backgrounds and ANSI colours. `bat` uses its `base16` theme and Delta follows `BAT_THEME` where possible.
 
-cmux's Command Palette also includes entries for browsing themes, selecting the next favourite, opening the readability test, cycling glass, and cycling scroll speed. The built-in Markdown viewer uses a 16-point body size and a narrower reading column, and the plain-text editor wraps long lines.
+The built-in Markdown viewer uses a 16-point body size and a narrower reading column, and the plain-text editor wraps long lines.
 
 ## Shell experience
 
@@ -134,7 +163,7 @@ The kit also installs:
 
 Completion initialisation remains owned by the user's existing shell setup; terminal-kit does not run `compinit` a second time.
 
-The beta cmux TextBox stays hidden for new terminals. The normal Zsh prompt is the primary command editor.
+The beta cmux TextBox stays hidden for new terminals. Zsh remains the command editor, with Starship only rendering the contextual prompt around it.
 
 ## Ricing roadmap
 
