@@ -1,7 +1,7 @@
 # terminal-kit: deep indigo appearance shared by Ghostty and cmux
 
-# Ben Davis uses GitHub Dark Default in his editor. Start from the matching
-# terminal palette, then pull the base toward a quieter, desaturated indigo.
+# GitHub Dark Default supplies the ANSI palette; the overrides pull the base
+# toward a quieter, desaturated indigo.
 theme = GitHub Dark Default
 background = #171923
 foreground = #D8DBE8
@@ -12,9 +12,10 @@ selection-foreground = #F4F6FB
 split-divider-color = #2A2F3E
 minimum-contrast = 3
 
-# Barely-there translucency: enough depth to feel native without reducing
-# readability. macOS 26 uses the system's regular Liquid Glass material.
-background-opacity = 0.975
+# Noticeable but still readable native macOS glass. Ghostty maps this special
+# blur value to the macOS 26 system glass material rather than a third-party
+# shader or imitation effect.
+background-opacity = 0.94
 background-blur = macos-glass-regular
 background-opacity-cells = false
 unfocused-split-opacity = 1
