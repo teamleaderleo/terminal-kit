@@ -14,13 +14,13 @@ fail() {
 }
 
 state_value() {
-  local value="on"
+  local value="off"
   if [[ -r "$STATE_FILE" ]]; then
     value="$(tr -d '[:space:]' < "$STATE_FILE")"
   fi
   case "$value" in
     on|off) printf '%s\n' "$value" ;;
-    *) printf 'on\n' ;;
+    *) printf 'off\n' ;;
   esac
 }
 
@@ -86,15 +86,16 @@ usage() {
   cat <<'HELP'
 Usage: terminal-kit hints <command>
 
-  current       Show whether fresh-shell hints are enabled
-  on            Enable hints for new terminal surfaces
-  off           Disable hints and clear the current one
-  next|show     Show the next hint in the current workspace
+  current       Show whether automatic fresh-shell hints are enabled
+  on            Enable row hints for new terminal surfaces
+  off           Disable automatic hints and clear the current one
+  next|show     Explicitly show the next hint in the current workspace
   clear         Remove the current workspace hint
   list          Print the full compact key and command cheat sheet
 
-A fresh cmux terminal shows one low-priority hint in its sidebar row. The first
-command clears it. Opening another terminal surface advances to the next hint.
+Automatic hints are off by default because cmux status metadata arrives after the
+shell starts and can change the workspace row height. `tk keys` is the calm,
+non-shifting help view; `tk hints next` remains available as an explicit preview.
 HELP
 }
 
@@ -103,11 +104,11 @@ shift || true
 
 case "$command_name" in
   current|status)
-    printf 'terminal-kit: fresh-shell sidebar hints %s\n' "$(state_value)"
+    printf 'terminal-kit: automatic sidebar hints %s\n' "$(state_value)"
     ;;
   on)
     write_state on
-    printf 'terminal-kit: fresh-shell sidebar hints enabled\n'
+    printf 'terminal-kit: automatic sidebar hints enabled\n'
     if cmux_ready; then
       show_next_hint
     fi
@@ -115,7 +116,7 @@ case "$command_name" in
   off)
     write_state off
     clear_hint
-    printf 'terminal-kit: fresh-shell sidebar hints disabled\n'
+    printf 'terminal-kit: automatic sidebar hints disabled\n'
     ;;
   next|show)
     show_next_hint
