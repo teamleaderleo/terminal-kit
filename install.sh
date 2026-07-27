@@ -54,11 +54,24 @@ if ! [[ "$scroll_speed" =~ ^[0-9]+([.][0-9]+)?$ ]] \
   printf '1.4\n' >"$scroll_target"
 fi
 
-# The prompt is enabled for this installation by default, while the local state
-# file lets the user opt out without changing a tracked shell file.
+# The calm prompt is the default. Preserve explicit detailed/off choices and
+# migrate the older generic "on" value to minimal.
 prompt_target="$HOME/.config/terminal-kit/prompt"
 if [[ ! -e "$prompt_target" ]]; then
-  printf 'on\n' >"$prompt_target"
+  printf 'minimal\n' >"$prompt_target"
+else
+  prompt_mode="$(tr -d '[:space:]' <"$prompt_target")"
+  case "$prompt_mode" in
+    on|enable)
+      printf 'minimal\n' >"$prompt_target"
+      ;;
+    minimal|detailed|off)
+      ;;
+    *)
+      warn "invalid prompt mode; resetting to minimal"
+      printf 'minimal\n' >"$prompt_target"
+      ;;
+  esac
 fi
 
 # Automatic sidebar status hints arrived after the workspace row was first drawn,
