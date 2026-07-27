@@ -1,0 +1,55 @@
+# terminal-kit: optional detailed, theme-responsive prompt without Nerd Font dependencies.
+
+add_newline = false
+command_timeout = 800
+format = "$directory$git_branch$git_status$character"
+right_format = "$cmd_duration$status$jobs"
+
+[directory]
+style = "bold blue"
+truncation_length = 4
+truncate_to_repo = false
+read_only = " ro"
+format = "[$path]($style)[$read_only]($read_only_style) "
+
+[git_branch]
+symbol = "git:"
+style = "bold purple"
+format = "[$symbol$branch]($style) "
+
+[git_status]
+style = "yellow"
+format = "[$all_status$ahead_behind]($style) "
+conflicted = "~${count}"
+ahead = "+${count}"
+behind = "-${count}"
+diverged = "+${ahead_count}/-${behind_count}"
+untracked = "?${count}"
+stashed = "*${count}"
+modified = "!${count}"
+staged = "+${count}"
+renamed = ">${count}"
+deleted = "x${count}"
+
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+
+[cmd_duration]
+min_time = 2000
+show_milliseconds = false
+style = "yellow"
+format = "[$duration]($style) "
+
+[status]
+disabled = false
+style = "bold red"
+format = "[$status]($style) "
+
+[jobs]
+symbol = "jobs:"
+style = "cyan"
+format = "[$symbol$number]($style) "
+number_threshold = 1
+symbol_threshold = 1
