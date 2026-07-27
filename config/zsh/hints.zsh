@@ -1,11 +1,11 @@
-# terminal-kit: temporary cmux sidebar hints for fresh terminal surfaces.
+# terminal-kit: optional cmux sidebar hints for fresh terminal surfaces.
 
 [[ -o interactive ]] || return 0
 [[ -n "${CMUX_WORKSPACE_ID:-}" ]] || return 0
 command -v cmux >/dev/null 2>&1 || return 0
 [[ -z "${TERMINAL_KIT_HINT_ACTIVE:-}" ]] || return 0
 
-_terminal_kit_hint_state="on"
+_terminal_kit_hint_state="off"
 if [[ -r "$HOME/.config/terminal-kit/hints" ]]; then
   _terminal_kit_hint_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/hints")"
 fi
