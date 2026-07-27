@@ -4,7 +4,11 @@
   "app": {
     "hideTabCloseButton": true,
     "commandPaletteSearchesAllSurfaces": true,
+    "newWorkspacePlacement": "afterCurrent",
     "workspaceInheritWorkingDirectory": false,
+    "focusPaneOnFirstClick": true,
+    "openSupportedFilesInCmux": "preview",
+    "openMarkdownInCmuxViewer": true,
     "windowTitleTemplate": "{activeWorkspace} — {activeDirectory}"
   },
   "terminal": {
@@ -46,6 +50,9 @@
   "sidebarAppearance": {
     "matchTerminalBackground": true,
     "tintOpacity": 0.88
+  },
+  "shortcuts": {
+    "showModifierHoldHints": true
   },
   "markdown": {
     "fontSize": 16,
