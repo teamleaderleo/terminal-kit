@@ -4,6 +4,7 @@
   "app": {
     "hideTabCloseButton": true,
     "commandPaletteSearchesAllSurfaces": true,
+    "workspaceInheritWorkingDirectory": false,
     "windowTitleTemplate": "{activeWorkspace} — {activeDirectory}"
   },
   "terminal": {
@@ -16,23 +17,22 @@
   },
   "sidebar": {
     "wrapWorkspaceTitles": false,
-    "showWorkspaceDescription": true,
+    "showWorkspaceDescription": false,
     "branchLayout": "inline",
-    "showNotificationMessage": true,
-    "notificationMessageLineLimit": 2,
-    "showBranchDirectory": true,
-    "showPullRequests": true,
-    "showPorts": true,
-    "showLog": true,
-    "showProgress": true,
+    "showNotificationMessage": false,
+    "notificationMessageLineLimit": 1,
+    "showBranchDirectory": false,
+    "showPullRequests": false,
+    "showPorts": false,
+    "showLog": false,
+    "showProgress": false,
     "showAgentActivity": true,
     "showCustomMetadata": true,
     "loadingSpinnerPosition": "trailing",
     "notificationBadgePosition": "trailing"
   },
   "workspaceColors": {
-    "indicatorStyle": "washRail",
-    "selectionColor": "#343744",
+    "indicatorStyle": "wash",
     "notificationBadgeColor": "#9AA4C8",
     "colors": {
       "Indigo": "#6876A5",
@@ -98,13 +98,13 @@
     },
     {
       "name": "Hints: Show Next",
-      "description": "Place the next compact shortcut hint in the current workspace row",
+      "description": "Explicitly place one shortcut hint in the current workspace row",
       "keywords": ["hints", "keys", "shortcuts", "learn", "sidebar"],
       "command": "terminal-kit hints next"
     },
     {
       "name": "Hints: Clear",
-      "description": "Remove the temporary terminal-kit hint from this workspace",
+      "description": "Remove the optional terminal-kit hint from this workspace",
       "keywords": ["hints", "clear", "sidebar"],
       "command": "terminal-kit hints clear"
     },
