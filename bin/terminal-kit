@@ -122,7 +122,7 @@ Usage: terminal-kit <command>
   editor       Toggle wrapping or horizontal scrolling in cmux's text editor
   hints        Control temporary hints in cmux workspace rows
   keys         Print the compact hotkey and command cheat sheet
-  prompt       Enable or disable the compact contextual prompt
+  prompt       Choose minimal, detailed, or disabled prompt mode
   tools        Install recommended Homebrew packages
   doctor       Check files and commands
   test         Run repository checks
@@ -132,7 +132,7 @@ Usage: terminal-kit <command>
   path         Print the repository location
 
 After Zsh loads the kit, plain `tk` updates everything. `tk update` is the explicit form.
-Run `tk status` to explain the Git symbols shown in the prompt.
+Use `tk status` when you deliberately want Git branch, stash, and working-tree details.
 HELP
     ;;
   *)
