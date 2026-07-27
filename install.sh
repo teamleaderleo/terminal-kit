@@ -61,11 +61,16 @@ if [[ ! -e "$prompt_target" ]]; then
   printf 'on\n' >"$prompt_target"
 fi
 
-# Fresh terminal surfaces show one low-priority cmux sidebar hint until the first
-# command runs. Keep the preference local so it can be disabled without Git edits.
+# Automatic sidebar status hints arrived after the workspace row was first drawn,
+# which made row heights jump. Migrate the original experiment to off once, then
+# preserve any later explicit `tk hints on` choice through the version marker.
 hints_target="$HOME/.config/terminal-kit/hints"
-if [[ ! -e "$hints_target" ]]; then
-  printf 'on\n' >"$hints_target"
+hints_layout_marker="$HOME/.config/terminal-kit/hints-layout-v2"
+if [[ ! -e "$hints_layout_marker" ]]; then
+  printf 'off\n' >"$hints_target"
+  : >"$hints_layout_marker"
+elif [[ ! -e "$hints_target" ]]; then
+  printf 'off\n' >"$hints_target"
 fi
 
 # cmux's built-in text editor wraps by default. Wide mode is stored locally so
