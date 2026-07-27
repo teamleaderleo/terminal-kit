@@ -33,18 +33,23 @@ fi
 
 source "$_terminal_kit_zsh_dir/tools.zsh"
 
-# The compact Starship prompt is enabled by default, but a machine-local switch
-# lets it be disabled without editing or dirtying the repository.
-_terminal_kit_prompt_state="on"
+# The default prompt shows only the directory and prompt character. A local mode
+# can opt into Git branch/status details or disable Starship entirely.
+_terminal_kit_prompt_state="minimal"
 if [[ -r "$HOME/.config/terminal-kit/prompt" ]]; then
   _terminal_kit_prompt_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/prompt")"
 fi
+[[ "$_terminal_kit_prompt_state" == "on" ]] && _terminal_kit_prompt_state="minimal"
+_terminal_kit_starship_config="$_terminal_kit_zsh_dir/../starship/terminal-kit.toml"
+[[ "$_terminal_kit_prompt_state" == "detailed" ]] \
+  && _terminal_kit_starship_config="$_terminal_kit_zsh_dir/../starship/detailed.toml"
+
 if [[ "$_terminal_kit_prompt_state" != "off" ]] \
   && command -v starship >/dev/null 2>&1 \
   && [[ -z "${TERMINAL_KIT_STARSHIP_LOADED:-}" ]]; then
   typeset -g TERMINAL_KIT_STARSHIP_LOADED=1
   typeset +x TERMINAL_KIT_STARSHIP_LOADED 2>/dev/null || true
-  export STARSHIP_CONFIG="$_terminal_kit_zsh_dir/../starship/terminal-kit.toml"
+  export STARSHIP_CONFIG="$_terminal_kit_starship_config"
   eval "$(starship init zsh)"
 fi
 
@@ -53,8 +58,8 @@ fi
 source "$_terminal_kit_zsh_dir/terminal.zsh"
 source "$_terminal_kit_zsh_dir/highlight.zsh"
 
-# A fresh cmux surface gets one quiet workspace-row hint. Its preexec hook removes
-# the hint as soon as the user runs a command, so it never becomes permanent UI.
+# Optional fresh-surface hints remain available, but are disabled by default because
+# late sidebar metadata changes row height after the workspace has already appeared.
 source "$_terminal_kit_zsh_dir/hints.zsh"
 
 # Remove export attributes applied by older revisions so new cmux workspaces
@@ -94,4 +99,4 @@ terminal-update() {
 }
 alias tk='terminal-update'
 
-unset _terminal_kit_prompt_state _terminal_kit_zsh_dir
+unset _terminal_kit_prompt_state _terminal_kit_starship_config _terminal_kit_zsh_dir
