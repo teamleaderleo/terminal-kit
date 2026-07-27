@@ -5,7 +5,9 @@
 # masking the selected theme.
 theme = Catppuccin Mocha
 minimum-contrast = 3
-unfocused-split-opacity = 1
+
+# Keep inactive splits readable while making the focused pane slightly clearer.
+unfocused-split-opacity = 0.96
 
 # Slightly larger and thicker macOS text improves distance legibility without
 # turning the terminal into a bold display face.
