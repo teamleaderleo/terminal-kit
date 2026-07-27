@@ -45,6 +45,7 @@ before="$(shasum \
   "$test_root/home/.config/terminal-kit/scroll-speed" \
   "$test_root/home/.config/terminal-kit/prompt" \
   "$test_root/home/.config/terminal-kit/hints" \
+  "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
@@ -59,6 +60,7 @@ after="$(shasum \
   "$test_root/home/.config/terminal-kit/scroll-speed" \
   "$test_root/home/.config/terminal-kit/prompt" \
   "$test_root/home/.config/terminal-kit/hints" \
+  "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
@@ -73,12 +75,16 @@ grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/config" "$test_ro
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/.config/terminal-kit/glass.ghostty" "$test_root/home/.config/ghostty/config"
 grep -Fq 'background-blur = macos-glass-regular' "$test_root/home/.config/terminal-kit/glass.ghostty"
+grep -Fq 'working-directory = home' "$test_root/home/Projects/terminal-kit/config/ghostty/config"
 grep -Fxq '1.4' "$test_root/home/.config/terminal-kit/scroll-speed"
 grep -Fxq 'on' "$test_root/home/.config/terminal-kit/prompt"
-grep -Fxq 'on' "$test_root/home/.config/terminal-kit/hints"
+grep -Fxq 'off' "$test_root/home/.config/terminal-kit/hints"
 grep -Fxq 'wrap' "$test_root/home/.config/terminal-kit/editor-wrap"
 grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.txt"
 grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
+grep -Fq '"workspaceInheritWorkingDirectory": false' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"showBranchDirectory": false' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"indicatorStyle": "wash"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"scrollSpeed": 1.4' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"wordWrap": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showCustomMetadata": true' "$test_root/home/.config/cmux/cmux.json"
