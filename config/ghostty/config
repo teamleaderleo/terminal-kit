@@ -6,6 +6,10 @@ cursor-click-to-move = true
 shell-integration = zsh
 link-previews = osc8
 
+# New top-level workspaces start at home. cmux can still open an explicit project
+# directory, while tabs and splits inside a project keep their own live context.
+working-directory = home
+
 # Clipboard and screen selection.
 # Dragging output copies it immediately. Cmd+Shift+C is the explicit screen-copy key.
 clipboard-read = ask
