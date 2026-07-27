@@ -14,11 +14,16 @@ working-directory = home
 # Dragging output copies it immediately. Cmd+Shift+C is the explicit screen-copy key.
 clipboard-read = ask
 clipboard-write = allow
+clipboard-trim-trailing-spaces = true
 copy-on-select = clipboard
 right-click-action = copy-or-paste
 mouse-shift-capture = never
 selection-clear-on-typing = true
 selection-clear-on-copy = false
+
+# Treat the left Option key as terminal Alt/Meta for Neovim and other TUIs while
+# leaving the right Option key available for ordinary macOS symbol entry.
+macos-option-as-alt = left
 
 # macOS-style prompt editing. Zsh owns the custom CSI sequences below.
 # Cmd+A/C/X/Z and Cmd+Shift+Z act on the editable command line.
