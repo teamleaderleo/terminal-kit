@@ -23,7 +23,7 @@ tk update
 
 ```text
 tk / tk update              Pull Git changes, install tools, reload, and refresh Zsh
-tk status                   Explain the branch, stash count, and working-tree state
+tk status                   Show branch, stash count, and working-tree state on demand
 tk apply                    Apply local files without pulling Git
 tk theme                    Browse, test, set, rotate, or automate cmux themes
 tk glass                    Switch native macOS glass presets
@@ -32,15 +32,13 @@ tk sidebar                  Tune the left workspace sidebar's minimum width
 tk editor                   Toggle wrapping or horizontal editor scrolling
 tk hints                    Control optional hints in cmux workspace rows
 tk keys                     Print the compact hotkey and command cheat sheet
-tk prompt                   Enable or disable the contextual prompt
+tk prompt                   Choose minimal, detailed, or disabled prompt mode
 tk tools                    Install missing Homebrew tools
 tk doctor                   Check files, commands, and syntax
 tk test                     Run the repo tests
 tk edit                     Open the repository
 tk uninstall                Remove the managed include blocks
 ```
-
-In the Starship prompt, `*1` means one Git stash and `!4` means four modified files. `tk status` expands those compact symbols into a readable report.
 
 ## Theme controls
 
@@ -109,7 +107,7 @@ The setting changes the lower limit rather than forcing a width. Fully quit and 
 
 New top-level workspaces start in the user's home directory (`~`) rather than inheriting whichever project happened to be focused. Opening an explicit project path still starts there, and work inside an existing project keeps its own context.
 
-The left sidebar defaults to one calm title row. It hides the duplicated branch/directory line, pull-request snippets, ports, logs, progress rows, and notification text. Agent activity and unread badges remain available. The selected workspace uses a soft background wash instead of a coloured rail.
+The left sidebar defaults to one calm title row. It hides the duplicated branch/directory line, pull-request snippets, ports, logs, progress rows, and notification text. Agent activity and unread badges remain available. The selected workspace uses Catppuccin Mocha's muted surface colour instead of the macOS accent-blue fallback.
 
 ## Horizontal views
 
@@ -154,16 +152,25 @@ tk hints off          Disable automatic hints
 
 The preference lives in `~/.config/terminal-kit/hints`, and the rotation index lives beside it. Both stay outside Git. The cmux Command Palette includes **Hints: Show Next**, **Hints: Clear**, and **Keys: Cheat Sheet**.
 
-## Contextual prompt
+## Prompt modes
 
-The compact Starship prompt is enabled by default and uses ordinary ANSI colours so it follows the active terminal theme. It shows the current path, Git branch and state, command duration, background jobs, and failures without Powerline blocks or Nerd Font dependencies.
+The default Starship prompt is deliberately minimal:
 
 ```text
-terminal-kit prompt status
-terminal-kit prompt on
-terminal-kit prompt off
-exec zsh                       Apply a prompt-state change
+~/Projects/terminal-kit ❯
 ```
+
+Git branch, stash, and modified-file indicators are not permanently shown. Use `tk status` when those details matter, or switch to the optional detailed prompt:
+
+```text
+tk prompt status
+tk prompt minimal
+tk prompt detailed
+tk prompt off
+exec zsh
+```
+
+The detailed mode shows the Git branch and compact repository state. Both prompt modes use ordinary ANSI colours so they follow the active terminal theme, while failures, long command duration, and background jobs can still appear on the right.
 
 ## Modern terminal tools
 
@@ -177,7 +184,7 @@ The kit installs a restrained terminal-native toolbelt:
 
 Yazi image previews can pass through tmux into Ghostty-compatible terminals. In cmux, `Cmd+Up` and `Cmd+Down` jump between shell prompts instead of scrolling line-by-line through command output.
 
-cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, optional hints, key previews, and readability testing. The global Dock provides System and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
+cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, prompt modes, optional hints, key previews, and readability testing. The global Dock provides System and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
 
 ## Managed files
 
@@ -187,14 +194,15 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, e
 | `config/ghostty/appearance` | Ghostty and cmux theme fallback and typography |
 | `~/.config/terminal-kit/glass.ghostty` | Machine-local native glass preset |
 | `~/.config/terminal-kit/scroll-speed` | Machine-local cmux scroll multiplier |
-| `~/.config/terminal-kit/prompt` | Machine-local prompt switch |
+| `~/.config/terminal-kit/prompt` | Machine-local prompt mode |
 | `~/.config/terminal-kit/hints` | Machine-local automatic-hint switch |
 | `~/.config/terminal-kit/hint-index` | Machine-local hint rotation position |
 | `~/.config/terminal-kit/editor-wrap` | Machine-local cmux editor mode |
 | `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll and editor settings |
 | `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
 | `config/hints.txt` | Compact cmux and terminal-kit hint catalogue |
-| `config/starship/terminal-kit.toml` | Compact contextual prompt |
+| `config/starship/terminal-kit.toml` | Calm minimal prompt |
+| `config/starship/detailed.toml` | Optional Git-detailed prompt |
 | `config/tmux/tmux.conf` | `~/.tmux.conf` |
 | `config/zsh/env.zsh` | `~/.zshenv`; restores standard macOS and Homebrew command paths early |
 | `config/zsh/init.zsh` | Per-shell helper, prompt, optional hint, and plugin bootstrap |
@@ -220,7 +228,7 @@ surface-tab-bar-font-size = 11
 
 The slightly larger, gently thickened text is intended to improve character separation and distance legibility. Balanced padding keeps the grid centred while panes resize.
 
-The base configuration does not fix its own background, foreground, cursor, or selection hex values, so Rosé Pine, Vesper, Catppuccin, and other selected themes can display their full palettes. The cmux sidebar and tmux use theme-responsive backgrounds and ANSI colours. `bat` uses its `base16` theme and Delta follows `BAT_THEME` where possible.
+The base configuration does not fix its own background, foreground, cursor, or selection hex values, so Rosé Pine, Vesper, Catppuccin, and other selected themes can display their full palettes. The cmux sidebar and tmux use theme-responsive backgrounds and restrained companion colours. `bat` uses its `base16` theme and Delta follows `BAT_THEME` where possible.
 
 The built-in Markdown viewer uses a 16-point body size and a narrower reading column, and the plain-text editor defaults to wrapping long lines.
 
@@ -240,7 +248,7 @@ The kit also installs:
 
 Completion initialisation remains owned by the user's existing shell setup; terminal-kit does not run `compinit` a second time.
 
-The beta cmux TextBox stays hidden for new terminals. Zsh remains the command editor, with Starship only rendering the contextual prompt around it.
+The beta cmux TextBox stays hidden for new terminals. Zsh remains the command editor, with Starship only rendering the prompt around it.
 
 ## Ricing roadmap
 
