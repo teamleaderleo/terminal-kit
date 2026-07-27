@@ -32,7 +32,8 @@
     "notificationBadgePosition": "trailing"
   },
   "workspaceColors": {
-    "indicatorStyle": "wash",
+    "indicatorStyle": "solidFill",
+    "selectionColor": "#313244",
     "notificationBadgeColor": "#9AA4C8",
     "colors": {
       "Indigo": "#6876A5",
@@ -113,6 +114,18 @@
       "description": "Preview the compact terminal-kit and cmux key list",
       "keywords": ["keys", "shortcuts", "commands", "help", "cheat sheet"],
       "command": "terminal-kit keys | less -R"
+    },
+    {
+      "name": "Prompt: Minimal",
+      "description": "Use the calm directory-only shell prompt",
+      "keywords": ["prompt", "minimal", "calm", "git"],
+      "command": "terminal-kit prompt minimal"
+    },
+    {
+      "name": "Prompt: Detailed",
+      "description": "Show Git branch and repository state in the shell prompt",
+      "keywords": ["prompt", "detailed", "git", "branch", "status"],
+      "command": "terminal-kit prompt detailed"
     },
     {
       "name": "Files: Yazi",
