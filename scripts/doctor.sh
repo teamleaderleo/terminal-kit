@@ -42,6 +42,7 @@ check_file "$ROOT/config/cmux/cmux.json.example"
 check_file "$ROOT/config/cmux/dock.json.example"
 check_file "$ROOT/config/hints.txt"
 check_file "$ROOT/config/starship/terminal-kit.toml"
+check_file "$ROOT/config/starship/detailed.toml"
 check_file "$ROOT/config/tmux/tmux.conf"
 check_file "$ROOT/config/zsh/env.zsh"
 check_file "$ROOT/config/zsh/init.zsh"
@@ -90,6 +91,12 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/hints.zsh" \
     "$ROOT/config/zsh/highlight.zsh"
   printf 'OK   Zsh settings parse cleanly\n'
+fi
+
+if [[ -r "$HOME/.config/terminal-kit/prompt" ]]; then
+  prompt_mode="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/prompt")"
+  [[ "$prompt_mode" == "on" ]] && prompt_mode="minimal"
+  printf 'OK   prompt mode               %s\n' "$prompt_mode"
 fi
 
 if [[ -r "$HOME/.config/terminal-kit/hints" ]]; then
