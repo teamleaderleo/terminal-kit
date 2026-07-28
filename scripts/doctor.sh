@@ -25,6 +25,54 @@ check_command() {
   fi
 }
 
+validate_json() {
+  local file="$1"
+  if command -v jq >/dev/null 2>&1; then
+    jq empty "$file" >/dev/null
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 - "$file" >/dev/null <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    json.load(handle)
+PY
+  else
+    return 2
+  fi
+}
+
+check_json() {
+  local file="$1"
+  if [[ ! -r "$file" ]]; then
+    return 0
+  fi
+
+  if validate_json "$file"; then
+    printf 'OK   JSON parses cleanly       %s\n' "$file"
+  else
+    local status=$?
+    if (( status == 2 )); then
+      printf 'MISS JSON parser for %s (install jq)\n' "$file"
+    else
+      printf 'BAD  invalid JSON              %s\n' "$file"
+    fi
+    failures=$((failures + 1))
+  fi
+}
+
+json_value() {
+  local file="$1"
+  local jq_path="$2"
+  local plist_path="$3"
+
+  if command -v jq >/dev/null 2>&1; then
+    jq -r "$jq_path // empty" "$file" 2>/dev/null || true
+  elif command -v plutil >/dev/null 2>&1; then
+    plutil -extract "$plist_path" raw "$file" 2>/dev/null || true
+  fi
+}
+
 check_file "$HOME/.config/ghostty/config"
 check_file "$HOME/.config/terminal-kit/glass.ghostty"
 check_file "$HOME/.config/terminal-kit/scroll-speed"
@@ -104,19 +152,19 @@ if [[ -r "$HOME/.config/terminal-kit/hints" ]]; then
   printf 'OK   fresh-shell hints         %s\n' "$hints_state"
 fi
 
-if command -v plutil >/dev/null 2>&1; then
-  plutil -lint "$ROOT/config/cmux/cmux.json.example" >/dev/null
-  plutil -lint "$ROOT/config/cmux/dock.json.example" >/dev/null
-  printf 'OK   managed cmux JSON parses cleanly\n'
-  if [[ -r "$HOME/.config/cmux/cmux.json" ]]; then
-    scroll_speed="$(plutil -extract terminal.scrollSpeed raw "$HOME/.config/cmux/cmux.json" 2>/dev/null || true)"
-    [[ -n "$scroll_speed" ]] && printf 'OK   cmux scroll speed         %sx\n' "$scroll_speed"
-    editor_wrap="$(plutil -extract fileEditor.wordWrap raw "$HOME/.config/cmux/cmux.json" 2>/dev/null || true)"
-    case "$editor_wrap" in
-      true|1) printf 'OK   cmux editor mode          wrap\n' ;;
-      false|0) printf 'OK   cmux editor mode          horizontal\n' ;;
-    esac
-  fi
+check_json "$ROOT/config/cmux/cmux.json.example"
+check_json "$ROOT/config/cmux/dock.json.example"
+check_json "$HOME/.config/cmux/cmux.json"
+check_json "$HOME/.config/cmux/dock.json"
+
+if [[ -r "$HOME/.config/cmux/cmux.json" ]]; then
+  scroll_speed="$(json_value "$HOME/.config/cmux/cmux.json" '.terminal.scrollSpeed' 'terminal.scrollSpeed')"
+  [[ -n "$scroll_speed" ]] && printf 'OK   cmux scroll speed         %sx\n' "$scroll_speed"
+  editor_wrap="$(json_value "$HOME/.config/cmux/cmux.json" '.fileEditor.wordWrap' 'fileEditor.wordWrap')"
+  case "$editor_wrap" in
+    true|1) printf 'OK   cmux editor mode          wrap\n' ;;
+    false|0) printf 'OK   cmux editor mode          horizontal\n' ;;
+  esac
 fi
 
 if command -v cmux >/dev/null 2>&1; then
@@ -124,7 +172,7 @@ if command -v cmux >/dev/null 2>&1; then
 fi
 
 if (( failures > 0 )); then
-  die "$failures required file(s) missing; run terminal-kit install"
+  die "$failures check(s) failed"
 fi
 
 log "doctor finished"
