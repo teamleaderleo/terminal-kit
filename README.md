@@ -33,6 +33,8 @@ tk editor                   Toggle wrapping or horizontal editor scrolling
 tk hints                    Control optional hints in cmux workspace rows
 tk keys                     Print the compact hotkey and command cheat sheet
 tk prompt                   Choose minimal, detailed, or disabled prompt mode
+tk perf                     Benchmark Zsh and inspect cmux resources
+tk memory                   Choose renderer reclamation and agent hibernation policy
 tk tools                    Install missing Homebrew tools
 tk doctor                   Check files, commands, and syntax
 tk test                     Run the repo tests
@@ -88,6 +90,39 @@ terminal-kit scroll cycle       Rotate through the four presets
 
 Use cmux's multiplier as the main speed control rather than stacking it immediately with Ghostty's mouse-scroll multiplier. A Mos per-app profile can then adjust gain and duration for cmux without making Apple Terminal or browsers too fast.
 
+## Memory controls
+
+The memory policy lives in `~/.config/terminal-kit/memory-mode`, outside Git. It controls two different mechanisms:
+
+- Renderer reclamation releases off-screen Metal renderers while keeping the shell process, PTY, scrollback, and terminal state alive.
+- Agent hibernation stops only supported, restorable coding agents after they are idle and off-screen. Ordinary shells and arbitrary running commands are never killed.
+
+```text
+tk memory status       Show the active policy and limits
+tk memory normal       cmux defaults: 12 warm renderers; agents remain live
+tk memory balanced     6 warm renderers; agents remain live
+tk memory lean         2 warm renderers; hibernate agents above 4
+tk memory ultra        1 warm renderer; hibernate agents above 2
+tk memory menu         Interactive memory control
+tk memory top          cmux Task Manager by workspace and surface
+```
+
+Balanced is the terminal-kit default. Lean and Ultra trade a small tab-switch warm-up for a lower idle footprint when many workspaces and agent sessions are open. The cmux Dock includes a clickable **Memory** control, and the Command Palette includes each preset plus Task Manager.
+
+Cloud VMs are remote compute rather than local terminal processes. cmux exposes list, create, attach, execute, and destroy operations; provider idle suspension is automatic rather than a local RAM toggle. The Command Palette includes **Cloud VMs: List** for quick inspection.
+
+## Performance measurement
+
+```text
+tk perf status       Show cmux version and performance-related settings
+tk perf shell        Benchmark bare versus configured Zsh startup
+tk perf profile      Profile Zsh startup functions with zprof
+tk perf cmux         Show cmux resource use by window, workspace, and surface
+tk perf all          Run the main reports
+```
+
+Hyperfine supplies repeatable shell benchmarks. `cmux top` identifies the actual workspace, browser pane, terminal process, or coding agent responsible when the app feels slow.
+
 ## Sidebar width
 
 cmux's left workspace sidebar is draggable, but its normal minimum is 240 points. terminal-kit can lower that resize limit without patching cmux:
@@ -108,6 +143,8 @@ The setting changes the lower limit rather than forcing a width. Fully quit and 
 New top-level workspaces start in the user's home directory (`~`) rather than inheriting whichever project happened to be focused. Opening an explicit project path still starts there, and work inside an existing project keeps its own context.
 
 The left sidebar defaults to one calm title row. It hides the duplicated branch/directory line, pull-request snippets, ports, logs, progress rows, and notification text. Agent activity and unread badges remain available. The selected workspace uses Catppuccin Mocha's muted surface colour instead of the macOS accent-blue fallback.
+
+The hidden Git metadata watcher is disabled, because the sidebar no longer displays branch or pull-request information.
 
 ## Horizontal views
 
@@ -150,7 +187,7 @@ tk hints on           Re-enable automatic fresh-shell hints
 tk hints off          Disable automatic hints
 ```
 
-The preference lives in `~/.config/terminal-kit/hints`, and the rotation index lives beside it. Both stay outside Git. The cmux Command Palette includes **Hints: Show Next**, **Hints: Clear**, and **Keys: Cheat Sheet**.
+The preference lives in `~/.config/terminal-kit/hints`, and the rotation index lives beside it. Both stay outside Git. Native hold-a-modifier shortcut previews remain enabled because they appear on demand without changing sidebar layout.
 
 ## Prompt modes
 
@@ -184,7 +221,7 @@ The kit installs a restrained terminal-native toolbelt:
 
 Yazi image previews can pass through tmux into Ghostty-compatible terminals. In cmux, `Cmd+Up` and `Cmd+Down` jump between shell prompts instead of scrolling line-by-line through command output.
 
-cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, prompt modes, optional hints, key previews, and readability testing. The global Dock provides System and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
+cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, prompt modes, memory presets, Task Manager, Cloud VM listing, optional hints, key previews, and readability testing. The global Dock provides Memory, System, and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
 
 ## Managed files
 
@@ -198,7 +235,8 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, e
 | `~/.config/terminal-kit/hints` | Machine-local automatic-hint switch |
 | `~/.config/terminal-kit/hint-index` | Machine-local hint rotation position |
 | `~/.config/terminal-kit/editor-wrap` | Machine-local cmux editor mode |
-| `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll and editor settings |
+| `~/.config/terminal-kit/memory-mode` | Machine-local renderer and agent-memory policy |
+| `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll, editor, and memory settings |
 | `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
 | `config/hints.txt` | Compact cmux and terminal-kit hint catalogue |
 | `config/starship/terminal-kit.toml` | Calm minimal prompt |
@@ -210,6 +248,8 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, e
 | `config/zsh/tools.zsh` | Yazi, wide view, and modern-tool wrappers |
 | `config/zsh/hints.zsh` | Opt-in fresh-surface hint display and first-command cleanup hook |
 | `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
+| `scripts/perf.sh` | Shell benchmarks, Zsh profiling, and cmux resource reports |
+| `scripts/memory.sh` | Reversible renderer-reclamation and agent-hibernation presets |
 
 Backups go to `~/.config/terminal-kit-backups/`.
 
