@@ -19,4 +19,4 @@ jobs:
       - name: Type-check native memory daemon
         run: xcrun swiftc -typecheck tools/memoryd/main.swift
       - name: Run repository tests
-        run: ./scripts/test.sh
+        run: bash scripts/test.sh
