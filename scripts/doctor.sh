@@ -80,6 +80,7 @@ check_file "$HOME/.config/terminal-kit/prompt"
 check_file "$HOME/.config/terminal-kit/hints"
 check_file "$HOME/.config/terminal-kit/editor-wrap"
 check_file "$HOME/.config/terminal-kit/memory-mode"
+check_file "$HOME/.config/terminal-kit/memory-auto"
 check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.config/cmux/dock.json"
 check_file "$HOME/.tmux.conf"
@@ -108,6 +109,7 @@ check_file "$ROOT/scripts/hints.sh"
 check_file "$ROOT/scripts/prompt.sh"
 check_file "$ROOT/scripts/perf.sh"
 check_file "$ROOT/scripts/memory.sh"
+check_file "$ROOT/tools/memoryd/main.swift"
 
 # Standard macOS commands should never disappear from PATH.
 check_command uname
@@ -145,6 +147,22 @@ if command -v zsh >/dev/null 2>&1; then
   printf 'OK   Zsh settings parse cleanly\n'
 fi
 
+swift_parser=""
+if command -v xcrun >/dev/null 2>&1; then
+  swift_parser="$(xcrun --find swiftc 2>/dev/null || true)"
+fi
+if [[ -z "$swift_parser" ]] && command -v swiftc >/dev/null 2>&1; then
+  swift_parser="$(command -v swiftc)"
+fi
+if [[ -n "$swift_parser" ]]; then
+  if "$swift_parser" -frontend -parse "$ROOT/tools/memoryd/main.swift"; then
+    printf 'OK   memory daemon Swift parses cleanly\n'
+  else
+    printf 'BAD  memory daemon Swift parse failed\n'
+    failures=$((failures + 1))
+  fi
+fi
+
 if [[ -r "$HOME/.config/terminal-kit/prompt" ]]; then
   prompt_mode="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/prompt")"
   [[ "$prompt_mode" == "on" ]] && prompt_mode="minimal"
@@ -165,6 +183,39 @@ if [[ -r "$HOME/.config/terminal-kit/memory-mode" ]]; then
       failures=$((failures + 1))
       ;;
   esac
+fi
+
+memory_auto_state="off"
+if [[ -r "$HOME/.config/terminal-kit/memory-auto" ]]; then
+  memory_auto_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/memory-auto")"
+  case "$memory_auto_state" in
+    on|off) printf 'OK   automatic memory          %s\n' "$memory_auto_state" ;;
+    *)
+      printf 'BAD  automatic memory          %s\n' "$memory_auto_state"
+      failures=$((failures + 1))
+      ;;
+  esac
+fi
+
+if [[ "$memory_auto_state" == on ]]; then
+  daemon_bin="$HOME/.local/lib/terminal-kit/terminal-kit-memoryd"
+  launch_agent="$HOME/Library/LaunchAgents/com.terminal-kit.memory-auto.plist"
+  if [[ -x "$daemon_bin" ]]; then
+    printf 'OK   memory daemon binary      %s\n' "$daemon_bin"
+  else
+    printf 'MISS memory daemon binary      %s\n' "$daemon_bin"
+    failures=$((failures + 1))
+  fi
+  check_file "$launch_agent"
+  if launchctl print "gui/$(id -u)/com.terminal-kit.memory-auto" >/dev/null 2>&1; then
+    printf 'OK   memory daemon             running\n'
+  else
+    printf 'BAD  memory daemon             not running\n'
+    failures=$((failures + 1))
+  fi
+  if [[ -z "$swift_parser" ]]; then
+    printf 'WARN Swift compiler unavailable; automatic mode works now but cannot rebuild after source changes\n'
+  fi
 fi
 
 check_json "$ROOT/config/cmux/cmux.json.example"
