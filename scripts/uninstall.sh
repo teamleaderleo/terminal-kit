@@ -18,10 +18,19 @@ if [[ -L "$HOME/.local/bin/terminal-kit" ]]; then
   rm "$HOME/.local/bin/terminal-kit"
 fi
 
+launch_label="com.terminal-kit.memory-auto"
+launch_agent="$HOME/Library/LaunchAgents/$launch_label.plist"
+launchctl bootout "gui/$(id -u)/$launch_label" >/dev/null 2>&1 || true
+rm -f "$launch_agent"
+rm -f \
+  "$HOME/.local/lib/terminal-kit/terminal-kit-memoryd" \
+  "$HOME/.local/lib/terminal-kit/memoryd-source.sha256"
+rmdir "$HOME/.local/lib/terminal-kit" >/dev/null 2>&1 || true
+
 if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
   tmux source-file "$HOME/.tmux.conf" >/dev/null 2>&1 || true
 fi
 
-log "removed managed include blocks"
-log "left the repository and cmux file in place"
+log "removed managed include blocks and automatic memory daemon"
+log "left the repository, local preferences, and cmux file in place"
 log "backups: $BACKUP_DIR"
