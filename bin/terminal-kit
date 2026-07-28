@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# launchd jobs receive a minimal PATH. Keep terminal-kit functional when it is
+# invoked by the automatic memory daemon rather than an interactive shell.
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
+
 resolve_script_dir() {
   local source_path="${BASH_SOURCE[0]}"
   while [[ -L "$source_path" ]]; do
