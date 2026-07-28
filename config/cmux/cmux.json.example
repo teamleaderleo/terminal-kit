@@ -7,7 +7,7 @@
     "newWorkspacePlacement": "afterCurrent",
     "workspaceInheritWorkingDirectory": false,
     "focusPaneOnFirstClick": true,
-    "openSupportedFilesInCmux": "preview",
+    "openSupportedFilesInCmux": true,
     "openMarkdownInCmuxViewer": true,
     "windowTitleTemplate": "{activeWorkspace} — {activeDirectory}"
   },
@@ -61,6 +61,9 @@
   },
   "fileEditor": {
     "wordWrap": true
+  },
+  "fileExplorer": {
+    "doubleClickAction": "preview"
   },
   "commands": [
     {
