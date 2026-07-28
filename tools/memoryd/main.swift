@@ -1,3 +1,4 @@
+import Darwin
 import Dispatch
 import Foundation
 
@@ -74,6 +75,7 @@ private final class MemoryController {
     private var recoveryWorkItem: DispatchWorkItem?
     private var pressureSource: DispatchSourceMemoryPressure?
     private var terminationSource: DispatchSourceSignal?
+    private var interruptSource: DispatchSourceSignal?
 
     init(options: Options) {
         self.options = options
@@ -98,6 +100,7 @@ private final class MemoryController {
 
         signal(SIGTERM, SIG_IGN)
         signal(SIGINT, SIG_IGN)
+
         let termination = DispatchSource.makeSignalSource(signal: SIGTERM, queue: queue)
         termination.setEventHandler { [weak self] in
             self?.shutdown()
@@ -110,6 +113,7 @@ private final class MemoryController {
             self?.shutdown()
         }
         interrupt.resume()
+        interruptSource = interrupt
 
         dispatchMain()
     }
@@ -186,7 +190,7 @@ private final class MemoryController {
         guard let data = line.data(using: .utf8) else { return }
 
         if !FileManager.default.fileExists(atPath: url.path) {
-            FileManager.default.createFile(atPath: url.path, contents: nil)
+            _ = FileManager.default.createFile(atPath: url.path, contents: nil)
         }
         guard let handle = try? FileHandle(forWritingTo: url) else { return }
         defer { try? handle.close() }
@@ -202,6 +206,7 @@ private final class MemoryController {
         recoveryWorkItem?.cancel()
         pressureSource?.cancel()
         terminationSource?.cancel()
+        interruptSource?.cancel()
         exit(0)
     }
 }
