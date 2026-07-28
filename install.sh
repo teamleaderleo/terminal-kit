@@ -103,7 +103,8 @@ case "$editor_wrap_mode" in
 esac
 
 # Memory policy controls how quickly cmux releases off-screen GPU renderers and
-# whether supported idle coding agents may hibernate. Keep the choice local.
+# whether supported idle coding agents may hibernate. Keep both the effective
+# mode and the automatic-controller switch local to this Mac.
 memory_target="$HOME/.config/terminal-kit/memory-mode"
 if [[ ! -e "$memory_target" ]]; then
   printf 'balanced\n' >"$memory_target"
@@ -115,6 +116,20 @@ case "$memory_mode" in
     warn "invalid memory mode; resetting to balanced"
     memory_mode=balanced
     printf 'balanced\n' >"$memory_target"
+    ;;
+esac
+
+memory_auto_target="$HOME/.config/terminal-kit/memory-auto"
+if [[ ! -e "$memory_auto_target" ]]; then
+  printf 'off\n' >"$memory_auto_target"
+fi
+memory_auto_state="$(tr -d '[:space:]' <"$memory_auto_target")"
+case "$memory_auto_state" in
+  on|off) ;;
+  *)
+    warn "invalid automatic memory state; resetting to off"
+    memory_auto_state=off
+    printf 'off\n' >"$memory_auto_target"
     ;;
 esac
 
@@ -213,6 +228,12 @@ if [[ ! -e "$dock_target" ]] || ! cmp -s "$dock_source" "$dock_target"; then
 fi
 
 /bin/bash "$ROOT/scripts/apply.sh"
+
+# Recompile and restart the event-driven daemon after an update only when the user
+# has explicitly enabled automatic memory mode.
+if [[ "$memory_auto_state" == on ]]; then
+  /bin/bash "$ROOT/scripts/memory.sh" auto refresh
+fi
 
 display_root="${ROOT/#$HOME/\~}"
 display_backup="${BACKUP_DIR/#$HOME/\~}"
