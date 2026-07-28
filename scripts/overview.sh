@@ -44,24 +44,45 @@ collect_rows() {
       --arg window_number "$window_number" \
       --argjson window_key "$window_key" '
         def payload: .result // .data // .;
-        def clean: tostring | gsub("[\\t\\r\\n]+"; " ");
+        def clean: tostring | gsub("[[:cntrl:]]+"; " ");
         def shortdir($home):
           if . == null or . == "" then "—"
           elif . == $home then "~"
           elif startswith($home + "/") then "~/" + .[($home | length) + 1:]
           else .
           end;
+        def clip($width):
+          tostring as $value
+          | if ($value | length) > $width then $value[:($width - 1)] + "…" else $value end;
+        def pad($width):
+          tostring as $value
+          | if ($value | length) < $width then $value + (" " * ($width - ($value | length))) else $value end;
+        def bold: "\u001b[1m";
+        def dim: "\u001b[2m";
+        def reset: "\u001b[0m";
         (payload.workspaces // [])[]
         | select((.ref // .id // "") != "")
         | (.index // 0) as $index
         | (.selected // false) as $selected
-        | (.title // .custom_title // ("Workspace " + (($index + 1) | tostring))) as $title
-        | (.current_directory | shortdir($home)) as $directory
-        | (if ($window_key and $selected) then "●" elif $selected then "○" else " " end) as $marker
+        | (.title // .custom_title // ("Workspace " + (($index + 1) | tostring)) | clean) as $title
+        | (.current_directory | shortdir($home) | clean) as $directory
+        | (if ($window_key and $selected) then "●" elif $selected then "○" else "·" end) as $marker
+        | ("W" + $window_number + " · " + (($index + 1) | tostring) | pad(10)) as $location
+        | ($title | clip(38) | pad(40)) as $display_title
+        | ($marker + "  " + $location + $display_title + $directory) as $plain
+        | (
+            (if ($window_key and $selected) then bold + $marker + reset elif $selected then $marker else dim + $marker + reset end)
+            + "  " + dim + $location + reset
+            + (if ($window_key and $selected) then bold + $display_title + reset else $display_title end)
+            + dim + $directory + reset
+          ) as $styled
         | [
             $window_ref,
             (.ref // .id),
-            ($marker + "  W" + $window_number + " · " + (($index + 1) | tostring) + "  " + ($title | clean) + "  " + ($directory | clean))
+            $window_number,
+            (($index + 1) | tostring),
+            $plain,
+            $styled
           ]
         | @tsv
       '
@@ -79,6 +100,8 @@ collect_rows() {
 preview_workspace() {
   local window_ref="${1:-}"
   local workspace_ref="${2:-}"
+  local window_number="${3:-?}"
+  local workspace_number="${4:-?}"
   local workspaces_json
 
   [[ -n "$window_ref" && -n "$workspace_ref" ]] || return 0
@@ -86,31 +109,52 @@ preview_workspace() {
 
   if [[ -n "$workspaces_json" ]]; then
     printf '%s\n' "$workspaces_json" | "$JQ_BIN" -r \
-      --arg workspace_ref "$workspace_ref" '
+      --arg home "$HOME" \
+      --arg workspace_ref "$workspace_ref" \
+      --arg window_number "$window_number" \
+      --arg workspace_number "$workspace_number" '
         def payload: .result // .data // .;
+        def clean: tostring | gsub("[[:cntrl:]]+"; " ");
+        def shortdir($home):
+          if . == null or . == "" then ""
+          elif . == $home then "~"
+          elif startswith($home + "/") then "~/" + .[($home | length) + 1:]
+          else .
+          end;
+        def clip($width):
+          tostring as $value
+          | if ($value | length) > $width then $value[:($width - 1)] + "…" else $value end;
+        def bold: "\u001b[1m";
+        def dim: "\u001b[2m";
+        def reset: "\u001b[0m";
         (payload.workspaces // [])[]
         | select((.ref // .id) == $workspace_ref)
-        | [
-            (.title // .custom_title // "Untitled workspace"),
-            (.current_directory // empty),
-            (.description // empty),
-            (if ((.listening_ports // []) | length) > 0 then "Ports: " + ((.listening_ports // []) | map(tostring) | join(", ")) else empty end),
-            (.latest_submitted_message // .latest_conversation_message // empty)
-          ]
-        | map(select(. != ""))
-        | .[]
+        | (.title // .custom_title // "Untitled workspace" | clean) as $title
+        | (.current_directory | shortdir($home) | clean) as $directory
+        | (.description // "" | clean) as $description
+        | ((.listening_ports // []) | map(tostring) | join(", ")) as $ports
+        | (.latest_submitted_message // .latest_conversation_message // "" | clean | clip(240)) as $activity
+        | (
+            bold + $title + reset
+            + "\n" + dim + "Window " + $window_number + " · Workspace " + $workspace_number + reset
+            + (if $directory != "" then "\n\n" + dim + "Directory" + reset + "\n" + $directory else "" end)
+            + (if $description != "" then "\n\n" + dim + "Description" + reset + "\n" + $description else "" end)
+            + (if $ports != "" then "\n\n" + dim + "Listening ports" + reset + "\n" + $ports else "" end)
+            + (if $activity != "" then "\n\n" + dim + "Recent activity" + reset + "\n" + $activity else "" end)
+          )
       '
   fi
 
-  printf '\n'
-  "$CMUX_BIN" --window "$window_ref" tree --workspace "$workspace_ref" 2>/dev/null || true
+  printf '\n\n\033[2mPane layout\033[0m\n'
+  "$CMUX_BIN" --window "$window_ref" tree --workspace "$workspace_ref" 2>/dev/null \
+    | sed 's/^/  /' || true
 }
 
 print_overview() {
   OVERVIEW_TMP="$(mktemp)"
   collect_rows > "$OVERVIEW_TMP"
   [[ -s "$OVERVIEW_TMP" ]] || fail "cmux has no workspaces to show"
-  cut -f3- "$OVERVIEW_TMP"
+  cut -f5 "$OVERVIEW_TMP"
 }
 
 open_overview() {
@@ -119,22 +163,26 @@ open_overview() {
   collect_rows > "$OVERVIEW_TMP"
   [[ -s "$OVERVIEW_TMP" ]] || fail "cmux has no workspaces to show"
 
-  preview_command="$(printf '%q' "$0") __preview {1} {2}"
+  preview_command="$(printf '%q' "$0") __preview {1} {2} {3} {4}"
   if ! choice="$("$FZF_BIN" \
+    --ansi \
     --delimiter=$'\t' \
-    --with-nth=3.. \
-    --nth=3.. \
+    --with-nth=6 \
+    --nth=5 \
     --height=100% \
     --layout=reverse \
-    --border=none \
+    --border=rounded \
+    --margin=1,2 \
+    --padding=1,2 \
     --cycle \
     --no-multi \
+    --no-hscroll \
     --info=inline-right \
     --prompt='Overview › ' \
     --pointer='›' \
-    --header='Enter focus · Esc return' \
+    --header='Every cmux window · type to filter · Enter focus · Esc return' \
     --preview="$preview_command" \
-    --preview-window='right,55%,border-left,wrap' \
+    --preview-window='right,54%,border-left,wrap' \
     < "$OVERVIEW_TMP")"; then
     exit 0
   fi
@@ -154,8 +202,9 @@ Usage: terminal-kit overview [command]
   open          Open the full-screen cmux window and workspace overview
   list          Print the same overview as stable text
 
-The overview uses the active terminal palette, shows every cmux window and
-workspace, previews the selected pane tree, and returns immediately with Esc.
+The overview inherits the active terminal palette, uses quiet typographic emphasis,
+shows every cmux window and workspace, previews the selected pane tree, and returns
+immediately with Esc.
 HELP
 }
 
@@ -179,7 +228,7 @@ case "$command_name" in
   __preview)
     require_command "$CMUX_BIN"
     require_command "$JQ_BIN"
-    preview_workspace "${1:-}" "${2:-}"
+    preview_workspace "${1:-}" "${2:-}" "${3:-?}" "${4:-?}"
     ;;
   help|-h|--help)
     usage
