@@ -1,6 +1,12 @@
 {
   "controls": [
     {
+      "id": "memory",
+      "title": "Memory",
+      "command": "terminal-kit memory menu",
+      "height": 280
+    },
+    {
       "id": "system",
       "title": "System",
       "command": "btop",
