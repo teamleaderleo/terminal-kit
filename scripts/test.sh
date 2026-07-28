@@ -103,11 +103,15 @@ grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.
 grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
 grep -Fq 'format = "$directory$character"' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
 grep -Fq 'format = "$directory$git_branch$git_status$character"' "$test_root/home/Projects/terminal-kit/config/starship/detailed.toml"
+grep -Fq 'brew "hyperfine"' "$test_root/home/Projects/terminal-kit/Brewfile"
+grep -Fq 'Usage: terminal-kit perf' "$test_root/home/Projects/terminal-kit/scripts/perf.sh"
+grep -Fq 'perf         Benchmark and profile shell and cmux performance' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq '"workspaceInheritWorkingDirectory": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openSupportedFilesInCmux": "preview"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openMarkdownInCmuxViewer": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showModifierHoldHints": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showBranchDirectory": false' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"watchGitStatus": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"indicatorStyle": "solidFill"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"selectionColor": "#313244"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"scrollSpeed": 1.4' "$test_root/home/.config/cmux/cmux.json"
@@ -123,5 +127,6 @@ cmp -s \
   "$test_root/home/.config/cmux/dock.json"
 [[ "$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" path)" == "$test_root/home/Projects/terminal-kit" ]]
 HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" keys | grep -Fq 'tk keys Cheat sheet'
+HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" perf status | grep -Fq 'terminal-kit performance settings'
 
 printf 'terminal-kit tests passed\n'
