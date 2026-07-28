@@ -1,0 +1,22 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install JSON parser
+        run: brew install jq
+      - name: Type-check native memory daemon
+        run: xcrun swiftc -typecheck tools/memoryd/main.swift
+      - name: Run repository tests
+        run: ./scripts/test.sh
