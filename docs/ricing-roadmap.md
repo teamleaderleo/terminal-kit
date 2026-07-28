@@ -13,7 +13,7 @@
 - `bat` and Delta configured to inherit theme-responsive colours where possible.
 - Mac-style Zsh selection, clipboard, undo, redo, and deletion.
 - Calm command validation colours, searchable history, fuzzy selection, and directory jumping.
-- Full-screen, theme-responsive window and workspace overview through `terminal-kit overview`.
+- A full-screen cmux window and workspace overview with theme-responsive emphasis and pane-tree previews.
 
 ## How deep cmux goes
 
@@ -30,6 +30,7 @@
 - Sidebar branch, pull request, directory, port, progress, agent activity, and notification details.
 - Custom surface-tab buttons and plus-button menus.
 - A right-side Dock for logs, test watchers, Git TUIs, servers, queues, or Feed.
+- `terminal-kit overview` provides a calm keyboard-first all-window view using cmux's public CLI.
 
 ### Project workflows
 
@@ -51,7 +52,7 @@
 - True-colour application themes do not automatically share one universal theme name. Terminal ANSI, `bat`, Delta, editors, Git TUIs, and web views each have their own theme systems.
 - Prompt decoration is separate from terminal theming. A minimal Starship profile could add directory, Git, duration, and status information without becoming noisy.
 - Theme quality is subjective, but legibility can be tested. A future tool can render the same ANSI, syntax, diff, and log samples and flag weak contrast pairs.
-- Live workspace thumbnails and animated Exposé-style focus need a native cmux view with snapshot support.
+- Live overview thumbnails, animated zoom, and pointer selection need native cmux workspace snapshots and an AppKit overview surface.
 
 ## Sensible next upgrades
 
