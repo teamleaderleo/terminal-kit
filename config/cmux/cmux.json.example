@@ -17,7 +17,17 @@
     "scrollSpeed": 1.4,
     "showTextBoxOnNewTerminals": false,
     "focusTextBoxOnNewTerminals": false,
-    "textBoxMaxLines": 6
+    "textBoxMaxLines": 6,
+    "rendererRealization": {
+      "enabled": true,
+      "idleSeconds": 15,
+      "maxWarmRenderers": 6
+    },
+    "agentHibernation": {
+      "enabled": false,
+      "idleSeconds": 5,
+      "maxLiveTerminals": 8
+    }
   },
   "sidebar": {
     "wrapWorkspaceTitles": false,
@@ -143,6 +153,42 @@
       "description": "Compare bare and configured Zsh startup time",
       "keywords": ["performance", "speed", "benchmark", "zsh", "startup"],
       "command": "terminal-kit perf shell"
+    },
+    {
+      "name": "Memory: Choose Mode",
+      "description": "Choose normal, balanced, lean, or ultra memory policy",
+      "keywords": ["memory", "ram", "idle", "hibernate", "renderer"],
+      "command": "terminal-kit memory menu"
+    },
+    {
+      "name": "Memory: Balanced",
+      "description": "Keep six terminal renderers warm without hibernating agents",
+      "keywords": ["memory", "balanced", "renderer", "ram"],
+      "command": "terminal-kit memory balanced"
+    },
+    {
+      "name": "Memory: Lean",
+      "description": "Keep two renderers warm and hibernate idle agents above four",
+      "keywords": ["memory", "lean", "hibernate", "ram"],
+      "command": "terminal-kit memory lean"
+    },
+    {
+      "name": "Memory: Ultra",
+      "description": "Keep one renderer warm and hibernate idle agents above two",
+      "keywords": ["memory", "ultra", "hibernate", "ram"],
+      "command": "terminal-kit memory ultra"
+    },
+    {
+      "name": "Memory: Task Manager",
+      "description": "Show actual CPU and memory use by cmux surface",
+      "keywords": ["memory", "task manager", "top", "cpu", "ram"],
+      "command": "terminal-kit memory top"
+    },
+    {
+      "name": "Cloud VMs: List",
+      "description": "List cmux Cloud VMs and their current provider state",
+      "keywords": ["vm", "cloud", "machine", "status"],
+      "command": "cmux vm list | less -R"
     },
     {
       "name": "Files: Yazi",
