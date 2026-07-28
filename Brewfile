@@ -19,5 +19,6 @@ brew "btop"
 brew "ripgrep"
 brew "fd"
 brew "jq"
+brew "hyperfine"
 
 brew "gh"
