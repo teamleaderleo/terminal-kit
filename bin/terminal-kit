@@ -85,6 +85,9 @@ case "$command_name" in
   perf|performance)
     exec /bin/bash "$ROOT/scripts/perf.sh" "$@"
     ;;
+  memory|ram)
+    exec /bin/bash "$ROOT/scripts/memory.sh" "$@"
+    ;;
   tools)
     exec /bin/bash "$ROOT/scripts/install-tools.sh" "$@"
     ;;
@@ -127,6 +130,7 @@ Usage: terminal-kit <command>
   keys         Print the compact hotkey and command cheat sheet
   prompt       Choose minimal, detailed, or disabled prompt mode
   perf         Benchmark and profile shell and cmux performance
+  memory       Choose renderer reclamation and agent hibernation policy
   tools        Install recommended Homebrew packages
   doctor       Check files and commands
   test         Run repository checks
