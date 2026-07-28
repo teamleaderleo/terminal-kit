@@ -69,13 +69,15 @@ private struct Options {
     }
 }
 
-private final class MemoryController {
+// All mutable state is isolated to `queue`. The unchecked conformance is needed
+// because Dispatch event handlers are @Sendable in current Swift toolchains.
+private final class MemoryController: @unchecked Sendable {
     private let options: Options
     private let queue = DispatchQueue(label: "com.terminal-kit.memoryd")
     private var recoveryWorkItem: DispatchWorkItem?
-    private var pressureSource: DispatchSourceMemoryPressure?
-    private var terminationSource: DispatchSourceSignal?
-    private var interruptSource: DispatchSourceSignal?
+    private var pressureSource: (any DispatchSourceMemoryPressure)?
+    private var terminationSource: (any DispatchSourceSignal)?
+    private var interruptSource: (any DispatchSourceSignal)?
 
     init(options: Options) {
         self.options = options
@@ -88,32 +90,32 @@ private final class MemoryController {
             eventMask: [.normal, .warning, .critical],
             queue: queue
         )
-        pressure.setEventHandler { [weak self, weak pressure] in
-            guard let self, let pressure else { return }
-            self.handle(pressure.data)
+        pressureSource = pressure
+        pressure.setEventHandler { [weak self] in
+            guard let self, let source = self.pressureSource else { return }
+            self.handle(source.data)
         }
         pressure.setCancelHandler { [weak self] in
             self?.log("stopped")
         }
-        pressure.resume()
-        pressureSource = pressure
+        pressure.activate()
 
         signal(SIGTERM, SIG_IGN)
         signal(SIGINT, SIG_IGN)
 
         let termination = DispatchSource.makeSignalSource(signal: SIGTERM, queue: queue)
+        terminationSource = termination
         termination.setEventHandler { [weak self] in
             self?.shutdown()
         }
-        termination.resume()
-        terminationSource = termination
+        termination.activate()
 
         let interrupt = DispatchSource.makeSignalSource(signal: SIGINT, queue: queue)
+        interruptSource = interrupt
         interrupt.setEventHandler { [weak self] in
             self?.shutdown()
         }
-        interrupt.resume()
-        interruptSource = interrupt
+        interrupt.activate()
 
         dispatchMain()
     }
