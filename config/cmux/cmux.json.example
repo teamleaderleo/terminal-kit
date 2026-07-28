@@ -78,7 +78,7 @@
   "commands": [
     {
       "name": "Workspace: Overview",
-      "description": "Browse every cmux window and workspace in one full-screen view",
+      "description": "Browse every cmux window and workspace in one calm full-screen view",
       "keywords": ["workspace", "window", "overview", "switcher", "expose"],
       "command": "terminal-kit overview"
     },
