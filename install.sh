@@ -102,6 +102,22 @@ case "$editor_wrap_mode" in
     ;;
 esac
 
+# Memory policy controls how quickly cmux releases off-screen GPU renderers and
+# whether supported idle coding agents may hibernate. Keep the choice local.
+memory_target="$HOME/.config/terminal-kit/memory-mode"
+if [[ ! -e "$memory_target" ]]; then
+  printf 'balanced\n' >"$memory_target"
+fi
+memory_mode="$(tr -d '[:space:]' <"$memory_target")"
+case "$memory_mode" in
+  normal|balanced|lean|ultra) ;;
+  *)
+    warn "invalid memory mode; resetting to balanced"
+    memory_mode=balanced
+    printf 'balanced\n' >"$memory_target"
+    ;;
+esac
+
 # Ghostty and cmux both read this path. Load behaviour, shared appearance, then
 # the machine-local glass preset so theme and glass rotation remain independent.
 ghostty_behaviour_include="config-file = \"$ROOT/config/ghostty/config\""
@@ -141,7 +157,7 @@ mkdir -p "$HOME/.local/bin"
 ln -sfn "$ROOT/bin/terminal-kit" "$HOME/.local/bin/terminal-kit"
 
 # cmux has no include mechanism, so render its managed config with machine-local
-# scroll and editor preferences before comparing or installing it.
+# scroll, editor, and memory preferences before comparing or installing it.
 cmux_source="$ROOT/config/cmux/cmux.json.example"
 cmux_target="$HOME/.config/cmux/cmux.json"
 cmux_rendered="$(mktemp -t terminal-kit-cmux)"
@@ -152,6 +168,28 @@ fi
 if [[ "$editor_wrap_mode" == "wide" ]]; then
   /usr/bin/plutil -replace fileEditor.wordWrap -bool false "$cmux_rendered"
 fi
+case "$memory_mode" in
+  normal)
+    /usr/bin/plutil -replace terminal.rendererRealization.idleSeconds -integer 30 "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.rendererRealization.maxWarmRenderers -integer 12 "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.agentHibernation.enabled -bool false "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.agentHibernation.maxLiveTerminals -integer 12 "$cmux_rendered"
+    ;;
+  balanced)
+    ;;
+  lean)
+    /usr/bin/plutil -replace terminal.rendererRealization.idleSeconds -integer 5 "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.rendererRealization.maxWarmRenderers -integer 2 "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.agentHibernation.enabled -bool true "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.agentHibernation.maxLiveTerminals -integer 4 "$cmux_rendered"
+    ;;
+  ultra)
+    /usr/bin/plutil -replace terminal.rendererRealization.idleSeconds -integer 5 "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.rendererRealization.maxWarmRenderers -integer 1 "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.agentHibernation.enabled -bool true "$cmux_rendered"
+    /usr/bin/plutil -replace terminal.agentHibernation.maxLiveTerminals -integer 2 "$cmux_rendered"
+    ;;
+esac
 mkdir -p "$(dirname "$cmux_target")"
 if [[ ! -e "$cmux_target" ]] || ! cmp -s "$cmux_rendered" "$cmux_target"; then
   if [[ -e "$cmux_target" ]]; then
