@@ -105,6 +105,7 @@ check_file "$ROOT/scripts/sidebar.sh"
 check_file "$ROOT/scripts/editor.sh"
 check_file "$ROOT/scripts/hints.sh"
 check_file "$ROOT/scripts/prompt.sh"
+check_file "$ROOT/scripts/perf.sh"
 
 # Standard macOS commands should never disappear from PATH.
 check_command uname
@@ -128,6 +129,7 @@ check_command btop
 check_command rg
 check_command fd
 check_command jq
+check_command hyperfine
 check_command cmux
 
 if command -v zsh >/dev/null 2>&1; then
@@ -154,16 +156,20 @@ fi
 
 check_json "$ROOT/config/cmux/cmux.json.example"
 check_json "$ROOT/config/cmux/dock.json.example"
-check_json "$HOME/.config/cmux/cmux.json"
-check_json "$HOME/.config/cmux/dock.json"
 
 if [[ -r "$HOME/.config/cmux/cmux.json" ]]; then
+  check_json "$HOME/.config/cmux/cmux.json"
   scroll_speed="$(json_value "$HOME/.config/cmux/cmux.json" '.terminal.scrollSpeed' 'terminal.scrollSpeed')"
   [[ -n "$scroll_speed" ]] && printf 'OK   cmux scroll speed         %sx\n' "$scroll_speed"
   editor_wrap="$(json_value "$HOME/.config/cmux/cmux.json" '.fileEditor.wordWrap' 'fileEditor.wordWrap')"
   case "$editor_wrap" in
     true|1) printf 'OK   cmux editor mode          wrap\n' ;;
     false|0) printf 'OK   cmux editor mode          horizontal\n' ;;
+  esac
+  git_watch="$(json_value "$HOME/.config/cmux/cmux.json" '.sidebar.watchGitStatus' 'sidebar.watchGitStatus')"
+  case "$git_watch" in
+    false|0) printf 'OK   hidden Git watcher        off\n' ;;
+    true|1) printf 'WARN hidden Git watcher        on\n' ;;
   esac
 fi
 
@@ -172,7 +178,7 @@ if command -v cmux >/dev/null 2>&1; then
 fi
 
 if (( failures > 0 )); then
-  die "$failures check(s) failed"
+  die "$failures required file(s) missing; run terminal-kit install"
 fi
 
 log "doctor finished"
