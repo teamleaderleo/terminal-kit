@@ -156,9 +156,21 @@
     },
     {
       "name": "Memory: Choose Mode",
-      "description": "Choose normal, balanced, lean, or ultra memory policy",
+      "description": "Choose automatic, normal, balanced, lean, or ultra memory policy",
       "keywords": ["memory", "ram", "idle", "hibernate", "renderer"],
       "command": "terminal-kit memory menu"
+    },
+    {
+      "name": "Memory: Automatic On",
+      "description": "Follow native macOS normal, warning, and critical memory pressure",
+      "keywords": ["memory", "automatic", "pressure", "ram", "kernel"],
+      "command": "terminal-kit memory auto on"
+    },
+    {
+      "name": "Memory: Automatic Off",
+      "description": "Stop automatic changes and keep the current effective policy",
+      "keywords": ["memory", "automatic", "off", "manual", "ram"],
+      "command": "terminal-kit memory auto off"
     },
     {
       "name": "Memory: Balanced",
