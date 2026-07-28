@@ -79,6 +79,7 @@ check_file "$HOME/.config/terminal-kit/scroll-speed"
 check_file "$HOME/.config/terminal-kit/prompt"
 check_file "$HOME/.config/terminal-kit/hints"
 check_file "$HOME/.config/terminal-kit/editor-wrap"
+check_file "$HOME/.config/terminal-kit/memory-mode"
 check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.config/cmux/dock.json"
 check_file "$HOME/.tmux.conf"
@@ -106,6 +107,7 @@ check_file "$ROOT/scripts/editor.sh"
 check_file "$ROOT/scripts/hints.sh"
 check_file "$ROOT/scripts/prompt.sh"
 check_file "$ROOT/scripts/perf.sh"
+check_file "$ROOT/scripts/memory.sh"
 
 # Standard macOS commands should never disappear from PATH.
 check_command uname
@@ -154,6 +156,17 @@ if [[ -r "$HOME/.config/terminal-kit/hints" ]]; then
   printf 'OK   fresh-shell hints         %s\n' "$hints_state"
 fi
 
+if [[ -r "$HOME/.config/terminal-kit/memory-mode" ]]; then
+  memory_mode="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/memory-mode")"
+  case "$memory_mode" in
+    normal|balanced|lean|ultra) printf 'OK   memory mode               %s\n' "$memory_mode" ;;
+    *)
+      printf 'BAD  memory mode               %s\n' "$memory_mode"
+      failures=$((failures + 1))
+      ;;
+  esac
+fi
+
 check_json "$ROOT/config/cmux/cmux.json.example"
 check_json "$ROOT/config/cmux/dock.json.example"
 
@@ -171,6 +184,13 @@ if [[ -r "$HOME/.config/cmux/cmux.json" ]]; then
     false|0) printf 'OK   hidden Git watcher        off\n' ;;
     true|1) printf 'WARN hidden Git watcher        on\n' ;;
   esac
+  warm_renderers="$(json_value "$HOME/.config/cmux/cmux.json" '.terminal.rendererRealization.maxWarmRenderers' 'terminal.rendererRealization.maxWarmRenderers')"
+  [[ -n "$warm_renderers" ]] && printf 'OK   warm terminal renderers   %s\n' "$warm_renderers"
+  agent_hibernation="$(json_value "$HOME/.config/cmux/cmux.json" '.terminal.agentHibernation.enabled' 'terminal.agentHibernation.enabled')"
+  case "$agent_hibernation" in
+    true|1) printf 'OK   agent hibernation         on\n' ;;
+    false|0) printf 'OK   agent hibernation         off\n' ;;
+  esac
 fi
 
 if command -v cmux >/dev/null 2>&1; then
@@ -178,7 +198,7 @@ if command -v cmux >/dev/null 2>&1; then
 fi
 
 if (( failures > 0 )); then
-  die "$failures required file(s) missing; run terminal-kit install"
+  die "$failures required file(s) missing or invalid; run terminal-kit install"
 fi
 
 log "doctor finished"
