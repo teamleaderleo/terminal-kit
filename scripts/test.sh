@@ -3,6 +3,24 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+validate_json() {
+  local file="$1"
+  if command -v jq >/dev/null 2>&1; then
+    jq empty "$file"
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 - "$file" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    json.load(handle)
+PY
+  else
+    printf 'terminal-kit: JSON validation requires jq or python3\n' >&2
+    return 1
+  fi
+}
+
 for file in "$ROOT/install.sh" "$ROOT/bin/terminal-kit" "$ROOT/scripts/"*.sh; do
   bash -n "$file"
 done
@@ -17,10 +35,8 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/highlight.zsh"
 fi
 
-if command -v plutil >/dev/null 2>&1; then
-  plutil -lint "$ROOT/config/cmux/cmux.json.example" >/dev/null
-  plutil -lint "$ROOT/config/cmux/dock.json.example" >/dev/null
-fi
+validate_json "$ROOT/config/cmux/cmux.json.example"
+validate_json "$ROOT/config/cmux/dock.json.example"
 
 # Exercise repeated installs from a repo that stays inside ~/Projects.
 test_root="$(mktemp -d)"
