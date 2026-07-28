@@ -82,6 +82,9 @@ case "$command_name" in
   prompt)
     exec /bin/bash "$ROOT/scripts/prompt.sh" "$@"
     ;;
+  perf|performance)
+    exec /bin/bash "$ROOT/scripts/perf.sh" "$@"
+    ;;
   tools)
     exec /bin/bash "$ROOT/scripts/install-tools.sh" "$@"
     ;;
@@ -123,6 +126,7 @@ Usage: terminal-kit <command>
   hints        Control temporary hints in cmux workspace rows
   keys         Print the compact hotkey and command cheat sheet
   prompt       Choose minimal, detailed, or disabled prompt mode
+  perf         Benchmark and profile shell and cmux performance
   tools        Install recommended Homebrew packages
   doctor       Check files and commands
   test         Run repository checks
