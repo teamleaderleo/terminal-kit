@@ -76,10 +76,12 @@ show_next_hint() {
 list_hints() {
   local i
   load_hints
-  printf 'terminal-kit keys and commands:\n'
-  for ((i = 0; i < ${#HINTS[@]}; i++)); do
-    printf '%2d  %s\n' "$((i + 1))" "${HINTS[$i]}"
-  done
+  {
+    printf 'terminal-kit keys and commands:\n'
+    for ((i = 0; i < ${#HINTS[@]}; i++)); do
+      printf '%2d  %s\n' "$((i + 1))" "${HINTS[$i]}"
+    done
+  } || true
 }
 
 usage() {

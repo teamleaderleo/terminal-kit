@@ -30,6 +30,7 @@ tk glass                    Switch native macOS glass presets
 tk scroll                   Tune cmux wheel and trackpad scroll speed
 tk sidebar                  Tune the left workspace sidebar's minimum width
 tk editor                   Toggle wrapping or horizontal editor scrolling
+tk overview                 Browse every cmux window and workspace in one calm full-screen view
 tk hints                    Control optional hints in cmux workspace rows
 tk keys                     Print the compact hotkey and command cheat sheet
 tk prompt                   Choose minimal, detailed, or disabled prompt mode
@@ -41,6 +42,17 @@ tk test                     Run the repo tests
 tk edit                     Open the repository
 tk uninstall                Remove the managed include blocks
 ```
+
+## Workspace overview
+
+```text
+tk overview                 Open the all-window workspace view
+tk overview list            Print the same workspace list as plain text
+```
+
+The overview spans every cmux window. It uses active, selected, and idle markers; aligned workspace labels; restrained bold and dim text; a rounded inset frame; and a metadata and pane-tree preview. It inherits the active terminal palette without fixed interface colours. Type to filter, press Enter to focus a workspace, or press Esc to return.
+
+This is the keyboard-first terminal-kit version of an Exposé-style view. Live thumbnails, animated zoom, and pointer selection require native workspace snapshots and an AppKit overview inside cmux.
 
 ## Theme controls
 
@@ -198,7 +210,7 @@ Optional explicit controls remain available:
 tk hints current      Show whether automatic hints are enabled
 tk hints next         Place one hint in the current workspace row
 tk hints clear        Remove the current workspace hint
-tk hints on           Re-enable automatic fresh-shell hints
+tk hints on           Re-enable automatic hints
 tk hints off          Disable automatic hints
 ```
 
@@ -236,7 +248,7 @@ The kit installs a restrained terminal-native toolbelt:
 
 Yazi image previews can pass through tmux into Ghostty-compatible terminals. In cmux, `Cmd+Up` and `Cmd+Down` jump between shell prompts instead of scrolling line-by-line through command output.
 
-cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, prompt modes, automatic memory control, memory presets, Task Manager, Cloud VM listing, optional hints, key previews, and readability testing. The global Dock provides Memory, System, and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
+cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, prompt modes, automatic memory control, memory presets, Task Manager, Cloud VM listing, optional hints, key previews, readability testing, and the all-window workspace overview. The global Dock provides Memory, System, and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
 
 ## Managed files
 
