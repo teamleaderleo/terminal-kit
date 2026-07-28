@@ -34,7 +34,7 @@ tk hints                    Control optional hints in cmux workspace rows
 tk keys                     Print the compact hotkey and command cheat sheet
 tk prompt                   Choose minimal, detailed, or disabled prompt mode
 tk perf                     Benchmark Zsh and inspect cmux resources
-tk memory                   Choose renderer reclamation and agent hibernation policy
+tk memory                   Manual or automatic renderer and agent-memory policy
 tk tools                    Install missing Homebrew tools
 tk doctor                   Check files, commands, and syntax
 tk test                     Run the repo tests
@@ -92,13 +92,16 @@ Use cmux's multiplier as the main speed control rather than stacking it immediat
 
 ## Memory controls
 
-The memory policy lives in `~/.config/terminal-kit/memory-mode`, outside Git. It controls two different mechanisms:
+The effective memory policy lives in `~/.config/terminal-kit/memory-mode`, outside Git. It controls two different mechanisms:
 
 - Renderer reclamation releases off-screen Metal renderers while keeping the shell process, PTY, scrollback, and terminal state alive.
 - Agent hibernation stops only supported, restorable coding agents after they are idle and off-screen. Ordinary shells and arbitrary running commands are never killed.
 
 ```text
-tk memory status       Show the active policy and limits
+tk memory status       Show the active policy, automatic state, and limits
+tk memory auto on      Follow native macOS memory-pressure events
+tk memory auto off     Stop automatic changes and keep the current mode
+tk memory auto log     Show recent pressure transitions
 tk memory normal       cmux defaults: 12 warm renderers; agents remain live
 tk memory balanced     6 warm renderers; agents remain live
 tk memory lean         2 warm renderers; hibernate agents above 4
@@ -107,7 +110,19 @@ tk memory menu         Interactive memory control
 tk memory top          cmux Task Manager by workspace and surface
 ```
 
-Balanced is the terminal-kit default. Lean and Ultra trade a small tab-switch warm-up for a lower idle footprint when many workspaces and agent sessions are open. The cmux Dock includes a clickable **Memory** control, and the Command Palette includes each preset plus Task Manager.
+Automatic mode compiles a tiny native Swift daemon and installs it as the per-user LaunchAgent `com.terminal-kit.memory-auto`. It sleeps on a Grand Central Dispatch memory-pressure source rather than polling:
+
+```text
+macOS normal for 5 minutes  → balanced
+macOS warning               → lean immediately
+macOS critical              → ultra immediately
+```
+
+The five-minute recovery delay prevents rapid mode flapping. Manual selection of `normal`, `balanced`, `lean`, or `ultra` disables automatic mode. The controller state lives in `~/.config/terminal-kit/memory-auto`, and transitions are logged to `~/Library/Logs/terminal-kit-memoryd.log`.
+
+Balanced remains the default until automatic mode is explicitly enabled. Lean and Ultra trade a small tab-switch warm-up for a lower idle footprint when many workspaces and agent sessions are open. The cmux Dock includes a clickable **Memory** control, and the Command Palette includes automatic on/off, each preset, and Task Manager.
+
+cmux itself also performs coordinated memory-pressure reclamation and cold scrollback compression. The terminal-kit daemon does not replace those mechanisms; it changes the configurable renderer and agent caps when macOS reports system pressure.
 
 Cloud VMs are remote compute rather than local terminal processes. cmux exposes list, create, attach, execute, and destroy operations; provider idle suspension is automatic rather than a local RAM toggle. The Command Palette includes **Cloud VMs: List** for quick inspection.
 
@@ -221,7 +236,7 @@ The kit installs a restrained terminal-native toolbelt:
 
 Yazi image previews can pass through tmux into Ghostty-compatible terminals. In cmux, `Cmd+Up` and `Cmd+Down` jump between shell prompts instead of scrolling line-by-line through command output.
 
-cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, prompt modes, memory presets, Task Manager, Cloud VM listing, optional hints, key previews, and readability testing. The global Dock provides Memory, System, and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
+cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, prompt modes, automatic memory control, memory presets, Task Manager, Cloud VM listing, optional hints, key previews, and readability testing. The global Dock provides Memory, System, and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
 
 ## Managed files
 
@@ -235,7 +250,10 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, e
 | `~/.config/terminal-kit/hints` | Machine-local automatic-hint switch |
 | `~/.config/terminal-kit/hint-index` | Machine-local hint rotation position |
 | `~/.config/terminal-kit/editor-wrap` | Machine-local cmux editor mode |
-| `~/.config/terminal-kit/memory-mode` | Machine-local renderer and agent-memory policy |
+| `~/.config/terminal-kit/memory-mode` | Machine-local effective renderer and agent-memory policy |
+| `~/.config/terminal-kit/memory-auto` | Machine-local automatic memory-controller switch |
+| `~/Library/LaunchAgents/com.terminal-kit.memory-auto.plist` | Per-user event-driven memory daemon, only when enabled |
+| `tools/memoryd/main.swift` | Native macOS normal/warning/critical pressure listener |
 | `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll, editor, and memory settings |
 | `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
 | `config/hints.txt` | Compact cmux and terminal-kit hint catalogue |
@@ -249,7 +267,7 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, e
 | `config/zsh/hints.zsh` | Opt-in fresh-surface hint display and first-command cleanup hook |
 | `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
 | `scripts/perf.sh` | Shell benchmarks, Zsh profiling, and cmux resource reports |
-| `scripts/memory.sh` | Reversible renderer-reclamation and agent-hibernation presets |
+| `scripts/memory.sh` | Manual presets plus LaunchAgent build and control logic |
 
 Backups go to `~/.config/terminal-kit-backups/`.
 
