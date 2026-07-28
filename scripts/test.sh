@@ -118,12 +118,15 @@ grep -Fxq 'balanced' "$test_root/home/.config/terminal-kit/memory-mode"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/memory-auto"
 grep -Fq 'DispatchSource.makeMemoryPressureSource' "$test_root/home/Projects/terminal-kit/tools/memoryd/main.swift"
 grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.txt"
+grep -Fq 'tk overview All workspaces' "$test_root/home/Projects/terminal-kit/config/hints.txt"
 grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
 grep -Fq 'format = "$directory$character"' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
 grep -Fq 'format = "$directory$git_branch$git_status$character"' "$test_root/home/Projects/terminal-kit/config/starship/detailed.toml"
 grep -Fq 'brew "hyperfine"' "$test_root/home/Projects/terminal-kit/Brewfile"
 grep -Fq 'Usage: terminal-kit perf' "$test_root/home/Projects/terminal-kit/scripts/perf.sh"
 grep -Fq 'Usage: terminal-kit memory' "$test_root/home/Projects/terminal-kit/scripts/memory.sh"
+grep -Fq 'Usage: terminal-kit overview' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
+grep -Fq 'overview     Browse every cmux window and workspace in one full-screen view' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq 'memory       Choose renderer reclamation and agent hibernation policy' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq '"workspaceInheritWorkingDirectory": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openSupportedFilesInCmux": true' "$test_root/home/.config/cmux/cmux.json"
@@ -139,6 +142,7 @@ grep -Fq '"doubleClickAction": "preview"' "$test_root/home/.config/cmux/cmux.jso
 grep -Fq '"maxWarmRenderers": 6' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"maxLiveTerminals": 8' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"command": "terminal-kit memory auto on"' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"command": "terminal-kit overview"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showCustomMetadata": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"id": "memory"' "$test_root/home/.config/cmux/dock.json"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
@@ -150,9 +154,13 @@ cmp -s \
   "$test_root/home/Projects/terminal-kit/config/cmux/dock.json.example" \
   "$test_root/home/.config/cmux/dock.json"
 [[ "$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" path)" == "$test_root/home/Projects/terminal-kit" ]]
-HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" keys | grep -Fq 'tk keys Cheat sheet'
-HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" perf status | grep -Fq 'terminal-kit performance settings'
-HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status | grep -Fq 'mode:                 balanced'
-HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status | grep -Fq 'automatic:            off'
+keys_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" keys)"
+grep -Fq 'tk keys Cheat sheet' <<< "$keys_output"
+grep -Fq 'tk overview All workspaces' <<< "$keys_output"
+perf_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" perf status)"
+grep -Fq 'terminal-kit performance settings' <<< "$perf_output"
+memory_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status)"
+grep -Fq 'mode:                 balanced' <<< "$memory_output"
+grep -Fq 'automatic:            off' <<< "$memory_output"
 
 printf 'terminal-kit tests passed\n'
