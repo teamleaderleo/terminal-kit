@@ -77,7 +77,7 @@ case "$command_name" in
   editor)
     exec /bin/bash "$ROOT/scripts/editor.sh" "$@"
     ;;
-  overview|switcher)
+  overview|workspaces)
     exec /bin/bash "$ROOT/scripts/overview.sh" "$@"
     ;;
   hints|hint)
