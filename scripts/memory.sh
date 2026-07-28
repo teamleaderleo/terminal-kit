@@ -138,7 +138,9 @@ stop_auto_daemon() {
   local quiet="${1:-false}"
   local domain
   domain="$(launch_domain)"
-  launchctl bootout "$domain/$LAUNCH_LABEL" >/dev/null 2>&1 || true
+  if command -v launchctl >/dev/null 2>&1; then
+    launchctl bootout "$domain/$LAUNCH_LABEL" >/dev/null 2>&1 || true
+  fi
   if [[ "$quiet" != true ]]; then
     printf 'terminal-kit: automatic memory policy stopped\n'
   fi
@@ -153,27 +155,42 @@ swiftc_path() {
 
 compile_daemon() {
   local compiler source_hash saved_hash temporary
-  [[ "$(uname -s)" == "Darwin" ]] || fail "automatic memory mode requires macOS"
-  [[ -r "$DAEMON_SOURCE" ]] || fail "memory daemon source missing: $DAEMON_SOURCE"
+  [[ "$(uname -s)" == "Darwin" ]] || {
+    printf 'terminal-kit: automatic memory mode requires macOS\n' >&2
+    return 1
+  }
+  [[ -r "$DAEMON_SOURCE" ]] || {
+    printf 'terminal-kit: memory daemon source missing: %s\n' "$DAEMON_SOURCE" >&2
+    return 1
+  }
 
   compiler="$(swiftc_path)"
-  [[ -n "$compiler" ]] || fail "Swift compiler missing; install Apple's Command Line Tools"
+  [[ -n "$compiler" ]] || {
+    printf "terminal-kit: Swift compiler missing; install Apple's Command Line Tools\n" >&2
+    return 1
+  }
 
   source_hash="$(shasum -a 256 "$DAEMON_SOURCE" | awk '{print $1}')"
   saved_hash=""
   [[ -r "$DAEMON_HASH_FILE" ]] && saved_hash="$(tr -d '[:space:]' < "$DAEMON_HASH_FILE")"
-  if [[ -x "$DAEMON_BIN" && "$source_hash" == "$saved_hash" ]]; then
+  if [[ -x "$DAEMON_BIN" && -s "$DAEMON_BIN" && "$source_hash" == "$saved_hash" ]]; then
     return 0
   fi
 
   mkdir -p "$DAEMON_DIR"
   temporary="$(mktemp -t terminal-kit-memoryd)"
-  trap 'rm -f "$temporary"' RETURN
-  "$compiler" -O -parse-as-library "$DAEMON_SOURCE" -o "$temporary"
+  if ! "$compiler" -O -parse-as-library "$DAEMON_SOURCE" -o "$temporary"; then
+    rm -f "$temporary"
+    return 1
+  fi
+  if [[ ! -s "$temporary" ]]; then
+    rm -f "$temporary"
+    printf 'terminal-kit: Swift compiler produced an empty memory daemon\n' >&2
+    return 1
+  fi
   chmod 755 "$temporary"
   mv "$temporary" "$DAEMON_BIN"
   printf '%s\n' "$source_hash" > "$DAEMON_HASH_FILE"
-  trap - RETURN
 }
 
 xml_escape() {
@@ -187,13 +204,14 @@ xml_escape() {
 }
 
 write_launch_agent() {
-  local terminal_kit daemon auto_state log_path
+  local terminal_kit daemon auto_state log_path home_path
   terminal_kit="$TERMINAL_KIT_BIN"
   [[ -x "$terminal_kit" ]] || terminal_kit="$ROOT/bin/terminal-kit"
   daemon="$(xml_escape "$DAEMON_BIN")"
   terminal_kit="$(xml_escape "$terminal_kit")"
   auto_state="$(xml_escape "$AUTO_STATE_FILE")"
   log_path="$(xml_escape "$LOG_FILE")"
+  home_path="$(xml_escape "$HOME")"
 
   mkdir -p "$(dirname "$LAUNCH_AGENT")" "$(dirname "$LOG_FILE")"
   cat > "$LAUNCH_AGENT" <<EOF_PLIST
@@ -215,6 +233,13 @@ write_launch_agent() {
     <string>--recovery-seconds</string>
     <string>300</string>
   </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>$home_path</string>
+    <key>PATH</key>
+    <string>$home_path/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
   <key>RunAtLoad</key>
   <true/>
   <key>KeepAlive</key>
@@ -237,12 +262,14 @@ EOF_PLIST
 
 start_auto_daemon() {
   local domain
-  compile_daemon
-  write_launch_agent
+  compile_daemon || return 1
+  [[ -x "$DAEMON_BIN" && -s "$DAEMON_BIN" ]] || return 1
+  write_launch_agent || return 1
   domain="$(launch_domain)"
   launchctl bootout "$domain/$LAUNCH_LABEL" >/dev/null 2>&1 || true
-  launchctl bootstrap "$domain" "$LAUNCH_AGENT"
+  launchctl bootstrap "$domain" "$LAUNCH_AGENT" || return 1
   launchctl kickstart -k "$domain/$LAUNCH_LABEL" >/dev/null 2>&1 || true
+  launchctl print "$domain/$LAUNCH_LABEL" >/dev/null 2>&1 || return 1
 }
 
 apply_mode() {
@@ -261,9 +288,14 @@ apply_mode() {
   fi
 
   temporary="$(mktemp -t terminal-kit-memory)"
-  trap 'rm -f "$temporary"' RETURN
-  render_mode "$mode" "$CMUX_CONFIG" "$temporary"
-  jq empty "$temporary" >/dev/null
+  if ! render_mode "$mode" "$CMUX_CONFIG" "$temporary"; then
+    rm -f "$temporary"
+    return 1
+  fi
+  if ! jq empty "$temporary" >/dev/null; then
+    rm -f "$temporary"
+    return 1
+  fi
 
   mkdir -p "$STATE_DIR"
   if ! cmp -s "$temporary" "$CMUX_CONFIG"; then
@@ -273,7 +305,6 @@ apply_mode() {
     rm -f "$temporary"
   fi
   printf '%s\n' "$mode" > "$STATE_FILE"
-  trap - RETURN
 
   if [[ "$origin" == auto ]]; then
     record_runtime "$pressure" "$mode"
@@ -288,6 +319,7 @@ auto_on() {
   printf 'on\n' > "$AUTO_STATE_FILE"
   if ! start_auto_daemon; then
     printf 'off\n' > "$AUTO_STATE_FILE"
+    stop_auto_daemon true
     fail "could not start automatic memory policy"
   fi
   printf 'terminal-kit: automatic memory policy on\n'
@@ -330,7 +362,8 @@ show_status() {
   pressure="$(runtime_value pressure)"
   updated="$(runtime_value updated_at)"
   daemon_state="stopped"
-  if launchctl print "$(launch_domain)/$LAUNCH_LABEL" >/dev/null 2>&1; then
+  if command -v launchctl >/dev/null 2>&1 \
+    && launchctl print "$(launch_domain)/$LAUNCH_LABEL" >/dev/null 2>&1; then
     daemon_state="running"
   fi
 
