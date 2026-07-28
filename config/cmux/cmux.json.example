@@ -27,6 +27,7 @@
     "notificationMessageLineLimit": 1,
     "showBranchDirectory": false,
     "showPullRequests": false,
+    "watchGitStatus": false,
     "showPorts": false,
     "showLog": false,
     "showProgress": false,
@@ -133,6 +134,12 @@
       "description": "Show Git branch and repository state in the shell prompt",
       "keywords": ["prompt", "detailed", "git", "branch", "status"],
       "command": "terminal-kit prompt detailed"
+    },
+    {
+      "name": "Performance: Benchmark Shell",
+      "description": "Compare bare and configured Zsh startup time",
+      "keywords": ["performance", "speed", "benchmark", "zsh", "startup"],
+      "command": "terminal-kit perf shell"
     },
     {
       "name": "Files: Yazi",
