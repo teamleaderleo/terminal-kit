@@ -63,6 +63,7 @@ before="$(shasum \
   "$test_root/home/.config/terminal-kit/hints" \
   "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
+  "$test_root/home/.config/terminal-kit/memory-mode" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
@@ -78,6 +79,7 @@ after="$(shasum \
   "$test_root/home/.config/terminal-kit/hints" \
   "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
+  "$test_root/home/.config/terminal-kit/memory-mode" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 
@@ -99,13 +101,15 @@ grep -Fxq '1.4' "$test_root/home/.config/terminal-kit/scroll-speed"
 grep -Fxq 'minimal' "$test_root/home/.config/terminal-kit/prompt"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/hints"
 grep -Fxq 'wrap' "$test_root/home/.config/terminal-kit/editor-wrap"
+grep -Fxq 'balanced' "$test_root/home/.config/terminal-kit/memory-mode"
 grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.txt"
 grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
 grep -Fq 'format = "$directory$character"' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
 grep -Fq 'format = "$directory$git_branch$git_status$character"' "$test_root/home/Projects/terminal-kit/config/starship/detailed.toml"
 grep -Fq 'brew "hyperfine"' "$test_root/home/Projects/terminal-kit/Brewfile"
 grep -Fq 'Usage: terminal-kit perf' "$test_root/home/Projects/terminal-kit/scripts/perf.sh"
-grep -Fq 'perf         Benchmark and profile shell and cmux performance' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
+grep -Fq 'Usage: terminal-kit memory' "$test_root/home/Projects/terminal-kit/scripts/memory.sh"
+grep -Fq 'memory       Choose renderer reclamation and agent hibernation policy' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq '"workspaceInheritWorkingDirectory": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openSupportedFilesInCmux": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openMarkdownInCmuxViewer": true' "$test_root/home/.config/cmux/cmux.json"
@@ -117,7 +121,10 @@ grep -Fq '"selectionColor": "#313244"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"scrollSpeed": 1.4' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"wordWrap": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"doubleClickAction": "preview"' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"maxWarmRenderers": 6' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"maxLiveTerminals": 8' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showCustomMetadata": true' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"id": "memory"' "$test_root/home/.config/cmux/dock.json"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/tmux/tmux.conf" "$test_root/home/.tmux.conf"
 cmp -s \
@@ -129,5 +136,6 @@ cmp -s \
 [[ "$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" path)" == "$test_root/home/Projects/terminal-kit" ]]
 HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" keys | grep -Fq 'tk keys Cheat sheet'
 HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" perf status | grep -Fq 'terminal-kit performance settings'
+HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status | grep -Fq 'mode:                 balanced'
 
 printf 'terminal-kit tests passed\n'
