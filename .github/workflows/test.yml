@@ -17,7 +17,7 @@ jobs:
         with:
           show-progress: false
       - name: Type-check native memory daemon
-        run: xcrun swiftc -swift-version 6 -typecheck tools/memoryd/main.swift
+        run: xcrun swiftc -swift-version 6 -parse-as-library -typecheck tools/memoryd/main.swift
       - name: Install JSON parser
         run: brew install jq
       - name: Run repository tests
