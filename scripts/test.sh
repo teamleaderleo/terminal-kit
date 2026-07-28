@@ -35,6 +35,17 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/highlight.zsh"
 fi
 
+swift_parser=""
+if command -v xcrun >/dev/null 2>&1; then
+  swift_parser="$(xcrun --find swiftc 2>/dev/null || true)"
+fi
+if [[ -z "$swift_parser" ]] && command -v swiftc >/dev/null 2>&1; then
+  swift_parser="$(command -v swiftc)"
+fi
+if [[ -n "$swift_parser" ]]; then
+  "$swift_parser" -frontend -parse "$ROOT/tools/memoryd/main.swift"
+fi
+
 validate_json "$ROOT/config/cmux/cmux.json.example"
 validate_json "$ROOT/config/cmux/dock.json.example"
 
@@ -64,6 +75,7 @@ before="$(shasum \
   "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
   "$test_root/home/.config/terminal-kit/memory-mode" \
+  "$test_root/home/.config/terminal-kit/memory-auto" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
@@ -80,6 +92,7 @@ after="$(shasum \
   "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
   "$test_root/home/.config/terminal-kit/memory-mode" \
+  "$test_root/home/.config/terminal-kit/memory-auto" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 
@@ -102,6 +115,8 @@ grep -Fxq 'minimal' "$test_root/home/.config/terminal-kit/prompt"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/hints"
 grep -Fxq 'wrap' "$test_root/home/.config/terminal-kit/editor-wrap"
 grep -Fxq 'balanced' "$test_root/home/.config/terminal-kit/memory-mode"
+grep -Fxq 'off' "$test_root/home/.config/terminal-kit/memory-auto"
+grep -Fq 'DispatchSource.makeMemoryPressureSource' "$test_root/home/Projects/terminal-kit/tools/memoryd/main.swift"
 grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.txt"
 grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
 grep -Fq 'format = "$directory$character"' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
@@ -123,6 +138,7 @@ grep -Fq '"wordWrap": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"doubleClickAction": "preview"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"maxWarmRenderers": 6' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"maxLiveTerminals": 8' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"command": "terminal-kit memory auto on"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showCustomMetadata": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"id": "memory"' "$test_root/home/.config/cmux/dock.json"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
@@ -137,5 +153,6 @@ cmp -s \
 HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" keys | grep -Fq 'tk keys Cheat sheet'
 HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" perf status | grep -Fq 'terminal-kit performance settings'
 HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status | grep -Fq 'mode:                 balanced'
+HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status | grep -Fq 'automatic:            off'
 
 printf 'terminal-kit tests passed\n'
