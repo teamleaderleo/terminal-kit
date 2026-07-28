@@ -77,6 +77,9 @@ case "$command_name" in
   editor)
     exec /bin/bash "$ROOT/scripts/editor.sh" "$@"
     ;;
+  overview|switcher)
+    exec /bin/bash "$ROOT/scripts/overview.sh" "$@"
+    ;;
   hints|hint)
     exec /bin/bash "$ROOT/scripts/hints.sh" "$@"
     ;;
@@ -130,6 +133,7 @@ Usage: terminal-kit <command>
   scroll       Tune cmux mouse-wheel and trackpad scroll speed
   sidebar      Tune the minimum width of cmux's left workspace sidebar
   editor       Toggle wrapping or horizontal scrolling in cmux's text editor
+  overview     Browse every cmux window and workspace in one full-screen view
   hints        Control temporary hints in cmux workspace rows
   keys         Print the compact hotkey and command cheat sheet
   prompt       Choose minimal, detailed, or disabled prompt mode
