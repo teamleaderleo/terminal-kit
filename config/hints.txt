@@ -9,6 +9,7 @@
 y Browse files
 lg Git dashboard
 bt System monitor
+tk overview All workspaces
 tk keys Cheat sheet
 tk status Git state
 tk theme next
