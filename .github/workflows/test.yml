@@ -21,4 +21,11 @@ jobs:
       - name: Install JSON parser
         run: brew install jq
       - name: Run repository tests
-        run: bash scripts/test.sh
+        run: bash scripts/test.sh > test.log 2>&1
+      - name: Upload failed test log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-log
+          path: test.log
+          retention-days: 7
