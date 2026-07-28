@@ -60,6 +60,12 @@ show_status() {
   local config="$HOME/.config/cmux/cmux.json"
   printf 'terminal-kit performance settings\n'
 
+  if command -v cmux >/dev/null 2>&1; then
+    printf '  cmux version:          %s\n' "$(cmux --version 2>/dev/null | head -n 1)"
+  else
+    printf '  cmux version:          missing\n'
+  fi
+
   if [[ -r "$config" ]] && command -v jq >/dev/null 2>&1; then
     printf '  Git sidebar watcher:  %s\n' "$(jq -r '.sidebar.watchGitStatus // true' "$config")"
     printf '  renderer reclamation: cmux default (enabled)\n'
