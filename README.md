@@ -210,7 +210,7 @@ Optional explicit controls remain available:
 tk hints current      Show whether automatic hints are enabled
 tk hints next         Place one hint in the current workspace row
 tk hints clear        Remove the current workspace hint
-tk hints on           Re-enable automatic fresh-shell hints
+tk hints on           Re-enable automatic hints
 tk hints off          Disable automatic hints
 ```
 
