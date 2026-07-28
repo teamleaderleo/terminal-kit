@@ -77,6 +77,12 @@
   },
   "commands": [
     {
+      "name": "Workspace: Overview",
+      "description": "Browse every cmux window and workspace in one full-screen view",
+      "keywords": ["workspace", "window", "overview", "switcher", "expose"],
+      "command": "terminal-kit overview"
+    },
+    {
       "name": "Theme: Browse",
       "description": "Preview and select a cmux terminal theme",
       "keywords": ["theme", "appearance", "colour"],
