@@ -4,6 +4,9 @@ scrollback-limit = 10000000
 mouse-hide-while-typing = true
 cursor-click-to-move = true
 shell-integration = zsh
+# Keep working-directory and prompt reporting while preventing completed commands
+# such as `tk` from replacing cmux's project-oriented workspace label.
+shell-integration-features = no-title
 link-previews = osc8
 
 # New top-level workspaces start at home. cmux can still open an explicit project
