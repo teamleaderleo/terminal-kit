@@ -14,6 +14,13 @@ for arg in "$@"; do
   esac
 done
 
+# The command link exists after a successful install. Capture this before the
+# installer repairs it so first-run guidance stays limited to the first run.
+first_install=true
+if [[ -e "$HOME/.local/bin/terminal-kit" || -L "$HOME/.local/bin/terminal-kit" ]]; then
+  first_install=false
+fi
+
 # Only the two public entry points need executable bits. Helper scripts are run
 # explicitly through Bash so installation never changes tracked file modes.
 chmod +x "$ROOT/install.sh" "$ROOT/bin/terminal-kit"
@@ -238,5 +245,11 @@ fi
 display_root="${ROOT/#$HOME/\~}"
 display_backup="${BACKUP_DIR/#$HOME/\~}"
 log "installed from $display_root"
-log "backup: $display_backup"
-log "open a fresh shell once after first install"
+if [[ -n "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]]; then
+  log "backup: $display_backup"
+else
+  rmdir "$BACKUP_DIR"
+fi
+if [[ "$first_install" == true ]]; then
+  log "open a fresh shell once after first install"
+fi
