@@ -9,6 +9,10 @@
 y Browse files
 lg Git dashboard
 bt System monitor
+clip path Copy folder
+ports Listening ports
+after <cmd> Notify on finish
+scratch Daily note
 tk overview All workspaces
 tk keys Cheat sheet
 tk status Git state
