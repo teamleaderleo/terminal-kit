@@ -12,11 +12,13 @@ working-directory = home
 
 # Clipboard and screen selection.
 # Dragging output copies it immediately. Cmd+Shift+C is the explicit screen-copy key.
+# Deliberate keyboard pastes may contain multiple lines without a confirmation prompt.
 clipboard-read = ask
 clipboard-write = allow
 clipboard-trim-trailing-spaces = true
+clipboard-paste-protection = false
 copy-on-select = clipboard
-right-click-action = copy-or-paste
+right-click-action = copy
 mouse-shift-capture = never
 selection-clear-on-typing = true
 selection-clear-on-copy = false
