@@ -35,7 +35,7 @@
     "branchLayout": "inline",
     "showNotificationMessage": false,
     "notificationMessageLineLimit": 1,
-    "showBranchDirectory": false,
+    "showBranchDirectory": true,
     "showPullRequests": false,
     "watchGitStatus": false,
     "showPorts": false,
@@ -132,7 +132,7 @@
     },
     {
       "name": "Hints: Clear",
-      "description": "Remove the optional terminal-kit hint from this workspace",
+      "description": "Remove the optional terminal-kit hint from the current workspace",
       "keywords": ["hints", "clear", "sidebar"],
       "command": "terminal-kit hints clear"
     },
