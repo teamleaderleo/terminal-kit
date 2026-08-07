@@ -35,7 +35,7 @@
     "branchLayout": "inline",
     "showNotificationMessage": false,
     "notificationMessageLineLimit": 1,
-    "showBranchDirectory": false,
+    "showBranchDirectory": true,
     "showPullRequests": false,
     "watchGitStatus": false,
     "showPorts": false,

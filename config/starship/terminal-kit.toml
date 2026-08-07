@@ -6,10 +6,14 @@ format = "$directory$character"
 right_format = "$cmd_duration$status$jobs"
 
 [directory]
-style = "bold blue"
-truncation_length = 4
-truncate_to_repo = false
+style = "blue"
+truncation_length = 3
+truncation_symbol = "…/"
+truncate_to_repo = true
 read_only = " ro"
+before_repo_root_style = "dimmed blue"
+repo_root_style = "bold blue"
+repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
 format = "[$path]($style)[$read_only]($read_only_style) "
 
 [character]

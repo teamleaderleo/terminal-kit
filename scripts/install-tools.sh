@@ -11,4 +11,6 @@ if ! command -v brew >/dev/null 2>&1; then
 fi
 
 log "installing any missing command-line tools with Homebrew"
-brew bundle --file "$ROOT/Brewfile"
+# Homebrew may refresh its package metadata before bundle runs. Keep that refresh
+# and normal upgrades, while omitting the unrelated list of newly-added casks.
+HOMEBREW_NO_UPDATE_REPORT_NEW=1 brew bundle --file "$ROOT/Brewfile"
