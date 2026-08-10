@@ -2,6 +2,8 @@
 ⌘D Split right
 ⌘⇧D Split down
 ⌘T New surface
+⌘Tab / ⌘⇧Tab Next / previous surface
+⌘⌥Tab macOS app switcher from cmux
 ⌘N New workspace
 ⌘B Toggle sidebar
 ⌘K Clear output
