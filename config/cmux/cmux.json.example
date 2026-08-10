@@ -83,6 +83,12 @@
       "command": "terminal-kit overview"
     },
     {
+      "name": "Agent: Work Here",
+      "description": "Create a reversible task checkout and open an agent for the current project",
+      "keywords": ["agent", "work", "task", "codex", "claude", "worktree"],
+      "command": "terminal-kit work"
+    },
+    {
       "name": "Theme: Browse",
       "description": "Preview and select a cmux terminal theme",
       "keywords": ["theme", "appearance", "colour"],

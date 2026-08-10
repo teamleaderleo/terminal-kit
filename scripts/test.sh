@@ -118,8 +118,10 @@ grep -Fxq 'balanced' "$test_root/home/.config/terminal-kit/memory-mode"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/memory-auto"
 grep -Fq 'DispatchSource.makeMemoryPressureSource' "$test_root/home/Projects/terminal-kit/tools/memoryd/main.swift"
 grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.txt"
+grep -Fq 'tk do task Agent worktree' "$test_root/home/Projects/terminal-kit/config/hints.txt"
 grep -Fq 'tk overview All workspaces' "$test_root/home/Projects/terminal-kit/config/hints.txt"
 grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
+grep -Fq "delta --navigate --keep-plus-minus-markers" "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
 grep -Fq 'format = "$directory$character"' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
 grep -Fq 'truncate_to_repo = true' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
 grep -Fq 'repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
@@ -129,9 +131,11 @@ grep -Fq 'brew "hyperfine"' "$test_root/home/Projects/terminal-kit/Brewfile"
 grep -Fq 'Usage: terminal-kit perf' "$test_root/home/Projects/terminal-kit/scripts/perf.sh"
 grep -Fq 'Usage: terminal-kit memory' "$test_root/home/Projects/terminal-kit/scripts/memory.sh"
 grep -Fq 'Usage: terminal-kit overview' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
+grep -Fq 'terminal-kit work [project-or-url] [task...]' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
 grep -Fq -- '--border=rounded' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
 grep -Fq -- '--ansi' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
 grep -Fq 'overview     Browse every cmux window and workspace in one full-screen view' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
+grep -Fq 'work / do    Resolve a project, make a reversible task checkout, and launch an agent' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq 'memory       Choose renderer reclamation and agent hibernation policy' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq '"workspaceInheritWorkingDirectory": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openSupportedFilesInCmux": true' "$test_root/home/.config/cmux/cmux.json"
@@ -146,6 +150,7 @@ grep -Fq '"wordWrap": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"doubleClickAction": "preview"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"maxWarmRenderers": 6' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"maxLiveTerminals": 8' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"command": "terminal-kit work"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"command": "terminal-kit memory auto on"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"command": "terminal-kit overview"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showCustomMetadata": true' "$test_root/home/.config/cmux/cmux.json"
@@ -161,11 +166,68 @@ cmp -s \
 [[ "$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" path)" == "$test_root/home/Projects/terminal-kit" ]]
 keys_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" keys)"
 grep -Fq 'tk keys Cheat sheet' <<< "$keys_output"
+grep -Fq 'tk do task Agent worktree' <<< "$keys_output"
 grep -Fq 'tk overview All workspaces' <<< "$keys_output"
 perf_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" perf status)"
 grep -Fq 'terminal-kit performance settings' <<< "$perf_output"
 memory_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status)"
 grep -Fq 'mode:                 balanced' <<< "$memory_output"
 grep -Fq 'automatic:            off' <<< "$memory_output"
+
+# Exercise the reversible worktree lifecycle when jq is available. A fake cmux
+# accepts workspace creation so the test never starts a real coding agent.
+if command -v jq >/dev/null 2>&1; then
+  cat > "$test_root/bin/cmux" <<'FAKE_CMUX'
+#!/usr/bin/env bash
+case "${1:-}" in
+  ping) exit 0 ;;
+  new-workspace) exit 0 ;;
+  *) exit 0 ;;
+esac
+FAKE_CMUX
+  chmod +x "$test_root/bin/cmux"
+
+  work_repo="$test_root/home/Projects/work-fixture"
+  mkdir -p "$work_repo"
+  git -C "$work_repo" init -q
+  git -C "$work_repo" config user.name terminal-kit-test
+  git -C "$work_repo" config user.email terminal-kit@example.invalid
+  printf 'base\n' > "$work_repo/file.txt"
+  git -C "$work_repo" add file.txt
+  git -C "$work_repo" commit -qm base
+  printf 'local\n' >> "$work_repo/file.txt"
+  printf 'untracked\n' > "$work_repo/note.txt"
+
+  HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+    "$test_root/home/.local/bin/terminal-kit" work "$work_repo" "test reversible task" >/dev/null
+  work_id="$(tr -d '[:space:]' < "$test_root/home/.local/state/terminal-kit/work/last")"
+  work_receipt="$test_root/home/.local/state/terminal-kit/work/$work_id.json"
+  work_path="$(jq -r '.work_path' "$work_receipt")"
+  [[ -d "$work_path" ]]
+  grep -Fxq local < <(tail -n 1 "$work_path/file.txt")
+  grep -Fxq untracked "$work_path/note.txt"
+  [[ "$(jq -r '.seeded_dirty' "$work_receipt")" == true ]]
+  [[ "$(jq -r '.state' "$work_receipt")" == launched ]]
+
+  printf 'agent\n' >> "$work_path/file.txt"
+  printf 'new\n' > "$work_path/new.txt"
+  HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+    "$test_root/home/.local/bin/terminal-kit" work undo "$work_id" >/dev/null
+  [[ ! -e "$work_path" ]]
+  [[ "$(jq -r '.state' "$work_receipt")" == undone ]]
+  recovery_head="$(jq -r '.recovery_head_ref' "$work_receipt")"
+  git -C "$work_repo" show-ref --verify --quiet "$recovery_head"
+
+  HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+    "$test_root/home/.local/bin/terminal-kit" work restore "$work_id" >/dev/null
+  [[ -d "$work_path" ]]
+  grep -Fq agent "$work_path/file.txt"
+  grep -Fxq new "$work_path/new.txt"
+  [[ "$(jq -r '.state' "$work_receipt")" == restored ]]
+  if grep -Fq agent "$work_repo/file.txt"; then
+    printf 'terminal-kit: agent work leaked into source checkout\n' >&2
+    exit 1
+  fi
+fi
 
 printf 'terminal-kit tests passed\n'
