@@ -10,8 +10,12 @@ command -v jq >/dev/null 2>&1 || {
 }
 
 jq empty "$ROOT/config/agent-policy.json"
+[[ "$(jq -r '.evidence.terminalTables' "$ROOT/config/agent-policy.json")" == 'display-only' ]]
+[[ "$(jq -r '.evidence.handoff' "$ROOT/config/agent-policy.json")" == 'machine-readable' ]]
 grep -Fq 'terminal-kit-agent/v1' "$ROOT/AGENTS.md"
+grep -Fq 'gh ... --json ... --jq ...' "$ROOT/AGENTS.md"
 grep -Fq 'terminal-kit agent context --json' "$ROOT/scripts/work-entry.sh"
+grep -Fq 'Treat terminal tables, colours, and visual wrapping as presentation' "$ROOT/scripts/work-entry.sh"
 grep -Fq 'agent|machine)' "$ROOT/bin/terminal-kit"
 
 scratch="$(mktemp -d)"
@@ -63,6 +67,7 @@ context="$(cd "$repo" && "$ROOT/bin/terminal-kit" agent context --json)"
 [[ "$(printf '%s' "$context" | jq -r '.repository.root')" == "$repo" ]]
 [[ "$(printf '%s' "$context" | jq -r '.work.id')" == "$id" ]]
 [[ "$(printf '%s' "$context" | jq -r '.policy.protocol')" == 'terminal-kit-agent/v1' ]]
+[[ "$(printf '%s' "$context" | jq -r '.policy.evidence.handoff')" == 'machine-readable' ]]
 printf '%s' "$context" | jq -e '.repository.guidance | type == "array"' >/dev/null
 
 (cd "$repo" && "$ROOT/bin/terminal-kit" agent checkpoint working "implementing the thing" --proof "baseline inspected" --next "run checks") >/dev/null
