@@ -37,6 +37,9 @@ Fresh operator approval remains required for the consequence classes listed in `
 
 - Keep `tk do` as the primary human-facing work entrypoint.
 - Prefer stable JSON and explicit receipts for agent-facing state.
+- Treat pretty TTY tables, colours, and visual wrapping as presentation only. They are poor evidence transport across terminal selection, clipboard, and chat.
+- When exact GitHub values need to leave the terminal, prefer `gh ... --json ... --jq ...` or `--template` on the first attempt rather than asking the operator to copy a `gh` table and repairing the handoff afterward.
+- When asking the operator to run a command and return output, choose compact stable plain text or JSON that remains meaningful after colour and layout disappear and that is unlikely to soft-wrap.
 - Keep ordinary human commands as escape hatches, not ceremony agents force the operator to remember.
 - Preserve user changes. Agent task work belongs in terminal-kit-owned worktrees by default.
 - Every automatic cleanup must prove it owns the exact resource it removes.
