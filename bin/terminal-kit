@@ -65,6 +65,9 @@ case "$command_name" in
   work|do)
     exec /bin/bash "$ROOT/scripts/work.sh" "$@"
     ;;
+  agent|machine)
+    exec /bin/bash "$ROOT/scripts/agent.sh" "$@"
+    ;;
   theme|themes)
     exec /bin/bash "$ROOT/scripts/theme.sh" "$@"
     ;;
@@ -130,6 +133,7 @@ Usage: terminal-kit <command>
   update       Pull Git changes, install new tools, and reload terminal settings
   status       Show the terminal-kit branch, stashes, and working-tree state
   work / do    Resolve a project, make a reversible task checkout, and launch an agent
+  agent        Machine-facing context, policy, durable checkpoints, and task events
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
   theme        Browse, test, set, rotate, or automate cmux themes
@@ -153,6 +157,7 @@ Usage: terminal-kit <command>
 
 After Zsh loads the kit, plain `tk` updates everything. `tk update` is the explicit form.
 `tk do fix the tests` hands the current repo to an agent in a reversible task checkout.
+Agents should bootstrap with `tk agent context --json` and record durable checkpoints.
 Use `tk status` when you deliberately want Git branch, stash, and working-tree details.
 HELP
     ;;
