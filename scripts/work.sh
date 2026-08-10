@@ -312,22 +312,25 @@ receipt_for() {
 }
 
 list_work() {
-  local file found=false
+  local file rows="" count=0
   [[ -d "$STATE_ROOT" ]] || {
     printf 'No terminal-kit work sessions yet.\n'
     return 0
   }
-  printf '%-24s %-10s %-18s %-9s %s\n' ID STATE PROJECT AGENT CREATED
   for file in "$STATE_ROOT"/*.json; do
     [[ -r "$file" ]] || continue
-    found=true
-    jq -r '[.id,.state,.repo_name,.agent,.created_at] | @tsv' "$file"
-  done | sort -r | while IFS=$'\t' read -r id state project agent created; do
-    printf '%-24s %-10s %-18s %-9s %s\n' "$id" "$state" "$project" "$agent" "$created"
+    count=$((count + 1))
+    rows="${rows}$(jq -r '[.id,.state,.repo_name,.agent,.created_at] | @tsv' "$file")"$'\n'
   done
-  if [[ "$found" == false ]]; then
+  if (( count == 0 )); then
     printf 'No terminal-kit work sessions yet.\n'
+    return 0
   fi
+  printf '%-24s %-16s %-18s %-9s %s\n' ID STATE PROJECT AGENT CREATED
+  printf '%s' "$rows" | sort -r | while IFS=$'\t' read -r id state project agent created; do
+    [[ -n "$id" ]] || continue
+    printf '%-24s %-16s %-18s %-9s %s\n' "$id" "$state" "$project" "$agent" "$created"
+  done
 }
 
 show_work() {
@@ -468,6 +471,11 @@ launch_agent() {
       cmux new-workspace --name "$title" --cwd "$work_path"
       return 0
     fi
+    if ! command -v "$agent" >/dev/null 2>&1; then
+      cmux new-workspace --name "$title" --cwd "$work_path"
+      warn "agent '$agent' is unavailable; opened the task worktree without launching it"
+      return 0
+    fi
     quoted="$(printf '%s' "$prompt" | jq -Rrs @sh)"
     case "$agent" in
       codex) command_text="codex --yolo -- $quoted" ;;
@@ -490,6 +498,7 @@ launch_agent() {
     warn "cmux is unavailable; open the path above and start your agent there"
     return 0
   }
+  command -v "$agent" >/dev/null 2>&1 || die "cmux is unavailable and agent '$agent' is not installed"
 
   case "$agent" in
     codex) (cd "$work_path" && codex --yolo -- "$prompt") ;;
