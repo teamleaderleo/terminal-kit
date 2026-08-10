@@ -131,7 +131,9 @@ grep -Fq 'brew "hyperfine"' "$test_root/home/Projects/terminal-kit/Brewfile"
 grep -Fq 'Usage: terminal-kit perf' "$test_root/home/Projects/terminal-kit/scripts/perf.sh"
 grep -Fq 'Usage: terminal-kit memory' "$test_root/home/Projects/terminal-kit/scripts/memory.sh"
 grep -Fq 'Usage: terminal-kit overview' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
-grep -Fq 'terminal-kit work [project-or-url] [task...]' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
+grep -Fq 'terminal-kit work [project-or-reference] [task...]' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
+grep -Fq 'tk do ./vmm/src/acpi.rs' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
+grep -Fq 'cloud-hypervisor/issues/8666' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
 grep -Fq -- '--border=rounded' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
 grep -Fq -- '--ansi' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
 grep -Fq 'overview     Browse every cmux window and workspace in one full-screen view' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
@@ -174,7 +176,7 @@ memory_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit
 grep -Fq 'mode:                 balanced' <<< "$memory_output"
 grep -Fq 'automatic:            off' <<< "$memory_output"
 
-# Exercise the reversible worktree lifecycle when jq is available. A fake cmux
+# Exercise the reversible worktree lifecycle and reference routing. A fake cmux
 # accepts workspace creation so the test never starts a real coding agent.
 if command -v jq >/dev/null 2>&1; then
   cat > "$test_root/bin/cmux" <<'FAKE_CMUX'
@@ -228,6 +230,31 @@ FAKE_CMUX
     printf 'terminal-kit: agent work leaked into source checkout\n' >&2
     exit 1
   fi
+
+  # A local file routes back to its containing repo and survives in the receipt.
+  source_file_reference="$(cd "$work_repo" && pwd -P)/file.txt"
+  HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+    "$test_root/home/.local/bin/terminal-kit" work "$work_repo/file.txt" "inspect this file" >/dev/null
+  file_work_id="$(tr -d '[:space:]' < "$test_root/home/.local/state/terminal-kit/work/last")"
+  file_receipt="$test_root/home/.local/state/terminal-kit/work/$file_work_id.json"
+  [[ "$(jq -r '.repo_root' "$file_receipt")" == "$(cd "$work_repo" && pwd -P)" ]]
+  [[ "$(jq -r '.reference' "$file_receipt")" == "$source_file_reference" ]]
+  grep -Fq 'inspect this file' < <(jq -r '.prompt' "$file_receipt")
+  HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+    "$test_root/home/.local/bin/terminal-kit" work undo "$file_work_id" >/dev/null
+
+  # A GitHub deep link routes to owner/repo. An existing repo with that basename
+  # prevents network access while exercising the same resolver path.
+  github_reference='https://github.com/example/work-fixture/issues/7'
+  HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+    "$test_root/home/.local/bin/terminal-kit" work "$github_reference" >/dev/null
+  url_work_id="$(tr -d '[:space:]' < "$test_root/home/.local/state/terminal-kit/work/last")"
+  url_receipt="$test_root/home/.local/state/terminal-kit/work/$url_work_id.json"
+  [[ "$(jq -r '.target' "$url_receipt")" == 'example/work-fixture' ]]
+  [[ "$(jq -r '.reference' "$url_receipt")" == "$github_reference" ]]
+  grep -Fq "$github_reference" < <(jq -r '.prompt' "$url_receipt")
+  HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+    "$test_root/home/.local/bin/terminal-kit" work undo "$url_work_id" >/dev/null
 fi
 
 printf 'terminal-kit tests passed\n'
