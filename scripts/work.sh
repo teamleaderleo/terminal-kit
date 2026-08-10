@@ -26,15 +26,19 @@ Examples:
   tk work fix the failing tests               # from inside a repository
   tk work                                     # open an agent session for the current repo
 
-A Git task runs in a terminal-kit-owned worktree. If the current checkout has
-local tracked or untracked changes, their contents are copied into the task
-worktree while the original checkout stays untouched. `work undo` stores hidden
-Git recovery refs before removing the owned worktree; `work restore` recreates it.
+Git tasks run in terminal-kit-owned worktrees. Current tracked and untracked
+changes are copied into the task checkout while the source checkout stays put.
+`work undo` removes only the recorded task checkout after creating hidden Git
+recovery refs; `work restore` reconstructs it from those refs.
 HELP
 }
 
 need_command() {
   command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
+}
+
+canonical_dir() {
+  (cd "$1" 2>/dev/null && pwd -P)
 }
 
 expand_path() {
@@ -45,10 +49,6 @@ expand_path() {
   esac
 }
 
-canonical_dir() {
-  (cd "$1" 2>/dev/null && pwd -P)
-}
-
 safe_slug() {
   printf '%s' "$1" \
     | tr '[:upper:]' '[:lower:]' \
@@ -57,33 +57,26 @@ safe_slug() {
 }
 
 find_project_by_name() {
-  local wanted="$1"
-  local direct="$PROJECTS_ROOT/$wanted"
-  local marker parent
+  local wanted="$1" direct="$PROJECTS_ROOT/$1" marker parent
   local -a matches=()
 
   if [[ -d "$direct" ]] && git -C "$direct" rev-parse --git-dir >/dev/null 2>&1; then
     canonical_dir "$direct"
     return 0
   fi
-
   [[ -d "$PROJECTS_ROOT" ]] || return 1
+
   while IFS= read -r marker; do
     parent="${marker%/.git}"
-    if [[ "${parent##*/}" == "$wanted" ]]; then
-      matches+=("$(canonical_dir "$parent")")
-    fi
+    [[ "${parent##*/}" == "$wanted" ]] && matches+=("$(canonical_dir "$parent")")
   done < <(find "$PROJECTS_ROOT" -mindepth 2 -maxdepth 4 \( -type d -o -type f \) -name .git -print 2>/dev/null)
 
-  if (( ${#matches[@]} == 1 )); then
-    printf '%s\n' "${matches[0]}"
-    return 0
-  fi
-  return 1
+  (( ${#matches[@]} == 1 )) || return 1
+  printf '%s\n' "${matches[0]}"
 }
 
 pick_project() {
-  local choices selected marker
+  local choices marker selected
   [[ -d "$PROJECTS_ROOT" ]] || die "no project directory at $PROJECTS_ROOT"
   command -v fzf >/dev/null 2>&1 || die "choose a project by name or install fzf"
 
@@ -114,15 +107,13 @@ remote_repo_name() {
 RESOLVED_PATH=""
 CLONED=false
 resolve_target() {
-  local raw="$1"
-  local expanded local_match name destination
+  local raw="$1" expanded local_match name destination
   expanded="$(expand_path "$raw")"
 
   if [[ -d "$expanded" ]]; then
     RESOLVED_PATH="$(canonical_dir "$expanded")"
     return 0
   fi
-
   if local_match="$(find_project_by_name "$raw" 2>/dev/null)"; then
     RESOLVED_PATH="$local_match"
     return 0
@@ -157,37 +148,51 @@ current_git_root() {
   git rev-parse --show-toplevel 2>/dev/null || true
 }
 
-copy_untracked_files() {
-  local source_root="$1"
-  local destination_root="$2"
-  local relative source destination
+worktree_dirty() {
+  [[ -n "$(git -C "$1" status --porcelain --untracked-files=all)" ]]
+}
 
-  while IFS= read -r -d '' relative; do
-    source="$source_root/$relative"
-    destination="$destination_root/$relative"
-    mkdir -p "$(dirname "$destination")"
-    if [[ -L "$source" ]]; then
-      ln -s "$(readlink "$source")" "$destination"
-    else
-      cp -p "$source" "$destination"
-    fi
-  done < <(git -C "$source_root" ls-files --others --exclude-standard -z)
+# Create an object-only snapshot of the checkout using an alternate Git index.
+# This captures tracked and non-ignored untracked files without touching the
+# user's index, branch, stash list, or working tree.
+snapshot_checkout() {
+  local checkout="$1" parent="$2" index tree commit
+  index="$(mktemp -t terminal-kit-index.XXXXXX)"
+  rm -f "$index"
+
+  if ! GIT_INDEX_FILE="$index" git -C "$checkout" read-tree "$parent" \
+    || ! GIT_INDEX_FILE="$index" git -C "$checkout" add -A -- .; then
+    rm -f "$index"
+    return 1
+  fi
+  tree="$(GIT_INDEX_FILE="$index" git -C "$checkout" write-tree)" || {
+    rm -f "$index"
+    return 1
+  }
+  rm -f "$index"
+
+  commit="$(
+    printf 'terminal-kit recovery snapshot\n' \
+      | env \
+          GIT_AUTHOR_NAME=terminal-kit \
+          GIT_AUTHOR_EMAIL=terminal-kit@localhost \
+          GIT_COMMITTER_NAME=terminal-kit \
+          GIT_COMMITTER_EMAIL=terminal-kit@localhost \
+          git -C "$checkout" commit-tree "$tree" -p "$parent"
+  )" || return 1
+  printf '%s\n' "$commit"
+}
+
+apply_snapshot_delta() {
+  local repo="$1" destination="$2" base="$3" snapshot="$4"
+  git -C "$repo" diff --binary "$base" "$snapshot" -- \
+    | git -C "$destination" apply --whitespace=nowarn
 }
 
 seed_worktree_from_checkout() {
-  local source_root="$1"
-  local destination_root="$2"
-  local patch
-  patch="$(mktemp -t terminal-kit-work.XXXXXX)"
-  git -C "$source_root" diff --binary HEAD -- > "$patch"
-  if [[ -s "$patch" ]]; then
-    if ! git -C "$destination_root" apply --whitespace=nowarn "$patch"; then
-      rm -f "$patch"
-      return 1
-    fi
-  fi
-  rm -f "$patch"
-  copy_untracked_files "$source_root" "$destination_root"
+  local source="$1" destination="$2" base="$3" snapshot
+  snapshot="$(snapshot_checkout "$source" "$base")" || return 1
+  apply_snapshot_delta "$source" "$destination" "$base" "$snapshot"
 }
 
 select_agent() {
@@ -197,17 +202,16 @@ select_agent() {
     return 0
   fi
   for candidate in codex claude opencode pi; do
-    if command -v "$candidate" >/dev/null 2>&1; then
+    command -v "$candidate" >/dev/null 2>&1 && {
       printf '%s\n' "$candidate"
       return 0
-    fi
+    }
   done
   printf '%s\n' codex
 }
 
 agent_policy_prompt() {
-  local user_prompt="$1"
-  local seeded_dirty="$2"
+  local user_prompt="$1" seeded_dirty="$2"
   cat <<EOF
 Work autonomously in this repository and own the ordinary implementation loop.
 Read repository guidance such as AGENTS.md, CLAUDE.md, CONTRIBUTING.md, and repo-native bootstrap/check scripts before changing code. Prefer the commands and workflows the repository already defines. Inspect the current state, make the requested changes, chain the relevant checks yourself, and finish with a concise summary of edits, checks, and any blocker.
@@ -228,78 +232,44 @@ EOF
 }
 
 write_receipt() {
-  local file="$1"
-  local id="$2"
-  local created_at="$3"
-  local target="$4"
-  local repo_name="$5"
-  local repo_root="$6"
-  local work_path="$7"
-  local branch="$8"
-  local base_sha="$9"
+  local file="$1" id="$2" created_at="$3" target="$4" repo_name="$5"
+  local repo_root="$6" work_path="$7" branch="$8" base_sha="$9"
   shift 9
-  local agent="$1"
-  local launcher="$2"
-  local prompt="$3"
-  local cloned="$4"
-  local seeded_dirty="$5"
-  local mode="$6"
-  local tmp
+  local agent="$1" launcher="$2" prompt="$3" cloned="$4" seeded_dirty="$5" mode="$6" tmp
 
   mkdir -p "$STATE_ROOT"
   tmp="$(mktemp "$STATE_ROOT/.receipt.XXXXXX")"
   jq -n \
-    --arg id "$id" \
-    --arg created_at "$created_at" \
-    --arg target "$target" \
-    --arg repo_name "$repo_name" \
-    --arg repo_root "$repo_root" \
-    --arg work_path "$work_path" \
-    --arg branch "$branch" \
-    --arg base_sha "$base_sha" \
-    --arg agent "$agent" \
-    --arg launcher "$launcher" \
-    --arg prompt "$prompt" \
-    --arg mode "$mode" \
-    --argjson cloned "$cloned" \
-    --argjson seeded_dirty "$seeded_dirty" \
-    '{
-      version: 1,
-      id: $id,
-      state: "prepared",
-      created_at: $created_at,
-      target: $target,
-      repo_name: $repo_name,
-      repo_root: $repo_root,
-      work_path: $work_path,
-      branch: $branch,
-      base_sha: $base_sha,
-      agent: $agent,
-      launcher: $launcher,
-      prompt: $prompt,
-      mode: $mode,
-      cloned: $cloned,
-      seeded_dirty: $seeded_dirty
-    }' > "$tmp"
+    --arg id "$id" --arg created_at "$created_at" --arg target "$target" \
+    --arg repo_name "$repo_name" --arg repo_root "$repo_root" --arg work_path "$work_path" \
+    --arg branch "$branch" --arg base_sha "$base_sha" --arg agent "$agent" \
+    --arg launcher "$launcher" --arg prompt "$prompt" --arg mode "$mode" \
+    --argjson cloned "$cloned" --argjson seeded_dirty "$seeded_dirty" \
+    '{version:1,id:$id,state:"prepared",created_at:$created_at,target:$target,
+      repo_name:$repo_name,repo_root:$repo_root,work_path:$work_path,branch:$branch,
+      base_sha:$base_sha,agent:$agent,launcher:$launcher,prompt:$prompt,mode:$mode,
+      cloned:$cloned,seeded_dirty:$seeded_dirty}' > "$tmp"
   mv "$tmp" "$file"
   printf '%s\n' "$id" > "$STATE_ROOT/last"
 }
 
-update_receipt_state() {
-  local file="$1"
-  local state="$2"
-  local timestamp_field="$3"
-  local now tmp
-  now="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+update_receipt() {
+  local file="$1" filter="$2" tmp
+  shift 2
   tmp="$(mktemp "$STATE_ROOT/.receipt.XXXXXX")"
-  jq --arg state "$state" --arg field "$timestamp_field" --arg now "$now" \
-    '.state=$state | .[$field]=$now' "$file" > "$tmp"
+  jq "$@" "$filter" "$file" > "$tmp"
   mv "$tmp" "$file"
 }
 
+update_receipt_state() {
+  local file="$1" state="$2" field="$3" now
+  now="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  update_receipt "$file" '.state=$state | .[$field]=$now' \
+    --arg state "$state" --arg field "$field" --arg now "$now"
+}
+
 receipt_for() {
-  local requested="${1:-last}"
-  local id file
+  local requested="${1:-last}" id file
   if [[ "$requested" == last ]]; then
     [[ -r "$STATE_ROOT/last" ]] || die "no terminal-kit work receipt yet"
     id="$(tr -d '[:space:]' < "$STATE_ROOT/last")"
@@ -322,10 +292,11 @@ list_work() {
     count=$((count + 1))
     rows="${rows}$(jq -r '[.id,.state,.repo_name,.agent,.created_at] | @tsv' "$file")"$'\n'
   done
-  if (( count == 0 )); then
+  (( count > 0 )) || {
     printf 'No terminal-kit work sessions yet.\n'
     return 0
-  fi
+  }
+
   printf '%-24s %-16s %-18s %-9s %s\n' ID STATE PROJECT AGENT CREATED
   printf '%s' "$rows" | sort -r | while IFS=$'\t' read -r id state project agent created; do
     [[ -n "$id" ]] || continue
@@ -334,19 +305,17 @@ list_work() {
 }
 
 show_work() {
-  local file
-  file="$(receipt_for "${1:-last}")"
-  cat "$file"
+  cat "$(receipt_for "${1:-last}")"
 }
 
 show_path() {
-  local file
-  file="$(receipt_for "${1:-last}")"
-  jq -r '.work_path' "$file"
+  jq -r '.work_path' "$(receipt_for "${1:-last}")"
 }
 
 undo_work() {
-  local file id mode repo_root work_path branch state head_oid stash_oid="" recovery_head recovery_stash tmp
+  local file id mode repo_root work_path canonical_work_path branch state head_oid
+  local snapshot_oid="" recovery_head recovery_snapshot now
+
   file="$(receipt_for "${1:-last}")"
   id="$(jq -r '.id' "$file")"
   mode="$(jq -r '.mode' "$file")"
@@ -362,45 +331,38 @@ undo_work() {
   }
   [[ -d "$repo_root" ]] || die "source repository is missing: $repo_root"
   [[ -d "$work_path" ]] || die "owned worktree is missing: $work_path"
-  [[ "$(git -C "$work_path" rev-parse --show-toplevel 2>/dev/null || true)" == "$work_path" ]] \
+
+  canonical_work_path="$(canonical_dir "$work_path")"
+  [[ "$(canonical_dir "$(git -C "$work_path" rev-parse --show-toplevel 2>/dev/null)")" == "$canonical_work_path" ]] \
     || die "refusing to remove path that is no longer the recorded worktree: $work_path"
   [[ "$(git -C "$work_path" symbolic-ref --quiet --short HEAD 2>/dev/null || true)" == "$branch" ]] \
     || die "refusing to remove worktree because its branch no longer matches the receipt"
 
-  if [[ -n "$(git -C "$work_path" status --porcelain)" ]]; then
-    git -C "$work_path" stash push --include-untracked -m "terminal-kit recovery $id" >/dev/null
-    stash_oid="$(git -C "$repo_root" rev-parse refs/stash)"
-  fi
-  [[ -z "$(git -C "$work_path" status --porcelain)" ]] \
-    || die "worktree still has uncaptured changes; leaving it in place"
-
   head_oid="$(git -C "$work_path" rev-parse HEAD)"
   recovery_head="$RECOVERY_REF_ROOT/$id/head"
-  recovery_stash="$RECOVERY_REF_ROOT/$id/stash"
+  recovery_snapshot="$RECOVERY_REF_ROOT/$id/snapshot"
   git -C "$repo_root" update-ref "$recovery_head" "$head_oid"
-  if [[ -n "$stash_oid" ]]; then
-    git -C "$repo_root" update-ref "$recovery_stash" "$stash_oid"
+
+  if worktree_dirty "$work_path"; then
+    snapshot_oid="$(snapshot_checkout "$work_path" "$head_oid")" \
+      || die "could not create a recovery snapshot; leaving the worktree in place"
+    git -C "$repo_root" update-ref "$recovery_snapshot" "$snapshot_oid"
   else
-    git -C "$repo_root" update-ref -d "$recovery_stash" >/dev/null 2>&1 || true
+    git -C "$repo_root" update-ref -d "$recovery_snapshot" >/dev/null 2>&1 || true
   fi
 
   git -C "$repo_root" worktree remove --force "$work_path"
   git -C "$repo_root" branch -D "$branch" >/dev/null 2>&1 || true
 
-  tmp="$(mktemp "$STATE_ROOT/.receipt.XXXXXX")"
-  jq \
-    --arg now "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
-    --arg recovery_head "$recovery_head" \
-    --arg recovery_stash "$recovery_stash" \
-    --arg stash_oid "$stash_oid" \
-    '.state="undone" | .undone_at=$now | .recovery_head_ref=$recovery_head | .recovery_stash_ref=$recovery_stash | .recovery_stash_oid=$stash_oid' \
-    "$file" > "$tmp"
-  mv "$tmp" "$file"
-  log "undid work $id; recovery refs kept in the source repository"
+  now="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+  update_receipt "$file" \
+    '.state="undone" | .undone_at=$now | .recovery_head_ref=$head | .recovery_snapshot_ref=$snapshot | .recovery_snapshot_oid=$snapshot_oid' \
+    --arg now "$now" --arg head "$recovery_head" --arg snapshot "$recovery_snapshot" --arg snapshot_oid "$snapshot_oid"
+  log "undid work $id; hidden recovery refs are keeping the task recoverable"
 }
 
 restore_work() {
-  local file id mode repo_root work_path branch state recovery_head recovery_stash stash_oid="" tmp
+  local file id mode repo_root work_path branch state recovery_head recovery_snapshot now
   file="$(receipt_for "${1:-last}")"
   id="$(jq -r '.id' "$file")"
   mode="$(jq -r '.mode' "$file")"
@@ -409,7 +371,7 @@ restore_work() {
   branch="$(jq -r '.branch' "$file")"
   state="$(jq -r '.state' "$file")"
   recovery_head="$(jq -r '.recovery_head_ref // empty' "$file")"
-  recovery_stash="$(jq -r '.recovery_stash_ref // empty' "$file")"
+  recovery_snapshot="$(jq -r '.recovery_snapshot_ref // empty' "$file")"
 
   [[ "$mode" == worktree ]] || die "receipt $id is not a disposable worktree"
   [[ "$state" == undone ]] || die "work $id is not currently undone"
@@ -417,23 +379,20 @@ restore_work() {
   git -C "$repo_root" show-ref --verify --quiet "$recovery_head" \
     || die "recovery head ref is missing: $recovery_head"
   [[ ! -e "$work_path" ]] || die "restore path already exists: $work_path"
-  if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch"; then
-    die "restore branch already exists: $branch"
-  fi
+  git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch" \
+    && die "restore branch already exists: $branch"
 
   git -C "$repo_root" branch "$branch" "$recovery_head"
   if ! git -C "$repo_root" worktree add "$work_path" "$branch"; then
     git -C "$repo_root" branch -D "$branch" >/dev/null 2>&1 || true
     return 1
   fi
+  work_path="$(canonical_dir "$work_path")"
 
-  if [[ -n "$recovery_stash" ]] && git -C "$repo_root" show-ref --verify --quiet "$recovery_stash"; then
-    stash_oid="$(git -C "$repo_root" rev-parse "$recovery_stash")"
-    if ! git -C "$work_path" stash apply "$stash_oid"; then
-      tmp="$(mktemp "$STATE_ROOT/.receipt.XXXXXX")"
-      jq --arg now "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
-        '.state="restore-conflict" | .restore_attempted_at=$now' "$file" > "$tmp"
-      mv "$tmp" "$file"
+  if [[ -n "$recovery_snapshot" ]] && git -C "$repo_root" show-ref --verify --quiet "$recovery_snapshot"; then
+    if ! apply_snapshot_delta "$repo_root" "$work_path" "$recovery_head" "$recovery_snapshot"; then
+      now="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+      update_receipt "$file" '.state="restore-conflict" | .restore_attempted_at=$now' --arg now "$now"
       die "recovery changes conflicted while restoring; the worktree was kept for manual resolution"
     fi
   fi
@@ -446,22 +405,14 @@ restore_work() {
 }
 
 launch_agent() {
-  local agent="$1"
-  local work_path="$2"
-  local title="$3"
-  local prompt="$4"
-  local quoted command_text
+  local agent="$1" work_path="$2" title="$3" prompt="$4" quoted command_text
 
   if command -v cmux-chat >/dev/null 2>&1 \
     && command -v cmux >/dev/null 2>&1 \
     && cmux ping >/dev/null 2>&1; then
     local -a chat_args=(cmux-chat -p "$agent" -C "$work_path")
-    if [[ "${TERMINAL_KIT_AGENT_APPROVAL:-auto}" == ask ]]; then
-      chat_args+=(--no-auto-approve)
-    fi
-    if [[ -n "$prompt" ]]; then
-      chat_args+=("$prompt")
-    fi
+    [[ "${TERMINAL_KIT_AGENT_APPROVAL:-auto}" == ask ]] && chat_args+=(--no-auto-approve)
+    [[ -n "$prompt" ]] && chat_args+=("$prompt")
     "${chat_args[@]}"
     return 0
   fi
@@ -476,6 +427,7 @@ launch_agent() {
       warn "agent '$agent' is unavailable; opened the task worktree without launching it"
       return 0
     fi
+
     quoted="$(printf '%s' "$prompt" | jq -Rrs @sh)"
     case "$agent" in
       codex) command_text="codex --yolo -- $quoted" ;;
@@ -488,8 +440,7 @@ launch_agent() {
         return 0
         ;;
     esac
-    command_text="$command_text; exec /bin/zsh -l"
-    cmux new-workspace --name "$title" --cwd "$work_path" --command "$command_text"
+    cmux new-workspace --name "$title" --cwd "$work_path" --command "$command_text; exec /bin/zsh -l"
     return 0
   fi
 
@@ -499,7 +450,6 @@ launch_agent() {
     return 0
   }
   command -v "$agent" >/dev/null 2>&1 || die "cmux is unavailable and agent '$agent' is not installed"
-
   case "$agent" in
     codex) (cd "$work_path" && codex --yolo -- "$prompt") ;;
     claude) (cd "$work_path" && claude --dangerously-skip-permissions -- "$prompt") ;;
@@ -515,36 +465,24 @@ start_work() {
 
   local current_repo first candidate_match target prompt="" source_path repo_root repo_name repo_slug
   local id created_at branch work_path base_sha agent launcher seeded_dirty=false mode=worktree
-  local source_status="" full_prompt="" receipt title
+  local full_prompt="" receipt title
   current_repo="$(current_git_root)"
 
   if (( $# == 0 )); then
-    if [[ -n "$current_repo" ]]; then
-      target="$current_repo"
-    else
-      target="$(pick_project)"
-    fi
+    [[ -n "$current_repo" ]] && target="$current_repo" || target="$(pick_project)"
   else
     first="$1"
     candidate_match=""
     if [[ -d "$(expand_path "$first")" ]]; then
-      target="$first"
-      shift
-      prompt="$*"
+      target="$first"; shift; prompt="$*"
     elif candidate_match="$(find_project_by_name "$first" 2>/dev/null)"; then
-      target="$candidate_match"
-      shift
-      prompt="$*"
+      target="$candidate_match"; shift; prompt="$*"
     elif is_remote_target "$first"; then
-      target="$first"
-      shift
-      prompt="$*"
+      target="$first"; shift; prompt="$*"
     elif [[ -n "$current_repo" ]]; then
-      target="$current_repo"
-      prompt="$*"
+      target="$current_repo"; prompt="$*"
     else
-      target="$(pick_project)"
-      prompt="$*"
+      target="$(pick_project)"; prompt="$*"
     fi
   fi
 
@@ -565,7 +503,6 @@ start_work() {
   agent="$(select_agent)"
   launcher=terminal
   command -v cmux-chat >/dev/null 2>&1 && launcher=cmux-chat
-
   mkdir -p "$STATE_ROOT" "$WORKTREE_ROOT/$repo_slug"
   receipt="$STATE_ROOT/$id.json"
 
@@ -573,27 +510,21 @@ start_work() {
     base_sha="$(git -C "$repo_root" rev-parse HEAD)"
     branch="tk/$repo_slug-$id"
     work_path="$WORKTREE_ROOT/$repo_slug/$id"
-    source_status="$(git -C "$repo_root" status --porcelain)"
-    [[ -n "$source_status" ]] && seeded_dirty=true
+    worktree_dirty "$repo_root" && seeded_dirty=true
 
     git -C "$repo_root" worktree add -b "$branch" "$work_path" HEAD
-    if [[ "$seeded_dirty" == true ]]; then
-      if ! seed_worktree_from_checkout "$repo_root" "$work_path"; then
-        git -C "$repo_root" worktree remove --force "$work_path" >/dev/null 2>&1 || true
-        git -C "$repo_root" branch -D "$branch" >/dev/null 2>&1 || true
-        die "could not copy the current checkout changes into the task worktree"
-      fi
+    work_path="$(canonical_dir "$work_path")"
+    if [[ "$seeded_dirty" == true ]] \
+      && ! seed_worktree_from_checkout "$repo_root" "$work_path" "$base_sha"; then
+      git -C "$repo_root" worktree remove --force "$work_path" >/dev/null 2>&1 || true
+      git -C "$repo_root" branch -D "$branch" >/dev/null 2>&1 || true
+      die "could not copy the current checkout changes into the task worktree"
     fi
   else
-    base_sha=""
-    branch=""
-    work_path="$repo_root"
+    base_sha=""; branch=""; work_path="$repo_root"
   fi
 
-  if [[ -n "$prompt" ]]; then
-    full_prompt="$(agent_policy_prompt "$prompt" "$seeded_dirty")"
-  fi
-
+  [[ -n "$prompt" ]] && full_prompt="$(agent_policy_prompt "$prompt" "$seeded_dirty")"
   write_receipt "$receipt" "$id" "$created_at" "$target" "$repo_name" "$repo_root" \
     "$work_path" "$branch" "$base_sha" "$agent" "$launcher" "$prompt" "$CLONED" "$seeded_dirty" "$mode"
 
@@ -610,34 +541,12 @@ start_work() {
 
 command_name="${1:-start}"
 case "$command_name" in
-  list)
-    shift
-    list_work "$@"
-    ;;
-  show)
-    shift
-    show_work "${1:-last}"
-    ;;
-  path)
-    shift
-    show_path "${1:-last}"
-    ;;
-  undo)
-    shift
-    undo_work "${1:-last}"
-    ;;
-  restore)
-    shift
-    restore_work "${1:-last}"
-    ;;
-  help|-h|--help)
-    usage
-    ;;
-  start)
-    shift || true
-    start_work "$@"
-    ;;
-  *)
-    start_work "$@"
-    ;;
+  list) shift; list_work "$@" ;;
+  show) shift; show_work "${1:-last}" ;;
+  path) shift; show_path "${1:-last}" ;;
+  undo) shift; undo_work "${1:-last}" ;;
+  restore) shift; restore_work "${1:-last}" ;;
+  help|-h|--help) usage ;;
+  start) shift || true; start_work "$@" ;;
+  *) start_work "$@" ;;
 esac
