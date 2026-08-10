@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "protocol": "terminal-kit-agent/v1",
+  "purpose": "A low-ceremony local development front door for one operator and many coding-agent sessions.",
+  "posture": {
+    "default": "ambitious",
+    "unitOfWork": "meaningful outcome",
+    "continueAtNaturalBoundaries": true,
+    "preferRepoNativeWorkflow": true,
+    "preserveUserWork": true,
+    "defaultGitIsolation": "terminal-kit-owned worktree",
+    "durableContinuation": "receipt-and-events"
+  },
+  "autonomousActions": [
+    "inspect",
+    "resolve_or_clone_repository",
+    "read_repository_guidance",
+    "create_owned_worktree",
+    "edit_repository_files",
+    "run_repo_local_bootstrap",
+    "install_repo_local_dependencies",
+    "format",
+    "lint",
+    "test",
+    "build",
+    "create_branch",
+    "commit",
+    "self_review",
+    "record_checkpoint",
+    "prepare_pull_request",
+    "push_when_remote_is_operator_controlled",
+    "create_or_update_pull_request_when_remote_is_operator_controlled",
+    "merge_reviewed_reversible_work_when_repository_policy_and_permissions_allow",
+    "fix_forward",
+    "undo_terminal_kit_owned_worktree",
+    "restore_terminal_kit_owned_worktree"
+  ],
+  "approvalRequired": [
+    "material_spend",
+    "secret_exposure_or_rotation_outside_bounded_recovery",
+    "access_widening_beyond_operator_and_participating_agents",
+    "external_publication_or_contact_as_operator",
+    "destructive_non_test_data_change",
+    "privileged_host_mutation_without_existing_project_grant",
+    "irreversible_migration_without_tested_recovery",
+    "legal_effect",
+    "financial_effect"
+  ],
+  "interfaces": {
+    "start": "tk do [project-or-reference] [desired outcome]",
+    "context": "tk agent context --json",
+    "policy": "tk agent policy",
+    "checkpoint": "tk agent checkpoint <todo|working|needs-attention|review|done> [summary] [--proof text] [--next text]",
+    "current": "tk agent current",
+    "events": "tk agent events",
+    "list": "tk work list",
+    "undo": "tk work undo [id|last]",
+    "restore": "tk work restore [id|last]"
+  },
+  "handoff": {
+    "keepFirstScreenCurrent": true,
+    "fields": [
+      "state",
+      "summary",
+      "proof",
+      "next",
+      "exact revision or reference when useful"
+    ],
+    "rule": "Leave enough durable state for a fresh agent to continue without the chat transcript."
+  }
+}
