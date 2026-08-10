@@ -63,7 +63,11 @@
     "tintOpacity": 0.88
   },
   "shortcuts": {
-    "showModifierHoldHints": true
+    "showModifierHoldHints": true,
+    "bindings": {
+      "nextSurface": "ctrl+tab",
+      "prevSurface": "ctrl+shift+tab"
+    }
   },
   "markdown": {
     "fontSize": 16,
@@ -87,6 +91,18 @@
       "description": "Create a reversible task checkout and open an agent for the current project",
       "keywords": ["agent", "work", "task", "codex", "claude", "worktree"],
       "command": "terminal-kit work"
+    },
+    {
+      "name": "Karabiner: Export Portable Settings",
+      "description": "Capture portable Karabiner mappings from the selected profile into terminal-kit",
+      "keywords": ["karabiner", "keyboard", "export", "sync", "keys"],
+      "command": "terminal-kit karabiner export"
+    },
+    {
+      "name": "Karabiner: Sync Settings",
+      "description": "Merge terminal-kit Karabiner mappings into the selected local profile",
+      "keywords": ["karabiner", "keyboard", "apply", "sync", "keys"],
+      "command": "terminal-kit karabiner sync"
     },
     {
       "name": "Theme: Browse",
