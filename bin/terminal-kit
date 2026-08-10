@@ -63,7 +63,7 @@ case "$command_name" in
     fi
     ;;
   work|do)
-    exec /bin/bash "$ROOT/scripts/work.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/work-entry.sh" "$@"
     ;;
   agent|machine)
     exec /bin/bash "$ROOT/scripts/agent.sh" "$@"
