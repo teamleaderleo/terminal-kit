@@ -68,6 +68,9 @@ case "$command_name" in
   agent|machine)
     exec /bin/bash "$ROOT/scripts/agent.sh" "$@"
     ;;
+  karabiner|keymap)
+    exec /bin/bash "$ROOT/scripts/karabiner.sh" "$@"
+    ;;
   theme|themes)
     exec /bin/bash "$ROOT/scripts/theme.sh" "$@"
     ;;
@@ -134,6 +137,7 @@ Usage: terminal-kit <command>
   status       Show the terminal-kit branch, stashes, and working-tree state
   work / do    Resolve a project, make a reversible task checkout, and launch an agent
   agent        Machine-facing context, policy, durable checkpoints, and task events
+  karabiner    Export and sync portable Karabiner key mappings
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
   theme        Browse, test, set, rotate, or automate cmux themes
