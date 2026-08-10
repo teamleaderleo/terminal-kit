@@ -3,7 +3,7 @@
 **Protocol:** `terminal-kit-agent/v1`  
 **Machine policy:** `config/agent-policy.json`
 
-terminal-kit manages macOS terminal settings for Ghostty, cmux, tmux, and Zsh, and now acts as the local front door for low-ceremony agent work. The human should be able to point at a repository, file, issue, pull request, or desired outcome and let agents compose the existing tools behind the scenes.
+terminal-kit manages macOS terminal settings for Ghostty, cmux, tmux, Zsh, and portable keyboard mappings, and acts as the local front door for low-ceremony agent work. The human should be able to point at a repository, file, issue, pull request, or desired outcome and let agents compose the existing tools behind the scenes.
 
 ## Start here
 
@@ -24,6 +24,7 @@ For work launched through `tk do`, prefer the target repository's own `AGENTS.md
 - Prefer one-command updates through `tk`.
 - Keep running tmux sessions and terminal processes alive during updates.
 - Keep the human command surface tiny; agent-facing JSON and receipts may be richer.
+- Prefer browser-style surface navigation: Control-Tab / Control-Shift-Tab as the portable semantic, with Command aliases on macOS.
 
 ## Operator direction
 
@@ -54,9 +55,13 @@ Fresh operator approval remains required for the consequence classes listed in `
 - Keep user-facing settings in `config/`.
 - Preserve the include-based installer; avoid replacing the user's complete `.zshrc`, `.tmux.conf`, or Ghostty host files.
 - Keep installer runs repeatable.
-- Back up host files before changing managed blocks.
+- Back up host files before changing managed blocks or live Karabiner state.
 - Avoid sending commands into existing tmux panes.
 - Keep cmux TextBox focus disabled by default so terminal signals remain direct.
+- cmux shortcut semantics belong in `config/cmux/cmux.json.example`; use portable Control-based bindings where possible.
+- macOS-only key translation belongs in `config/karabiner/terminal-kit.json` and must be scoped to cmux with a frontmost-application condition.
+- `tk karabiner export` may create `config/karabiner/portable.json`. That snapshot should contain portable selected-profile mappings only; never add Karabiner `devices`, profile selection, or machine-global metadata to it.
+- After an intentional Karabiner UI change that should travel to another Mac, export the portable snapshot and include it in the normal reviewed Git change.
 
 ## Task state
 
@@ -78,6 +83,8 @@ Run before committing:
 
 ```sh
 ./scripts/test.sh
+./scripts/test-agent.sh
+./scripts/test-karabiner.sh
 ```
 
 On macOS with the tools installed, also run:
