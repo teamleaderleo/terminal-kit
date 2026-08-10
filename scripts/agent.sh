@@ -85,7 +85,7 @@ context_json() {
   [[ -r "$POLICY_FILE" ]] || die "agent policy missing at $POLICY_FILE"
 
   local cwd repo branch head remote dirty=false guidance_json agents_json work_json recent_json
-  local cmux_available=false receipt file name
+  local cmux_available=false receipt name
   cwd="$(pwd -P)"
   repo="$(current_repo_root 2>/dev/null || true)"
   branch=""
@@ -100,17 +100,27 @@ context_json() {
   fi
 
   guidance_json="$(
-    if [[ -n "$repo" ]]; then
-      for name in AGENTS.md STENSIBLY.md CLAUDE.md CONTRIBUTING.md README.md docs/current-wave.md docs/ROADMAP.md; do
-        [[ -f "$repo/$name" ]] && printf '%s\n' "$name"
-      done
-    fi | json_array_from_lines
+    {
+      if [[ -n "$repo" ]]; then
+        for name in AGENTS.md STENSIBLY.md CLAUDE.md CONTRIBUTING.md README.md docs/current-wave.md docs/ROADMAP.md; do
+          if [[ -f "$repo/$name" ]]; then
+            printf '%s\n' "$name"
+          fi
+        done
+      fi
+      true
+    } | json_array_from_lines
   )"
 
   agents_json="$(
-    for name in codex claude opencode pi gemini; do
-      command -v "$name" >/dev/null 2>&1 && printf '%s\n' "$name"
-    done | json_array_from_lines
+    {
+      for name in codex claude opencode pi gemini; do
+        if command -v "$name" >/dev/null 2>&1; then
+          printf '%s\n' "$name"
+        fi
+      done
+      true
+    } | json_array_from_lines
   )"
 
   work_json=null
