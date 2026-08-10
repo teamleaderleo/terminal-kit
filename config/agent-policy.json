@@ -46,6 +46,18 @@
     "legal_effect",
     "financial_effect"
   ],
+  "evidence": {
+    "terminalTables": "display-only",
+    "handoff": "machine-readable",
+    "softWrappedTerminalSelection": "untrusted-for-exact-evidence",
+    "githubCli": {
+      "preferred": "--json with --jq or --template",
+      "rule": "When exact GitHub values leave the terminal, request or emit machine-readable output instead of a width-sensitive TTY table."
+    },
+    "operatorRequests": {
+      "rule": "When an operator must run a command and return its result, make the first requested command emit compact stable plain text or JSON that can survive clipboard and chat transport without terminal colour, column layout, or soft-wrap semantics."
+    }
+  },
   "interfaces": {
     "start": "tk do [project-or-reference] [desired outcome]",
     "context": "tk agent context --json",
