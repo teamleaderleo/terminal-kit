@@ -28,6 +28,11 @@ if command -v cmux >/dev/null 2>&1 && cmux ping >/dev/null 2>&1; then
   log "reloaded cmux"
 fi
 
+# Karabiner watches its config directory and reloads automatically after a file
+# update. Merge only portable mappings plus terminal-kit's owned rule; leave
+# device-specific and unrelated local profile state alone.
+/bin/bash "$ROOT/scripts/karabiner.sh" apply --quiet
+
 if [[ "$(uname -s)" == "Darwin" ]] && pgrep -x Ghostty >/dev/null 2>&1; then
   if osascript >/dev/null 2>&1 <<'APPLESCRIPT'
 tell application "Ghostty"
