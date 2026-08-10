@@ -12,7 +12,7 @@ RECOVERY_REF_ROOT="refs/terminal-kit/recovery"
 usage() {
   cat <<'HELP'
 Usage:
-  terminal-kit work [project-or-url] [task...]
+  terminal-kit work [project-or-reference] [task...]
   terminal-kit work [task...]                 # current repo, or choose a project
   terminal-kit work list
   terminal-kit work show [id|last]
@@ -21,10 +21,11 @@ Usage:
   terminal-kit work restore [id|last]
 
 Examples:
-  tk work smolrunner "finish the next safe runner lifecycle slice"
-  tk work https://github.com/cloud-hypervisor/cloud-hypervisor "fix the ACPI errors"
-  tk work fix the failing tests               # from inside a repository
-  tk work                                     # open an agent session for the current repo
+  tk do fix the failing tests
+  tk do smolrunner "finish the next safe runner lifecycle slice"
+  tk do ./vmm/src/acpi.rs "clean up the error handling"
+  tk do https://github.com/cloud-hypervisor/cloud-hypervisor/issues/8666
+  tk do https://github.com/cloud-hypervisor/cloud-hypervisor/pull/123 "finish the review fixes"
 
 Git tasks run in terminal-kit-owned worktrees. Current tracked and untracked
 changes are copied into the task checkout while the source checkout stays put.
@@ -39,6 +40,13 @@ need_command() {
 
 canonical_dir() {
   (cd "$1" 2>/dev/null && pwd -P)
+}
+
+canonical_file() {
+  local directory filename
+  directory="$(canonical_dir "$(dirname "$1")")" || return 1
+  filename="$(basename "$1")"
+  printf '%s/%s\n' "$directory" "$filename"
 }
 
 expand_path() {
@@ -104,6 +112,69 @@ remote_repo_name() {
   printf '%s\n' "${value##*/}"
 }
 
+ROUTED_TARGET=""
+ROUTED_REFERENCE=""
+route_reference() {
+  local raw="$1" expanded parent repo_root rest owner remainder repo tail shorthand
+  ROUTED_TARGET=""
+  ROUTED_REFERENCE=""
+  expanded="$(expand_path "$raw")"
+
+  if [[ -f "$expanded" ]]; then
+    parent="$(dirname "$expanded")"
+    repo_root="$(git -C "$parent" rev-parse --show-toplevel 2>/dev/null || true)"
+    if [[ -n "$repo_root" ]]; then
+      ROUTED_TARGET="$(canonical_dir "$repo_root")"
+    else
+      ROUTED_TARGET="$(canonical_dir "$parent")"
+    fi
+    ROUTED_REFERENCE="$(canonical_file "$expanded")"
+    return 0
+  fi
+
+  case "$raw" in
+    https://github.com/*)
+      rest="${raw#https://github.com/}"
+      owner="${rest%%/*}"
+      [[ "$rest" == */* ]] || return 1
+      remainder="${rest#*/}"
+      repo="${remainder%%/*}"
+      repo="${repo%.git}"
+      [[ -n "$owner" && -n "$repo" ]] || return 1
+      if [[ "$remainder" == */* ]]; then
+        tail="${remainder#*/}"
+        [[ -n "$tail" ]] || return 1
+        ROUTED_TARGET="$owner/$repo"
+        ROUTED_REFERENCE="$raw"
+        return 0
+      fi
+      ;;
+  esac
+
+  if [[ "$raw" == *'#'* ]]; then
+    shorthand="${raw%%#*}"
+    if [[ "$shorthand" == */* && "$shorthand" != /* && "$shorthand" != ./* && "$shorthand" != ../* ]]; then
+      ROUTED_TARGET="$shorthand"
+      ROUTED_REFERENCE="$raw"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+compose_reference_prompt() {
+  local reference="$1" requested="$2"
+  [[ -n "$reference" ]] || {
+    printf '%s' "$requested"
+    return 0
+  }
+  if [[ -n "$requested" ]]; then
+    printf 'Primary reference: %s\n\nRequested outcome:\n%s' "$reference" "$requested"
+  else
+    printf 'Use this as the primary reference: %s\nInspect its current state with the repository-native and GitHub tools available to you, infer the appropriate implementation work, carry it through, and run the relevant checks.' "$reference"
+  fi
+}
+
 RESOLVED_PATH=""
 CLONED=false
 resolve_target() {
@@ -152,9 +223,9 @@ worktree_dirty() {
   [[ -n "$(git -C "$1" status --porcelain --untracked-files=all)" ]]
 }
 
-# Create an object-only snapshot of the checkout using an alternate Git index.
-# This captures tracked and non-ignored untracked files without touching the
-# user's index, branch, stash list, or working tree.
+# Create an object-only snapshot using an alternate index. It captures tracked
+# and non-ignored untracked files without touching the user's index, branch,
+# stash list, or working tree.
 snapshot_checkout() {
   local checkout="$1" parent="$2" index tree commit
   index="$(mktemp -t terminal-kit-index.XXXXXX)"
@@ -235,7 +306,8 @@ write_receipt() {
   local file="$1" id="$2" created_at="$3" target="$4" repo_name="$5"
   local repo_root="$6" work_path="$7" branch="$8" base_sha="$9"
   shift 9
-  local agent="$1" launcher="$2" prompt="$3" cloned="$4" seeded_dirty="$5" mode="$6" tmp
+  local agent="$1" launcher="$2" prompt="$3" reference="$4"
+  local cloned="$5" seeded_dirty="$6" mode="$7" tmp
 
   mkdir -p "$STATE_ROOT"
   tmp="$(mktemp "$STATE_ROOT/.receipt.XXXXXX")"
@@ -243,12 +315,12 @@ write_receipt() {
     --arg id "$id" --arg created_at "$created_at" --arg target "$target" \
     --arg repo_name "$repo_name" --arg repo_root "$repo_root" --arg work_path "$work_path" \
     --arg branch "$branch" --arg base_sha "$base_sha" --arg agent "$agent" \
-    --arg launcher "$launcher" --arg prompt "$prompt" --arg mode "$mode" \
+    --arg launcher "$launcher" --arg prompt "$prompt" --arg reference "$reference" --arg mode "$mode" \
     --argjson cloned "$cloned" --argjson seeded_dirty "$seeded_dirty" \
     '{version:1,id:$id,state:"prepared",created_at:$created_at,target:$target,
       repo_name:$repo_name,repo_root:$repo_root,work_path:$work_path,branch:$branch,
-      base_sha:$base_sha,agent:$agent,launcher:$launcher,prompt:$prompt,mode:$mode,
-      cloned:$cloned,seeded_dirty:$seeded_dirty}' > "$tmp"
+      base_sha:$base_sha,agent:$agent,launcher:$launcher,prompt:$prompt,reference:$reference,
+      mode:$mode,cloned:$cloned,seeded_dirty:$seeded_dirty}' > "$tmp"
   mv "$tmp" "$file"
   printf '%s\n' "$id" > "$STATE_ROOT/last"
 }
@@ -463,9 +535,9 @@ start_work() {
   need_command git
   need_command jq
 
-  local current_repo first candidate_match target prompt="" source_path repo_root repo_name repo_slug
+  local current_repo first candidate_match target prompt="" reference="" source_path repo_root repo_name repo_slug
   local id created_at branch work_path base_sha agent launcher seeded_dirty=false mode=worktree
-  local full_prompt="" receipt title
+  local full_prompt="" receipt title expanded
   current_repo="$(current_git_root)"
 
   if (( $# == 0 )); then
@@ -473,7 +545,13 @@ start_work() {
   else
     first="$1"
     candidate_match=""
-    if [[ -d "$(expand_path "$first")" ]]; then
+    expanded="$(expand_path "$first")"
+    if route_reference "$first"; then
+      target="$ROUTED_TARGET"
+      reference="$ROUTED_REFERENCE"
+      shift
+      prompt="$*"
+    elif [[ -d "$expanded" ]]; then
       target="$first"; shift; prompt="$*"
     elif candidate_match="$(find_project_by_name "$first" 2>/dev/null)"; then
       target="$candidate_match"; shift; prompt="$*"
@@ -486,6 +564,7 @@ start_work() {
     fi
   fi
 
+  prompt="$(compose_reference_prompt "$reference" "$prompt")"
   resolve_target "$target"
   source_path="$RESOLVED_PATH"
   if repo_root="$(git -C "$source_path" rev-parse --show-toplevel 2>/dev/null)"; then
@@ -526,10 +605,12 @@ start_work() {
 
   [[ -n "$prompt" ]] && full_prompt="$(agent_policy_prompt "$prompt" "$seeded_dirty")"
   write_receipt "$receipt" "$id" "$created_at" "$target" "$repo_name" "$repo_root" \
-    "$work_path" "$branch" "$base_sha" "$agent" "$launcher" "$prompt" "$CLONED" "$seeded_dirty" "$mode"
+    "$work_path" "$branch" "$base_sha" "$agent" "$launcher" "$prompt" "$reference" \
+    "$CLONED" "$seeded_dirty" "$mode"
 
   title="$repo_name · work"
   log "work $id: ${work_path/#$HOME/\~}"
+  [[ -n "$reference" ]] && log "reference: $reference"
   [[ "$seeded_dirty" == true ]] && log "copied current checkout changes into the isolated worktree"
   if launch_agent "$agent" "$work_path" "$title" "$full_prompt"; then
     update_receipt_state "$receipt" launched launched_at
