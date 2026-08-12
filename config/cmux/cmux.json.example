@@ -65,8 +65,15 @@
   "shortcuts": {
     "showModifierHoldHints": true,
     "bindings": {
+      "newSurface": "cmd+t",
+      "closeTab": "cmd+w",
+      "reopenClosedBrowserPanel": "cmd+shift+t",
       "nextSurface": "ctrl+tab",
-      "prevSurface": "ctrl+shift+tab"
+      "prevSurface": "ctrl+shift+tab",
+      "browserBack": "cmd+[",
+      "browserForward": "cmd+]",
+      "focusBrowserAddressBar": "cmd+l",
+      "find": "cmd+f"
     }
   },
   "markdown": {

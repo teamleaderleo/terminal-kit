@@ -2,12 +2,16 @@
 ⌘D Split right
 ⌘⇧D Split down
 ⌘T New surface
+⌘W Close surface
+⌘⇧T Reopen closed
 ⌘Tab / ⌘⇧Tab Next / previous surface
+⌘⇧] / ⌘⇧[ Next / previous surface
 ⌘⌥Tab macOS app switcher from cmux
 ⌘N New workspace
 ⌘B Toggle sidebar
 ⌘K Clear output
 ⌘↑ Previous prompt
+Right-click Context menu
 y Browse files
 lg Git dashboard
 bt System monitor

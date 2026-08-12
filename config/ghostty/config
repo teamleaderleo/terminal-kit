@@ -14,14 +14,16 @@ link-previews = osc8
 working-directory = home
 
 # Clipboard and screen selection.
-# Dragging output copies it immediately. Cmd+Shift+C is the explicit screen-copy key.
+# Dragging output copies it immediately. Right-click keeps the familiar context
+# menu, so Copy/Paste stay available without sacrificing ordinary selection.
+# Cmd+Shift+C is the explicit screen-copy key.
 # Deliberate keyboard pastes may contain multiple lines without a confirmation prompt.
 clipboard-read = ask
 clipboard-write = allow
 clipboard-trim-trailing-spaces = true
 clipboard-paste-protection = false
 copy-on-select = clipboard
-right-click-action = copy
+right-click-action = context-menu
 mouse-shift-capture = never
 selection-clear-on-typing = true
 selection-clear-on-copy = false
