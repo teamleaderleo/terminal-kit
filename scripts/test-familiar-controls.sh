@@ -31,10 +31,10 @@ grep -Fxq 'keybind = cmd+v=paste_from_clipboard' "$ghostty"
 grep -Fxq 'keybind = cmd+a=csi:25~' "$ghostty"
 
 [[ "$(jq -r '.rules[0].manipulators | length' "$karabiner")" == 6 ]]
-[[ "$(jq -r '.rules[0].manipulators[2].from.key_code' "$karabiner")" == right_bracket ]]
+[[ "$(jq -r '.rules[0].manipulators[2].from.key_code' "$karabiner")" == close_bracket ]]
 [[ "$(jq -r '.rules[0].manipulators[2].from.modifiers.mandatory | join(",")' "$karabiner")" == command,shift ]]
 [[ "$(jq -r '.rules[0].manipulators[2].to[0].modifiers | join(",")' "$karabiner")" == left_control ]]
-[[ "$(jq -r '.rules[0].manipulators[3].from.key_code' "$karabiner")" == left_bracket ]]
+[[ "$(jq -r '.rules[0].manipulators[3].from.key_code' "$karabiner")" == open_bracket ]]
 [[ "$(jq -r '.rules[0].manipulators[3].to[0].modifiers | join(",")' "$karabiner")" == left_control,left_shift ]]
 
 grep -Fq '⌘W Close surface' "$ROOT/config/hints.txt"
