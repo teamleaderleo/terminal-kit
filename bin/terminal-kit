@@ -71,6 +71,9 @@ case "$command_name" in
   karabiner|keymap)
     exec /bin/bash "$ROOT/scripts/karabiner.sh" "$@"
     ;;
+  git|github)
+    exec /bin/bash "$ROOT/scripts/git.sh" "$@"
+    ;;
   theme|themes)
     exec /bin/bash "$ROOT/scripts/theme.sh" "$@"
     ;;
@@ -142,6 +145,7 @@ Usage: terminal-kit <command>
   work / do    Resolve a project, make a reversible task checkout, and launch an agent
   agent        Machine-facing context, policy, durable checkpoints, and task events
   karabiner    Export and sync portable Karabiner key mappings
+  git          Choose SSH or HTTPS for GitHub Git operations
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
   theme        Browse, test, set, rotate, or automate cmux themes
