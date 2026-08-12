@@ -20,9 +20,17 @@ fi
 typeset -g TERMINAL_KIT_SHELL_PID="$$"
 typeset +x TERMINAL_KIT_SHELL_PID 2>/dev/null || true
 
-# Do not call compinit here. Existing frameworks, Bun, and other user startup
-# files often own completion already; running it twice caused security prompts
-# and half-initialised `compdef` state. terminal-kit stays out of that path.
+# Let an existing Zsh framework keep ownership of completion. Plain terminal-kit
+# shells still need a completion system, so initialise one only when `_comps`
+# has not already been created by compinit. `-i` skips insecure completion
+# directories instead of stopping startup with an interactive security prompt.
+if (( ! $+_comps )); then
+  autoload -Uz compinit
+  _terminal_kit_compdump="${ZDOTDIR:-$HOME}/.zcompdump"
+  compinit -i -d "$_terminal_kit_compdump"
+  unset _terminal_kit_compdump
+fi
+
 if command -v zoxide >/dev/null 2>&1; then
   if [[ -z "${TERMINAL_KIT_ZOXIDE_LOADED:-}" ]]; then
     typeset -g TERMINAL_KIT_ZOXIDE_LOADED=1
