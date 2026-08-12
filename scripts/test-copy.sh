@@ -37,16 +37,16 @@ export TEST_PROJECT_ROOT="$test_root/work/project"
 cd "$test_root/work/project/subdir"
 
 TERMINAL_KIT_LAST_COMMAND='pnpm test --filter miniflare' \
-  "$ROOT/scripts/copy.sh" command >/dev/null
+  /bin/bash "$ROOT/scripts/copy.sh" command >/dev/null
 [[ "$(cat "$TEST_CLIPBOARD")" == 'pnpm test --filter miniflare' ]]
 
-"$ROOT/scripts/copy.sh" path >/dev/null
+/bin/bash "$ROOT/scripts/copy.sh" path >/dev/null
 [[ "$(cat "$TEST_CLIPBOARD")" == "$test_root/work/project/subdir" ]]
 
-"$ROOT/scripts/copy.sh" project >/dev/null
+/bin/bash "$ROOT/scripts/copy.sh" project >/dev/null
 [[ "$(cat "$TEST_CLIPBOARD")" == "$test_root/work/project" ]]
 
-CMUX_SURFACE_ID='surface:1' "$ROOT/scripts/copy.sh" screen >/dev/null
+CMUX_SURFACE_ID='surface:1' /bin/bash "$ROOT/scripts/copy.sh" screen >/dev/null
 [[ "$(cat "$TEST_CLIPBOARD")" == $'first visible line\nsecond visible line' ]]
 
 grep -Fq '"showBranchDirectory": false' "$ROOT/config/cmux/cmux.json.example"
