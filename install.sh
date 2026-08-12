@@ -109,6 +109,22 @@ case "$editor_wrap_mode" in
     ;;
 esac
 
+# GitHub Git transport is machine-local. SSH is the terminal-kit default so a
+# pasted https://github.com/... clone or remote still uses the configured SSH key.
+git_protocol_target="$HOME/.config/terminal-kit/git-protocol"
+if [[ ! -e "$git_protocol_target" ]]; then
+  printf 'ssh\n' >"$git_protocol_target"
+fi
+git_protocol="$(tr -d '[:space:]' <"$git_protocol_target")"
+case "$git_protocol" in
+  ssh|https) ;;
+  *)
+    warn "invalid GitHub protocol; resetting to ssh"
+    git_protocol=ssh
+    printf 'ssh\n' >"$git_protocol_target"
+    ;;
+esac
+
 # Memory policy controls how quickly cmux releases off-screen GPU renderers and
 # whether supported idle coding agents may hibernate. Keep both the effective
 # mode and the automatic-controller switch local to this Mac.
@@ -169,6 +185,10 @@ if [[ -r "$ROOT/config/zsh/env.zsh" ]]; then
 fi
 EOF_ZSHENV
 
+# Temporary activation snippets under /tmp cannot survive a reboot and should
+# never become permanent shell startup dependencies. Remove only the narrow
+# source/dot-command form before repairing terminal-kit's own managed block.
+prune_ephemeral_zsh_sources "$HOME/.zshrc"
 replace_managed_block "$HOME/.zshrc" "zsh" <<EOF_ZSH
 if [[ -r "$ROOT/config/zsh/init.zsh" ]]; then
   source "$ROOT/config/zsh/init.zsh"
@@ -177,6 +197,9 @@ EOF_ZSH
 
 mkdir -p "$HOME/.local/bin"
 ln -sfn "$ROOT/bin/terminal-kit" "$HOME/.local/bin/terminal-kit"
+
+# Keep GitHub CLI cloning and raw Git HTTPS URLs on the same saved transport.
+/bin/bash "$ROOT/scripts/git.sh" apply >/dev/null
 
 # cmux has no include mechanism, so render its managed config with machine-local
 # scroll, editor, and memory preferences before comparing or installing it.

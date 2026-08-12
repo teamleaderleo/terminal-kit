@@ -74,6 +74,7 @@ before="$(shasum \
   "$test_root/home/.config/terminal-kit/hints" \
   "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
+  "$test_root/home/.config/terminal-kit/git-protocol" \
   "$test_root/home/.config/terminal-kit/memory-mode" \
   "$test_root/home/.config/terminal-kit/memory-auto" \
   "$test_root/home/.config/cmux/cmux.json" \
@@ -91,6 +92,7 @@ after="$(shasum \
   "$test_root/home/.config/terminal-kit/hints" \
   "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/editor-wrap" \
+  "$test_root/home/.config/terminal-kit/git-protocol" \
   "$test_root/home/.config/terminal-kit/memory-mode" \
   "$test_root/home/.config/terminal-kit/memory-auto" \
   "$test_root/home/.config/cmux/cmux.json" \
@@ -114,6 +116,8 @@ grep -Fxq '1.4' "$test_root/home/.config/terminal-kit/scroll-speed"
 grep -Fxq 'minimal' "$test_root/home/.config/terminal-kit/prompt"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/hints"
 grep -Fxq 'wrap' "$test_root/home/.config/terminal-kit/editor-wrap"
+grep -Fxq 'ssh' "$test_root/home/.config/terminal-kit/git-protocol"
+HOME="$test_root/home" git config --global --get-all 'url.git@github.com:.insteadOf' | grep -Fxq 'https://github.com/'
 grep -Fxq 'balanced' "$test_root/home/.config/terminal-kit/memory-mode"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/memory-auto"
 grep -Fq 'DispatchSource.makeMemoryPressureSource' "$test_root/home/Projects/terminal-kit/tools/memoryd/main.swift"
@@ -122,15 +126,18 @@ grep -Fq 'tk do task Agent worktree' "$test_root/home/Projects/terminal-kit/conf
 grep -Fq 'tk overview All workspaces' "$test_root/home/Projects/terminal-kit/config/hints.txt"
 grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
 grep -Fq "delta --navigate --keep-plus-minus-markers" "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
+grep -Fq "DELTA_PAGER='less -FRX'" "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
 grep -Fq 'format = "$directory$character"' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
 grep -Fq 'truncate_to_repo = true' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
 grep -Fq 'repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
 grep -Fq 'format = "$directory$git_branch$git_status$character"' "$test_root/home/Projects/terminal-kit/config/starship/detailed.toml"
 grep -Fq 'HOMEBREW_NO_UPDATE_REPORT_NEW=1 brew bundle' "$test_root/home/Projects/terminal-kit/scripts/install-tools.sh"
 grep -Fq 'brew "hyperfine"' "$test_root/home/Projects/terminal-kit/Brewfile"
+grep -Fq 'brew "micro"' "$test_root/home/Projects/terminal-kit/Brewfile"
 grep -Fq 'Usage: terminal-kit perf' "$test_root/home/Projects/terminal-kit/scripts/perf.sh"
 grep -Fq 'Usage: terminal-kit memory' "$test_root/home/Projects/terminal-kit/scripts/memory.sh"
 grep -Fq 'Usage: terminal-kit overview' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
+grep -Fq 'Usage: terminal-kit git' "$test_root/home/Projects/terminal-kit/scripts/git.sh"
 grep -Fq 'terminal-kit work [project-or-reference] [task...]' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
 grep -Fq 'tk do ./vmm/src/acpi.rs' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
 grep -Fq 'cloud-hypervisor/issues/8666' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
@@ -138,12 +145,13 @@ grep -Fq -- '--border=rounded' "$test_root/home/Projects/terminal-kit/scripts/ov
 grep -Fq -- '--ansi' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
 grep -Fq 'overview     Browse every cmux window and workspace in one full-screen view' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq 'work / do    Resolve a project, make a reversible task checkout, and launch an agent' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
+grep -Fq 'git          Choose SSH or HTTPS for GitHub Git operations' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq 'memory       Choose renderer reclamation and agent hibernation policy' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
 grep -Fq '"workspaceInheritWorkingDirectory": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openSupportedFilesInCmux": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openMarkdownInCmuxViewer": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showModifierHoldHints": true' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"showBranchDirectory": true' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"showBranchDirectory": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"watchGitStatus": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"indicatorStyle": "solidFill"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"selectionColor": "#313244"' "$test_root/home/.config/cmux/cmux.json"

@@ -35,7 +35,7 @@
     "branchLayout": "inline",
     "showNotificationMessage": false,
     "notificationMessageLineLimit": 1,
-    "showBranchDirectory": true,
+    "showBranchDirectory": false,
     "showPullRequests": false,
     "watchGitStatus": false,
     "showPorts": false,
@@ -78,6 +78,61 @@
   },
   "fileExplorer": {
     "doubleClickAction": "preview"
+  },
+  "actions": {
+    "terminal-kit.copyCommand": {
+      "type": "command",
+      "title": "Copy Last Command",
+      "subtitle": "Copy the previous shell command to the macOS clipboard",
+      "keywords": ["copy", "clipboard", "command", "shell"],
+      "command": "terminal-kit copy command",
+      "target": "currentTerminal",
+      "palette": true,
+      "icon": { "type": "symbol", "name": "doc.on.doc" }
+    },
+    "terminal-kit.copyScreen": {
+      "type": "command",
+      "title": "Copy Visible Screen",
+      "subtitle": "Copy the current cmux terminal screen to the macOS clipboard",
+      "keywords": ["copy", "clipboard", "screen", "output", "terminal"],
+      "command": "terminal-kit copy screen",
+      "target": "currentTerminal",
+      "palette": true,
+      "icon": { "type": "symbol", "name": "rectangle.on.rectangle" }
+    },
+    "terminal-kit.copyPath": {
+      "type": "command",
+      "title": "Copy Current Path",
+      "subtitle": "Copy the current working directory to the macOS clipboard",
+      "keywords": ["copy", "clipboard", "path", "directory", "cwd"],
+      "command": "terminal-kit copy path",
+      "target": "currentTerminal",
+      "palette": true,
+      "icon": { "type": "symbol", "name": "folder" }
+    },
+    "terminal-kit.copyProject": {
+      "type": "command",
+      "title": "Copy Project Path",
+      "subtitle": "Copy the Git root, or the current directory outside Git",
+      "keywords": ["copy", "clipboard", "project", "git", "root"],
+      "command": "terminal-kit copy project",
+      "target": "currentTerminal",
+      "palette": true,
+      "icon": { "type": "symbol", "name": "folder.badge.gearshape" }
+    }
+  },
+  "ui": {
+    "surfaceTabBar": {
+      "buttons": [
+        "cmux.newTerminal",
+        "cmux.newBrowser",
+        "cmux.splitRight",
+        "cmux.splitDown",
+        { "action": "terminal-kit.copyCommand", "title": "Copy Cmd" },
+        { "action": "terminal-kit.copyScreen", "title": "Copy Screen" },
+        { "action": "terminal-kit.copyPath", "title": "Copy Path" }
+      ]
+    }
   },
   "commands": [
     {

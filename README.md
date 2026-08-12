@@ -7,7 +7,7 @@ The Git checkout stays in `~/Projects/terminal-kit`. The installer adds small ma
 ## Install
 
 ```sh
-git clone https://github.com/teamleaderleo/terminal-kit.git ~/Projects/terminal-kit
+git clone git@github.com:teamleaderleo/terminal-kit.git ~/Projects/terminal-kit
 ~/Projects/terminal-kit/install.sh
 exec zsh
 ```
@@ -25,11 +25,13 @@ tk update
 tk / tk update              Pull Git changes, install tools, reload, and refresh Zsh
 tk status                   Show branch, stash count, and working-tree state on demand
 tk apply                    Apply local files without pulling Git
+tk git                      Choose SSH or HTTPS for GitHub Git operations
 tk theme                    Browse, test, set, rotate, or automate cmux themes
 tk glass                    Switch native macOS glass presets
 tk scroll                   Tune cmux wheel and trackpad scroll speed
 tk sidebar                  Tune the left workspace sidebar's minimum width
 tk editor                   Toggle wrapping or horizontal editor scrolling
+tk copy                     Copy the last command, visible screen, current path, or project path
 tk overview                 Browse every cmux window and workspace in one calm full-screen view
 tk hints                    Control optional hints in cmux workspace rows
 tk keys                     Print the compact hotkey and command cheat sheet
@@ -42,6 +44,24 @@ tk test                     Run the repo tests
 tk edit                     Open the repository
 tk uninstall                Remove the managed include blocks
 ```
+
+## GitHub transport
+
+GitHub Git operations default to SSH. terminal-kit also installs a Git rewrite so pasted `https://github.com/...` clone and remote URLs travel over SSH automatically. Browser links remain ordinary HTTPS URLs.
+
+```text
+tk git current     Show the saved GitHub Git transport
+tk git ssh         Use SSH and rewrite GitHub HTTPS Git URLs to SSH
+tk git https       Use HTTPS and remove the terminal-kit rewrite
+```
+
+The GitHub CLI follows the same saved choice. `clip remote` copies the reusable Git remote exactly as configured; `clip web` copies the browser URL.
+
+## Terminal editor and diff viewing
+
+`micro` is installed as the friendly terminal editor. Blank/default `vi`, `vim`, and `nano` editor settings are migrated to `micro` for `EDITOR`, `VISUAL`, Git, GitHub CLI, and sudo editing while explicit custom editor choices are preserved.
+
+Git diffs continue through delta. Short diff views return directly to the prompt; longer views use `less`, where `q` exits and the viewed text remains in terminal scrollback.
 
 ## Workspace overview
 
@@ -262,6 +282,7 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, e
 | `~/.config/terminal-kit/hints` | Machine-local automatic-hint switch |
 | `~/.config/terminal-kit/hint-index` | Machine-local hint rotation position |
 | `~/.config/terminal-kit/editor-wrap` | Machine-local cmux editor mode |
+| `~/.config/terminal-kit/git-protocol` | Machine-local GitHub Git transport choice |
 | `~/.config/terminal-kit/memory-mode` | Machine-local effective renderer and agent-memory policy |
 | `~/.config/terminal-kit/memory-auto` | Machine-local automatic memory-controller switch |
 | `~/Library/LaunchAgents/com.terminal-kit.memory-auto.plist` | Per-user event-driven memory daemon, only when enabled |
@@ -272,12 +293,13 @@ cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, e
 | `config/starship/terminal-kit.toml` | Calm minimal prompt |
 | `config/starship/detailed.toml` | Optional Git-detailed prompt |
 | `config/tmux/tmux.conf` | `~/.tmux.conf` |
-| `config/zsh/env.zsh` | `~/.zshenv`; restores standard macOS and Homebrew command paths early |
-| `config/zsh/init.zsh` | Per-shell helper, prompt, optional hint, and plugin bootstrap |
+| `config/zsh/env.zsh` | `~/.zshenv`; restores command paths and friendly editor defaults early |
+| `config/zsh/init.zsh` | Per-shell helper, prompt, completion, pager, optional hint, and plugin bootstrap |
 | `config/zsh/terminal.zsh` | Editing widgets, history, and aliases |
-| `config/zsh/tools.zsh` | Yazi, wide view, and modern-tool wrappers |
+| `config/zsh/tools.zsh` | Yazi, wide view, clipboard, and modern-tool wrappers |
 | `config/zsh/hints.zsh` | Opt-in fresh-surface hint display and first-command cleanup hook |
 | `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
+| `scripts/git.sh` | GitHub SSH/HTTPS transport preference and HTTPS-to-SSH rewrite |
 | `scripts/perf.sh` | Shell benchmarks, Zsh profiling, and cmux resource reports |
 | `scripts/memory.sh` | Manual presets plus LaunchAgent build and control logic |
 
@@ -315,8 +337,9 @@ The kit also installs:
 - `zoxide` for ranked directory jumping with `z` and `zi`
 - `eza`, `bat`, and `grc` for restrained colour in ordinary command output
 - `delta` for syntax-aware Git diffs and logs
+- `micro` for mouse-friendly terminal editing
 
-Completion initialisation remains owned by the user's existing shell setup; terminal-kit does not run `compinit` a second time.
+terminal-kit reuses an existing Zsh completion setup when present and otherwise initializes `compinit` once for the shell.
 
 The beta cmux TextBox stays hidden for new terminals. Zsh remains the command editor, with Starship only rendering the prompt around it.
 

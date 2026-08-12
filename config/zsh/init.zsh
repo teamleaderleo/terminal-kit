@@ -20,9 +20,17 @@ fi
 typeset -g TERMINAL_KIT_SHELL_PID="$$"
 typeset +x TERMINAL_KIT_SHELL_PID 2>/dev/null || true
 
-# Do not call compinit here. Existing frameworks, Bun, and other user startup
-# files often own completion already; running it twice caused security prompts
-# and half-initialised `compdef` state. terminal-kit stays out of that path.
+# Let an existing Zsh framework keep ownership of completion. Plain terminal-kit
+# shells still need a completion system, so initialise one only when `_comps`
+# has not already been created by compinit. `-i` skips insecure completion
+# directories instead of stopping startup with an interactive security prompt.
+if (( ! $+_comps )); then
+  autoload -Uz compinit
+  _terminal_kit_compdump="${ZDOTDIR:-$HOME}/.zcompdump"
+  compinit -i -d "$_terminal_kit_compdump"
+  unset _terminal_kit_compdump
+fi
+
 if command -v zoxide >/dev/null 2>&1; then
   if [[ -z "${TERMINAL_KIT_ZOXIDE_LOADED:-}" ]]; then
     typeset -g TERMINAL_KIT_ZOXIDE_LOADED=1
@@ -76,10 +84,13 @@ if [[ -z "${BAT_THEME:-}" ]]; then
 fi
 
 # Delta uses BAT_THEME for syntax colours and can detect the terminal background.
-# Keep literal +/- markers too, so copied diffs remain unambiguous after terminal
-# colours are stripped by chat apps, issue trackers, or plain-text paste targets.
+# Short diffs should simply print and return to the prompt. Longer diffs remain in
+# less, where `q` exits; -X leaves the viewed text visible in terminal scrollback.
 if command -v delta >/dev/null 2>&1; then
   export GIT_PAGER='delta --navigate --keep-plus-minus-markers'
+  if [[ -z "${DELTA_PAGER:-}" ]]; then
+    export DELTA_PAGER='less -FRX'
+  fi
 fi
 
 # Plain `tk` and explicit `tk update` both update the kit. Updates replace the

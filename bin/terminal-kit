@@ -71,6 +71,9 @@ case "$command_name" in
   karabiner|keymap)
     exec /bin/bash "$ROOT/scripts/karabiner.sh" "$@"
     ;;
+  git|github)
+    exec /bin/bash "$ROOT/scripts/git.sh" "$@"
+    ;;
   theme|themes)
     exec /bin/bash "$ROOT/scripts/theme.sh" "$@"
     ;;
@@ -85,6 +88,9 @@ case "$command_name" in
     ;;
   editor)
     exec /bin/bash "$ROOT/scripts/editor.sh" "$@"
+    ;;
+  copy|clipboard)
+    exec /bin/bash "$ROOT/scripts/copy.sh" "$@"
     ;;
   overview|workspaces)
     exec /bin/bash "$ROOT/scripts/overview.sh" "$@"
@@ -111,6 +117,8 @@ case "$command_name" in
     exec /bin/bash "$ROOT/scripts/doctor.sh" "$@"
     ;;
   test)
+    /bin/bash "$ROOT/scripts/test-copy.sh"
+    /bin/bash "$ROOT/scripts/test-ergonomics.sh"
     exec /bin/bash "$ROOT/scripts/test.sh" "$@"
     ;;
   publish)
@@ -138,6 +146,7 @@ Usage: terminal-kit <command>
   work / do    Resolve a project, make a reversible task checkout, and launch an agent
   agent        Machine-facing context, policy, durable checkpoints, and task events
   karabiner    Export and sync portable Karabiner key mappings
+  git          Choose SSH or HTTPS for GitHub Git operations
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
   theme        Browse, test, set, rotate, or automate cmux themes
@@ -145,6 +154,7 @@ Usage: terminal-kit <command>
   scroll       Tune cmux mouse-wheel and trackpad scroll speed
   sidebar      Tune the minimum width of cmux's left workspace sidebar
   editor       Toggle wrapping or horizontal scrolling in cmux's text editor
+  copy         Copy the last command, visible screen, current path, or project path
   overview     Browse every cmux window and workspace in one full-screen view
   hints        Control temporary hints in cmux workspace rows
   keys         Print the compact hotkey and command cheat sheet

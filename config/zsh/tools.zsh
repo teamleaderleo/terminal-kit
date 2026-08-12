@@ -39,13 +39,14 @@ wide() {
 }
 
 # Copy common project values, literal text, a file, or piped input to the macOS
-# clipboard. Git remotes are normalized to a clean browser URL when possible.
+# clipboard. `clip remote` preserves the reusable Git transport. `clip web`
+# converts the same origin into an HTTPS browser URL.
 clip() {
   local mode="${1:-}" value label remote
 
   if [[ -z "$mode" ]]; then
     if [[ -t 0 ]]; then
-      print -u2 -- 'Usage: clip path|branch|commit|remote|FILE|TEXT'
+      print -u2 -- 'Usage: clip path|branch|commit|remote|web|FILE|TEXT'
       print -u2 -- '       command | clip'
       return 2
     fi
@@ -73,7 +74,14 @@ clip() {
       }
       label=commit
       ;;
-    remote|repo)
+    remote|repo|clone)
+      value="$(command git remote get-url origin 2>/dev/null)" || {
+        print -u2 -- 'clip: this repository has no origin remote'
+        return 1
+      }
+      label=remote
+      ;;
+    web|browser|url)
       remote="$(command git remote get-url origin 2>/dev/null)" || {
         print -u2 -- 'clip: this repository has no origin remote'
         return 1
@@ -91,7 +99,7 @@ clip() {
           ;;
       esac
       value="${value%.git}"
-      label=remote
+      label=web
       ;;
     *)
       if (( $# == 1 )) && [[ -f "$1" ]]; then

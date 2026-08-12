@@ -13,6 +13,7 @@ brew "git-delta"
 
 # Modern terminal-native tools and prompt.
 brew "starship"
+brew "micro"
 brew "yazi"
 brew "lazygit"
 brew "btop"
