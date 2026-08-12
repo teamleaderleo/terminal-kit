@@ -143,7 +143,7 @@ grep -Fq '"workspaceInheritWorkingDirectory": false' "$test_root/home/.config/cm
 grep -Fq '"openSupportedFilesInCmux": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"openMarkdownInCmuxViewer": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"showModifierHoldHints": true' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"showBranchDirectory": true' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"showBranchDirectory": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"watchGitStatus": false' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"indicatorStyle": "solidFill"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"selectionColor": "#313244"' "$test_root/home/.config/cmux/cmux.json"
