@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 test_root="$(mktemp -d)"
 trap 'rm -rf "$test_root"' EXIT
-mkdir -p "$test_root/home" "$test_root/bin" "$test_root/repo"
+mkdir -p "$test_root/home" "$test_root/bin" "$test_root/repo" "$test_root/backups"
 
 cat > "$test_root/bin/gh" <<'FAKE_GH'
 #!/usr/bin/env bash
@@ -61,9 +61,29 @@ git -C "$test_root/repo" remote add origin git@github.com:example/project.git
 /bin/zsh -c "cd '$test_root/repo'; source '$ROOT/config/zsh/tools.zsh'; clip web >/dev/null"
 [[ "$(cat "$TEST_CLIPBOARD")" == 'https://github.com/example/project' ]]
 
+# A persisted activation under /tmp is guaranteed to go stale across reboots. The
+# repair removes only that narrow source/dot-command form and preserves ordinary
+# startup lines.
+cat > "$HOME/.zshrc" <<'EOF_ZSHRC'
+export KEEP_ME=yes
+. /tmp/quarry-pr436-uv-bin/env
+source '/tmp/another-tool/env'
+source "$HOME/.local/env"
+EOF_ZSHRC
+export BACKUP_DIR="$test_root/backups"
+source "$ROOT/scripts/lib.sh"
+prune_ephemeral_zsh_sources "$HOME/.zshrc" >/dev/null
+grep -Fxq 'export KEEP_ME=yes' "$HOME/.zshrc"
+grep -Fq 'source "$HOME/.local/env"' "$HOME/.zshrc"
+if grep -Fq '/tmp/' "$HOME/.zshrc"; then
+  printf 'terminal-kit: temporary zsh source survived cleanup\n' >&2
+  exit 1
+fi
+[[ -n "$(find "$test_root/backups" -type f -print -quit)" ]]
+
 grep -Fq 'brew "micro"' "$ROOT/Brewfile"
 grep -Fq "export DELTA_PAGER='less -FRX'" "$ROOT/config/zsh/init.zsh"
 grep -Fq 'Prefer SSH GitHub remotes for clone, fetch, push, and remote-edit commands.' "$ROOT/AGENTS.md"
 grep -Fq 'perform the edit directly or provide one pasteable command/heredoc' "$ROOT/AGENTS.md"
 
-printf 'terminal-kit: Git transport, editor, and pager checks passed\n'
+printf 'terminal-kit: Git transport, editor, pager, and startup repair checks passed\n'
