@@ -86,6 +86,9 @@ case "$command_name" in
   editor)
     exec /bin/bash "$ROOT/scripts/editor.sh" "$@"
     ;;
+  copy|clipboard)
+    exec /bin/bash "$ROOT/scripts/copy.sh" "$@"
+    ;;
   overview|workspaces)
     exec /bin/bash "$ROOT/scripts/overview.sh" "$@"
     ;;
@@ -145,6 +148,7 @@ Usage: terminal-kit <command>
   scroll       Tune cmux mouse-wheel and trackpad scroll speed
   sidebar      Tune the minimum width of cmux's left workspace sidebar
   editor       Toggle wrapping or horizontal scrolling in cmux's text editor
+  copy         Copy the last command, visible screen, current path, or project path
   overview     Browse every cmux window and workspace in one full-screen view
   hints        Control temporary hints in cmux workspace rows
   keys         Print the compact hotkey and command cheat sheet
