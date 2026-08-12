@@ -23,6 +23,26 @@ backup_file() {
   fi
 }
 
+prune_ephemeral_zsh_sources() {
+  local file="$1"
+  [[ -e "$file" ]] || return 0
+
+  local output
+  output="$(mktemp)"
+  awk '
+    /^[[:space:]]*(source|\.)[[:space:]]+["\047]?\/tmp\/[^[:space:]"\047]+\/env["\047]?[[:space:]]*(#.*)?$/ { next }
+    { print }
+  ' "$file" > "$output"
+
+  if ! cmp -s "$output" "$file"; then
+    backup_file "$file"
+    mv "$output" "$file"
+    log "removed stale /tmp environment source from ~/.zshrc"
+  else
+    rm -f "$output"
+  fi
+}
+
 replace_managed_block() {
   local file="$1"
   local name="$2"
