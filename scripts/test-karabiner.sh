@@ -14,10 +14,14 @@ jq empty "$ROOT/config/cmux/cmux.json.example"
 [[ "$(jq -r '.shortcuts.bindings.prevSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+shift+tab' ]]
 grep -Fq '⌘Tab / ⌘⇧Tab Next / previous surface' "$ROOT/config/hints.txt"
 [[ "$(jq -r '.rules[0].description' "$ROOT/config/karabiner/terminal-kit.json")" == 'terminal-kit: browser-style cmux surface switching' ]]
-[[ "$(jq -r '.rules[0].manipulators | length' "$ROOT/config/karabiner/terminal-kit.json")" == 4 ]]
+[[ "$(jq -r '.rules[0].manipulators | length' "$ROOT/config/karabiner/terminal-kit.json")" == 6 ]]
 [[ "$(jq -r '.rules[0].manipulators[0].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_control ]]
 [[ "$(jq -r '.rules[0].manipulators[1].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_control,left_shift ]]
-[[ "$(jq -r '.rules[0].manipulators[2].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_command ]]
+[[ "$(jq -r '.rules[0].manipulators[2].from.key_code' "$ROOT/config/karabiner/terminal-kit.json")" == right_bracket ]]
+[[ "$(jq -r '.rules[0].manipulators[2].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_control ]]
+[[ "$(jq -r '.rules[0].manipulators[3].from.key_code' "$ROOT/config/karabiner/terminal-kit.json")" == left_bracket ]]
+[[ "$(jq -r '.rules[0].manipulators[3].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_control,left_shift ]]
+[[ "$(jq -r '.rules[0].manipulators[4].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_command ]]
 
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
