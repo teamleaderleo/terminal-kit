@@ -25,6 +25,10 @@ For work launched through `tk do`, prefer the target repository's own `AGENTS.md
 - Keep running tmux sessions and terminal processes alive during updates.
 - Keep the human command surface tiny; agent-facing JSON and receipts may be richer.
 - Prefer browser-style surface navigation: Control-Tab / Control-Shift-Tab as the portable semantic, with Command aliases on macOS.
+- Prefer SSH GitHub remotes for clone, fetch, push, and remote-edit commands. Use HTTPS for browser/API links.
+- For routine small file changes, perform the edit directly or provide one pasteable command/heredoc. Avoid sending the operator into nano or vim for ceremony.
+- When an interactive terminal editor is genuinely useful, honor `$EDITOR`; terminal-kit defaults legacy vi/vim/nano choices to `micro`.
+- Treat diffs and logs as pager views: `q` exits a long view, while short views should return directly to the prompt.
 
 ## Operator direction
 
