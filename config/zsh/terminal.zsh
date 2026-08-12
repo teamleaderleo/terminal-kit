@@ -1,6 +1,7 @@
 # terminal-kit: Zsh line editing, history, and optional helpers.
 
 bindkey -e
+bindkey '^I' expand-or-complete
 KEYTIMEOUT=1
 WORDCHARS=''
 autoload -Uz select-word-style
@@ -16,6 +17,45 @@ setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_REDUCE_BLANKS
 setopt HIST_FIND_NO_DUPS
+
+# Give cmux a stable, project-level process title whenever the prompt is ready.
+# A child process may temporarily set its own title while it runs; precmd restores
+# the Git root name afterwards. Outside Git, fall back to the current directory.
+_terminal_kit_project_title() {
+  local title root
+  if [[ "$PWD" == "$HOME" ]]; then
+    title='~'
+  elif root="$(command git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)"; then
+    title="${root:t}"
+  else
+    title="${PWD:t}"
+    [[ -n "$title" ]] || title='/'
+  fi
+
+  title="${title//$'\e'/}"
+  title="${title//$'\a'/}"
+  title="${title//$'\n'/ }"
+  printf '\e]2;%s\a' "$title"
+}
+
+# Keep the previous real command available to the external clipboard helper.
+# The copy helper itself is deliberately ignored so clicking Copy Cmd does not
+# replace the command it is trying to copy.
+_terminal_kit_record_command() {
+  local command_text="$1"
+  case "$command_text" in
+    terminal-kit\ copy\ *|tk\ copy\ *) return 0 ;;
+  esac
+  typeset -gx TERMINAL_KIT_LAST_COMMAND="$command_text"
+}
+
+autoload -Uz add-zsh-hook
+add-zsh-hook -d precmd _terminal_kit_project_title 2>/dev/null || true
+add-zsh-hook -d chpwd _terminal_kit_project_title 2>/dev/null || true
+add-zsh-hook -d preexec _terminal_kit_record_command 2>/dev/null || true
+add-zsh-hook precmd _terminal_kit_project_title
+add-zsh-hook chpwd _terminal_kit_project_title
+add-zsh-hook preexec _terminal_kit_record_command
 
 # Calm command-line colours. Keep ordinary typing close to the terminal foreground;
 # reserve indigo for useful distinctions and dim comments/suggestions.
