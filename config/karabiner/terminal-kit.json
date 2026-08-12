@@ -51,7 +51,7 @@
         {
           "type": "basic",
           "from": {
-            "key_code": "right_bracket",
+            "key_code": "close_bracket",
             "modifiers": {
               "mandatory": ["command", "shift"],
               "optional": ["caps_lock"]
@@ -73,7 +73,7 @@
         {
           "type": "basic",
           "from": {
-            "key_code": "left_bracket",
+            "key_code": "open_bracket",
             "modifiers": {
               "mandatory": ["command", "shift"],
               "optional": ["caps_lock"]
