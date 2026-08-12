@@ -84,10 +84,13 @@ if [[ -z "${BAT_THEME:-}" ]]; then
 fi
 
 # Delta uses BAT_THEME for syntax colours and can detect the terminal background.
-# Keep literal +/- markers too, so copied diffs remain unambiguous after terminal
-# colours are stripped by chat apps, issue trackers, or plain-text paste targets.
+# Short diffs should simply print and return to the prompt. Longer diffs remain in
+# less, where `q` exits; -X leaves the viewed text visible in terminal scrollback.
 if command -v delta >/dev/null 2>&1; then
   export GIT_PAGER='delta --navigate --keep-plus-minus-markers'
+  if [[ -z "${DELTA_PAGER:-}" ]]; then
+    export DELTA_PAGER='less -FRX'
+  fi
 fi
 
 # Plain `tk` and explicit `tk update` both update the kit. Updates replace the
