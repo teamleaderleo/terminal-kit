@@ -185,6 +185,10 @@ if [[ -r "$ROOT/config/zsh/env.zsh" ]]; then
 fi
 EOF_ZSHENV
 
+# Temporary activation snippets under /tmp cannot survive a reboot and should
+# never become permanent shell startup dependencies. Remove only the narrow
+# source/dot-command form before repairing terminal-kit's own managed block.
+prune_ephemeral_zsh_sources "$HOME/.zshrc"
 replace_managed_block "$HOME/.zshrc" "zsh" <<EOF_ZSH
 if [[ -r "$ROOT/config/zsh/init.zsh" ]]; then
   source "$ROOT/config/zsh/init.zsh"
