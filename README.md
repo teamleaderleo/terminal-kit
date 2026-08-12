@@ -257,3 +257,100 @@ exec zsh
 The detailed mode shows the Git branch and compact repository state. Both prompt modes use ordinary ANSI colours so they follow the active terminal theme, while failures, long command duration, and background jobs can still appear on the right.
 
 ## Modern terminal tools
+
+The kit installs a restrained terminal-native toolbelt:
+
+- `y` opens Yazi and changes the shell directory to the folder selected on exit.
+- `lg` opens Lazygit in the current repository.
+- `bt` opens btop.
+- `rg`, `fd`, and `jq` provide fast content search, file search, and JSON processing.
+- `wide` opens files or piped output without wrapping long rows.
+
+Yazi image previews can pass through tmux into Ghostty-compatible terminals. In cmux, `Cmd+Up` and `Cmd+Down` jump between shell prompts instead of scrolling line-by-line through command output.
+
+cmux's Command Palette includes Yazi, Lazygit, btop, themes, glass, scrolling, editor wrapping, compact sidebar mode, prompt modes, automatic memory control, memory presets, Task Manager, Cloud VM listing, optional hints, key previews, readability testing, and the all-window workspace overview. The global Dock provides Memory, System, and Feed panels; a project-local `.cmux/dock.json` can replace it with repo-specific logs, tests, servers, or Git controls.
+
+## Managed files
+
+| Repo file | Loaded by |
+| --- | --- |
+| `config/ghostty/config` | Ghostty and cmux behaviour, home-directory default, and keybindings |
+| `config/ghostty/appearance` | Ghostty and cmux theme fallback and typography |
+| `~/.config/terminal-kit/glass.ghostty` | Machine-local native glass preset |
+| `~/.config/terminal-kit/scroll-speed` | Machine-local cmux scroll multiplier |
+| `~/.config/terminal-kit/prompt` | Machine-local prompt mode |
+| `~/.config/terminal-kit/hints` | Machine-local automatic-hint switch |
+| `~/.config/terminal-kit/hint-index` | Machine-local hint rotation position |
+| `~/.config/terminal-kit/editor-wrap` | Machine-local cmux editor mode |
+| `~/.config/terminal-kit/git-protocol` | Machine-local GitHub Git transport choice |
+| `~/.config/terminal-kit/memory-mode` | Machine-local effective renderer and agent-memory policy |
+| `~/.config/terminal-kit/memory-auto` | Machine-local automatic memory-controller switch |
+| `~/Library/LaunchAgents/com.terminal-kit.memory-auto.plist` | Per-user event-driven memory daemon, only when enabled |
+| `tools/memoryd/main.swift` | Native macOS normal/warning/critical pressure listener |
+| `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll, editor, and memory settings |
+| `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
+| `config/hints.txt` | Compact cmux and terminal-kit hint catalogue |
+| `config/starship/terminal-kit.toml` | Calm minimal prompt |
+| `config/starship/detailed.toml` | Optional Git-detailed prompt |
+| `config/tmux/tmux.conf` | `~/.tmux.conf` |
+| `config/zsh/env.zsh` | `~/.zshenv`; restores command paths and friendly editor defaults early |
+| `config/zsh/init.zsh` | Per-shell helper, prompt, completion, pager, optional hint, and plugin bootstrap |
+| `config/zsh/terminal.zsh` | Editing widgets, history, and aliases |
+| `config/zsh/tools.zsh` | Yazi, wide view, clipboard, and modern-tool wrappers |
+| `config/zsh/hints.zsh` | Opt-in fresh-surface hint display and first-command cleanup hook |
+| `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
+| `scripts/git.sh` | GitHub SSH/HTTPS transport preference and HTTPS-to-SSH rewrite |
+| `scripts/perf.sh` | Shell benchmarks, Zsh profiling, and cmux resource reports |
+| `scripts/memory.sh` | Manual presets plus LaunchAgent build and control logic |
+
+Backups go to `~/.config/terminal-kit-backups/`.
+
+## Appearance
+
+Catppuccin Mocha is the fallback theme, while cmux's managed theme override controls the complete active palette:
+
+```ini
+theme = Catppuccin Mocha
+font-family = Menlo
+font-size = 13
+font-thicken = true
+sidebar-font-size = 14
+surface-tab-bar-font-size = 11
+```
+
+The slightly larger, gently thickened text is intended to improve character separation and distance legibility. Balanced padding keeps the grid centred while panes resize.
+
+The base configuration does not fix its own background, foreground, cursor, or selection hex values, so Rosé Pine, Vesper, Catppuccin, and other selected themes can display their full palettes. The cmux sidebar and tmux use theme-responsive backgrounds and restrained companion colours. `bat` uses its `base16` theme and Delta follows `BAT_THEME` where possible.
+
+The built-in Markdown viewer uses a 16-point body size and a narrower reading column, and the plain-text editor defaults to wrapping long lines.
+
+## Shell experience
+
+The prompt supports Mac-like selection, cut, copy, paste, deletion, undo, and redo while preserving standard Unix control keys such as `Ctrl+C` for process interruption.
+
+Valid commands use muted sage, invalid tokens use subdued salmon, and paths and options use restrained indigo-grey accents.
+
+The kit also installs:
+
+- `zsh-syntax-highlighting` and `zsh-autosuggestions`
+- `atuin` and `fzf` for searchable history
+- `zoxide` for ranked directory jumping with `z` and `zi`
+- `eza`, `bat`, and `grc` for restrained colour in ordinary command output
+- `delta` for syntax-aware Git diffs and logs
+- `micro` for mouse-friendly terminal editing
+
+terminal-kit reuses an existing Zsh completion setup when present and otherwise initializes `compinit` once for the shell.
+
+The beta cmux TextBox stays hidden for new terminals. Zsh remains the command editor, with Starship only rendering the prompt around it.
+
+## Ricing roadmap
+
+`docs/ricing-roadmap.md` records the broader cmux customisation surface: custom actions, project layouts, Dock controls, browser automation, notifications, workspace metadata, remaining theme gaps, and sensible future upgrades.
+
+## Session behaviour
+
+`tk` reloads the live tmux server without closing sessions, panes, or running programs. It asks cmux and Ghostty to reload their settings. Other open shells pick up shell changes after `exec zsh`, `source ~/.zshrc`, or opening a fresh workspace.
+
+## Public-repo safety
+
+Keep machine credentials and private values outside this repo. Avoid committing tokens, SSH private keys, cloud credentials, work-only hostnames, private aliases, and command history. Put machine-specific private additions in your existing local config files outside the managed include blocks.
