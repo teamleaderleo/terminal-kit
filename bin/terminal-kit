@@ -114,6 +114,7 @@ case "$command_name" in
     exec /bin/bash "$ROOT/scripts/doctor.sh" "$@"
     ;;
   test)
+    /bin/bash "$ROOT/scripts/test-copy.sh"
     exec /bin/bash "$ROOT/scripts/test.sh" "$@"
     ;;
   publish)
