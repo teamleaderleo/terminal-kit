@@ -24,6 +24,7 @@ jobs:
         run: |
           bash scripts/test.sh > test.log 2>&1
           bash scripts/test-copy.sh >> test.log 2>&1
+          bash scripts/test-ergonomics.sh >> test.log 2>&1
           bash scripts/test-agent.sh >> test.log 2>&1
           bash scripts/test-karabiner.sh >> test.log 2>&1
       - name: Upload failed test log
