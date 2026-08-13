@@ -8,6 +8,15 @@ CMUX_REPO="${TERMINAL_KIT_CMUX_REPO:-https://github.com/teamleaderleo/cmux.git}"
 CMUX_DIR="${TERMINAL_KIT_CMUX_DIR:-$HOME/Projects/cmux-terminal-kit}"
 CMUX_TAG="${TERMINAL_KIT_CMUX_TAG:-terminal-kit}"
 
+# terminal-kit normally prefers SSH for GitHub, including a global HTTPS-to-SSH
+# rewrite. The cmux dogfood checkout is a public, read-only fetch path, and some
+# networks block GitHub SSH on port 22. Ignore only the global Git config for
+# these network operations so this helper stays on HTTPS without changing the
+# user's normal Git transport preference.
+git_https() {
+  GIT_CONFIG_GLOBAL=/dev/null git "$@"
+}
+
 usage() {
   cat <<'HELP'
 Usage: terminal-kit cmux <command>
@@ -35,8 +44,8 @@ ensure_checkout() {
   fi
 
   mkdir -p "$(dirname "$CMUX_DIR")"
-  log "cloning cmux fork into ${CMUX_DIR/#$HOME/\~}"
-  git clone "$CMUX_REPO" "$CMUX_DIR"
+  log "cloning cmux fork into ${CMUX_DIR/#$HOME/\~} over HTTPS"
+  git_https clone "$CMUX_REPO" "$CMUX_DIR"
 }
 
 sync_checkout() {
@@ -50,16 +59,22 @@ sync_checkout() {
   dirty="$(git -C "$CMUX_DIR" status --short)"
   [[ -z "$dirty" ]] || die "cmux fork checkout has local changes; commit or stash them before sync"
 
-  git -C "$CMUX_DIR" pull --ff-only
-  git -C "$CMUX_DIR" submodule sync --recursive
-  git -C "$CMUX_DIR" submodule update --init --recursive
+  # A previous run may have stored an SSH origin. Keep this one checkout on the
+  # explicit fork URL; the scoped Git environment below prevents the user's
+  # global HTTPS-to-SSH rewrite from changing the transport during fetches.
+  git -C "$CMUX_DIR" remote set-url origin "$CMUX_REPO"
+  git_https -C "$CMUX_DIR" pull --ff-only
+  git_https -C "$CMUX_DIR" submodule sync --recursive
+  git_https -C "$CMUX_DIR" submodule update --init --recursive
 }
 
 setup_checkout() {
   sync_checkout
   (
     cd "$CMUX_DIR"
-    ./scripts/setup.sh
+    # setup.sh performs another recursive submodule update. Propagate the same
+    # scoped HTTPS behavior so it cannot fall back to the global SSH rewrite.
+    GIT_CONFIG_GLOBAL=/dev/null ./scripts/setup.sh
   )
 }
 
