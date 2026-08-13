@@ -1,8 +1,9 @@
 # terminal-kit: optional detailed, theme-responsive prompt without Nerd Font dependencies.
 
-add_newline = false
+# Separate commands into visible turns while keeping Git context on the header line.
+add_newline = true
 command_timeout = 800
-format = "$directory$git_branch$git_status$character"
+format = "[╭─](dimmed) $directory$git_branch$git_status$line_break[╰─](dimmed)$character"
 right_format = "$cmd_duration$status$jobs"
 
 [directory]
