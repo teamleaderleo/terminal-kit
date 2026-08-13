@@ -9,6 +9,12 @@ shell-integration = zsh
 shell-integration-features = no-title
 link-previews = osc8
 
+# Long-running commands should announce completion after you have moved elsewhere,
+# without adding terminal bells while you are already watching the command finish.
+notify-on-command-finish = unfocused
+notify-on-command-finish-action = no-bell,notify
+notify-on-command-finish-after = 15s
+
 # New top-level workspaces start at home. cmux can still open an explicit project
 # directory, while tabs and splits inside a project keep their own live context.
 working-directory = home
