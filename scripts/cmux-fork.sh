@@ -35,6 +35,20 @@ Environment overrides:
 HELP
 }
 
+preflight_native_toolchain() {
+  [[ "$(uname -s)" == Darwin ]] || die "cmux fork builds require macOS"
+  command -v xcodebuild >/dev/null 2>&1 || die "full Xcode is required to build cmux"
+  command -v xcrun >/dev/null 2>&1 || die "xcrun is unavailable; install or select full Xcode"
+
+  local developer_dir
+  developer_dir="$(xcode-select -p 2>/dev/null || true)"
+  [[ "$developer_dir" == */Xcode.app/Contents/Developer ]] || die "full Xcode is not selected; run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer"
+
+  if ! xcrun -sdk macosx metal --version >/dev/null 2>&1; then
+    die "Xcode's Metal Toolchain is missing; run: xcodebuild -downloadComponent MetalToolchain"
+  fi
+}
+
 ensure_checkout() {
   if [[ -d "$CMUX_DIR/.git" ]]; then
     return
@@ -69,6 +83,7 @@ sync_checkout() {
 }
 
 setup_checkout() {
+  preflight_native_toolchain
   sync_checkout
   (
     cd "$CMUX_DIR"
