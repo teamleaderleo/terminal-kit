@@ -21,14 +21,21 @@ typeset -g TERMINAL_KIT_SHELL_PID="$$"
 typeset +x TERMINAL_KIT_SHELL_PID 2>/dev/null || true
 
 # Let an existing Zsh framework keep ownership of completion. Plain terminal-kit
-# shells still need a completion system, so initialise one only when `_comps`
-# has not already been created by compinit. `-i` skips insecure completion
-# directories instead of stopping startup with an interactive security prompt.
+# shells use the existing compdump on ordinary launches and do a full discovery
+# pass only when the dump is missing or older than a day. This avoids repeating
+# compinit's directory/security scan on every new terminal while still picking up
+# newly installed completions automatically.
 if (( ! $+_comps )); then
   autoload -Uz compinit
   _terminal_kit_compdump="${ZDOTDIR:-$HOME}/.zcompdump"
-  compinit -i -d "$_terminal_kit_compdump"
-  unset _terminal_kit_compdump
+  typeset -a _terminal_kit_stale_compdump
+  _terminal_kit_stale_compdump=(${~_terminal_kit_compdump}(N.mh+24))
+  if [[ -s "$_terminal_kit_compdump" ]] && (( ${#_terminal_kit_stale_compdump} == 0 )); then
+    compinit -C -d "$_terminal_kit_compdump"
+  else
+    compinit -i -d "$_terminal_kit_compdump"
+  fi
+  unset _terminal_kit_compdump _terminal_kit_stale_compdump
 fi
 
 if command -v zoxide >/dev/null 2>&1; then
@@ -45,7 +52,8 @@ source "$_terminal_kit_zsh_dir/tools.zsh"
 # can opt into Git branch/status details or disable Starship entirely.
 _terminal_kit_prompt_state="minimal"
 if [[ -r "$HOME/.config/terminal-kit/prompt" ]]; then
-  _terminal_kit_prompt_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/prompt")"
+  IFS= read -r _terminal_kit_prompt_state < "$HOME/.config/terminal-kit/prompt" || true
+  _terminal_kit_prompt_state="${_terminal_kit_prompt_state//[[:space:]]/}"
 fi
 [[ "$_terminal_kit_prompt_state" == "on" ]] && _terminal_kit_prompt_state="minimal"
 _terminal_kit_starship_config="$_terminal_kit_zsh_dir/../starship/terminal-kit.toml"
@@ -64,6 +72,34 @@ fi
 # terminal.zsh defines all ZLE widgets and deliberately loads syntax highlighting
 # at its end. Keep it after Starship so highlighting remains the final widget wrapper.
 source "$_terminal_kit_zsh_dir/terminal.zsh"
+
+# terminal.zsh registers the title hooks. Cache the Git-derived project title by
+# working directory so precmd can restore titles after child programs without
+# spawning `git rev-parse` after every command. chpwd naturally refreshes the cache.
+typeset -g _TERMINAL_KIT_PROJECT_TITLE_PWD=''
+typeset -g _TERMINAL_KIT_PROJECT_TITLE=''
+_terminal_kit_project_title() {
+  local title root
+  if [[ "$_TERMINAL_KIT_PROJECT_TITLE_PWD" != "$PWD" || -z "$_TERMINAL_KIT_PROJECT_TITLE" ]]; then
+    if [[ "$PWD" == "$HOME" ]]; then
+      title='~'
+    elif root="$(command git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)"; then
+      title="${root:t}"
+    else
+      title="${PWD:t}"
+      [[ -n "$title" ]] || title='/'
+    fi
+
+    title="${title//$'\e'/}"
+    title="${title//$'\a'/}"
+    title="${title//$'\n'/ }"
+    typeset -g _TERMINAL_KIT_PROJECT_TITLE_PWD="$PWD"
+    typeset -g _TERMINAL_KIT_PROJECT_TITLE="$title"
+  fi
+  printf '\e]2;%s\a' "$_TERMINAL_KIT_PROJECT_TITLE"
+}
+_terminal_kit_project_title
+
 source "$_terminal_kit_zsh_dir/highlight.zsh"
 
 # Optional fresh-surface hints remain available, but are disabled by default because
