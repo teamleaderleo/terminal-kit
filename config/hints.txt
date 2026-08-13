@@ -10,7 +10,8 @@
 ⌘N New workspace
 ⌘B Toggle sidebar
 ⌘K Clear output
-⌘↑ Previous prompt
+⌘↑ / ⌘↓ Previous / next prompt
+⌘ triple-click Select command output
 Right-click Context menu
 y Browse files
 lg Git dashboard
