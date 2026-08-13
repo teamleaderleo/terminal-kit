@@ -1,8 +1,9 @@
 # terminal-kit: calm, theme-responsive default prompt without Nerd Font dependencies.
 
-add_newline = false
+# Separate commands into visible turns while keeping the prompt compact.
+add_newline = true
 command_timeout = 800
-format = "$directory$character"
+format = "[╭─](dimmed) $directory$line_break[╰─](dimmed)$character"
 right_format = "$cmd_duration$status$jobs"
 
 [directory]
