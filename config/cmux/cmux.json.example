@@ -15,7 +15,7 @@
     "copyOnSelect": true,
     "showScrollBar": false,
     "scrollSpeed": 1.4,
-    "showTextBoxOnNewTerminals": false,
+    "showTextBoxOnNewTerminals": true,
     "focusTextBoxOnNewTerminals": false,
     "textBoxMaxLines": 6,
     "rendererRealization": {
