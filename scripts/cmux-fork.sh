@@ -7,12 +7,11 @@ source "$ROOT/scripts/lib.sh"
 CMUX_REPO="${TERMINAL_KIT_CMUX_REPO:-https://github.com/teamleaderleo/cmux.git}"
 CMUX_DIR="${TERMINAL_KIT_CMUX_DIR:-$HOME/Projects/cmux-terminal-kit}"
 CMUX_TAG="${TERMINAL_KIT_CMUX_TAG:-terminal-kit}"
+LEGACY_GITHUB_REWRITE_KEY='url.git@github.com:.insteadOf'
+LEGACY_GITHUB_HTTPS_PREFIX='https://github.com/'
 
-# terminal-kit normally prefers SSH for GitHub, including a global HTTPS-to-SSH
-# rewrite. The cmux dogfood checkout is a public, read-only fetch path, and some
-# networks block GitHub SSH on port 22. Ignore only the global Git config for
-# these network operations so this helper stays on HTTPS without changing the
-# user's normal Git transport preference.
+# Keep only this helper's explicit fork/submodule fetches on HTTPS. Do not
+# blank global Git config for Xcode, SwiftPM, or the rest of the build.
 git_https() {
   GIT_CONFIG_GLOBAL=/dev/null git "$@"
 }
@@ -49,6 +48,12 @@ preflight_native_toolchain() {
   fi
 }
 
+preflight_git_transport() {
+  if git config --global --get-all "$LEGACY_GITHUB_REWRITE_KEY" 2>/dev/null | grep -Fxq "$LEGACY_GITHUB_HTTPS_PREFIX"; then
+    die "legacy global GitHub HTTPS-to-SSH rewrite is active; update terminal-kit and run: tk git apply"
+  fi
+}
+
 ensure_checkout() {
   if [[ -d "$CMUX_DIR/.git" ]]; then
     return
@@ -73,9 +78,6 @@ sync_checkout() {
   dirty="$(git -C "$CMUX_DIR" status --short)"
   [[ -z "$dirty" ]] || die "cmux fork checkout has local changes; commit or stash them before sync"
 
-  # A previous run may have stored an SSH origin. Keep this one checkout on the
-  # explicit fork URL; the scoped Git environment below prevents the user's
-  # global HTTPS-to-SSH rewrite from changing the transport during fetches.
   git -C "$CMUX_DIR" remote set-url origin "$CMUX_REPO"
   git_https -C "$CMUX_DIR" pull --ff-only
   git_https -C "$CMUX_DIR" submodule sync --recursive
@@ -84,12 +86,11 @@ sync_checkout() {
 
 setup_checkout() {
   preflight_native_toolchain
+  preflight_git_transport
   sync_checkout
   (
     cd "$CMUX_DIR"
-    # setup.sh performs another recursive submodule update. Propagate the same
-    # scoped HTTPS behavior so it cannot fall back to the global SSH rewrite.
-    GIT_CONFIG_GLOBAL=/dev/null ./scripts/setup.sh
+    ./scripts/setup.sh
   )
 }
 
@@ -130,19 +131,14 @@ case "$command_name" in
     setup_checkout
     (
       cd "$CMUX_DIR"
-      # xcodebuild resolves Swift packages during reload. Keep those GitHub
-      # fetches on HTTPS too, while preserving the user's normal global SSH
-      # preference outside this scoped build process.
-      GIT_CONFIG_GLOBAL=/dev/null ./scripts/reload.sh --tag "$CMUX_TAG"
+      ./scripts/reload.sh --tag "$CMUX_TAG"
     )
     ;;
   launch|dev)
     setup_checkout
     (
       cd "$CMUX_DIR"
-      # SwiftPM/Xcode inherits this environment, preventing terminal-kit's
-      # global HTTPS-to-SSH rewrite from leaking into package resolution.
-      GIT_CONFIG_GLOBAL=/dev/null ./scripts/reload.sh --tag "$CMUX_TAG" --launch
+      ./scripts/reload.sh --tag "$CMUX_TAG" --launch
     )
     ;;
   path)
