@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cmux="$ROOT/config/cmux/cmux.json.example"
 karabiner="$ROOT/config/karabiner/terminal-kit.json"
 ghostty="$ROOT/config/ghostty/config"
+zsh="$ROOT/config/zsh/terminal.zsh"
 
 command -v jq >/dev/null 2>&1 || {
   printf 'terminal-kit familiar-controls test: jq is required\n' >&2
@@ -29,6 +30,10 @@ grep -Fxq 'right-click-action = context-menu' "$ghostty"
 grep -Fxq 'copy-on-select = clipboard' "$ghostty"
 grep -Fxq 'keybind = cmd+v=paste_from_clipboard' "$ghostty"
 grep -Fxq 'keybind = cmd+a=csi:25~' "$ghostty"
+
+grep -Fq '_terminal_kit_select_all() {' "$zsh"
+grep -Fxq 'zle -N _terminal_kit_select_all' "$zsh"
+grep -Fxq "bindkey '\\e[25~' _terminal_kit_select_all" "$zsh"
 
 [[ "$(jq -r '.rules[0].manipulators | length' "$karabiner")" == 6 ]]
 [[ "$(jq -r '.rules[0].manipulators[2].from.key_code' "$karabiner")" == close_bracket ]]
