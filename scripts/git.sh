@@ -3,8 +3,8 @@ set -euo pipefail
 
 STATE_DIR="$HOME/.config/terminal-kit"
 STATE_FILE="$STATE_DIR/git-protocol"
-GITHUB_REWRITE_KEY='url.git@github.com:.insteadOf'
-GITHUB_HTTPS_PREFIX='https://github.com/'
+LEGACY_GITHUB_REWRITE_KEY='url.git@github.com:.insteadOf'
+LEGACY_GITHUB_HTTPS_PREFIX='https://github.com/'
 
 fail() {
   printf 'terminal-kit: %s\n' "$*" >&2
@@ -18,16 +18,8 @@ set_gh_protocol() {
   fi
 }
 
-add_github_ssh_rewrite() {
-  local existing
-  existing="$(git config --global --get-all "$GITHUB_REWRITE_KEY" 2>/dev/null || true)"
-  if ! grep -Fxq "$GITHUB_HTTPS_PREFIX" <<<"$existing"; then
-    git config --global --add "$GITHUB_REWRITE_KEY" "$GITHUB_HTTPS_PREFIX"
-  fi
-}
-
-remove_github_ssh_rewrite() {
-  git config --global --unset-all "$GITHUB_REWRITE_KEY" '^https://github\.com/$' >/dev/null 2>&1 || true
+remove_legacy_github_ssh_rewrite() {
+  git config --global --unset-all "$LEGACY_GITHUB_REWRITE_KEY" '^https://github\.com/$' >/dev/null 2>&1 || true
 }
 
 apply_mode() {
@@ -35,19 +27,24 @@ apply_mode() {
   command -v git >/dev/null 2>&1 || fail "git is unavailable"
   mkdir -p "$STATE_DIR"
 
+  # Older terminal-kit versions globally rewrote every https://github.com URL
+  # to SSH. That was convenient for pasted clone URLs, but it also changed
+  # transports underneath tools such as SwiftPM and Xcode. Always clean up that
+  # legacy rewrite; transport preference is now scoped to tools/URLs that
+  # explicitly choose it.
+  remove_legacy_github_ssh_rewrite
+
   case "$mode" in
     ssh)
-      add_github_ssh_rewrite
       set_gh_protocol ssh
       printf 'ssh\n' >"$STATE_FILE"
-      printf 'terminal-kit: GitHub Git transport set to SSH\n'
-      printf 'terminal-kit: git will rewrite https://github.com/... remotes to git@github.com:...\n'
+      printf 'terminal-kit: GitHub CLI Git transport set to SSH\n'
+      printf 'terminal-kit: explicit HTTPS GitHub URLs remain HTTPS\n'
       ;;
     https)
-      remove_github_ssh_rewrite
       set_gh_protocol https
       printf 'https\n' >"$STATE_FILE"
-      printf 'terminal-kit: GitHub Git transport set to HTTPS\n'
+      printf 'terminal-kit: GitHub CLI Git transport set to HTTPS\n'
       ;;
     *)
       fail "git mode must be ssh or https"
@@ -58,7 +55,7 @@ apply_mode() {
 current_mode() {
   local saved='ssh' rewrite='off' gh_protocol='unknown'
   [[ -r "$STATE_FILE" ]] && saved="$(tr -d '[:space:]' <"$STATE_FILE")"
-  if git config --global --get-all "$GITHUB_REWRITE_KEY" 2>/dev/null | grep -Fxq "$GITHUB_HTTPS_PREFIX"; then
+  if git config --global --get-all "$LEGACY_GITHUB_REWRITE_KEY" 2>/dev/null | grep -Fxq "$LEGACY_GITHUB_HTTPS_PREFIX"; then
     rewrite='on'
   fi
   if command -v gh >/dev/null 2>&1; then
@@ -66,7 +63,7 @@ current_mode() {
   fi
 
   printf 'terminal-kit: saved GitHub protocol %s\n' "$saved"
-  printf 'terminal-kit: HTTPS-to-SSH Git rewrite %s\n' "$rewrite"
+  printf 'terminal-kit: legacy HTTPS-to-SSH Git rewrite %s\n' "$rewrite"
   printf 'terminal-kit: gh Git protocol %s\n' "$gh_protocol"
 }
 
@@ -83,13 +80,14 @@ usage() {
   cat <<'HELP'
 Usage: terminal-kit git <command>
 
-  current   Show the GitHub transport preference and active rewrite
-  ssh       Use SSH for GitHub Git operations, including pasted HTTPS clone URLs
-  https     Use HTTPS for GitHub Git operations and remove the terminal-kit rewrite
-  apply     Reapply the saved preference
+  current   Show the GitHub transport preference and any legacy rewrite
+  ssh       Prefer SSH for GitHub CLI clone/remote operations
+  https     Prefer HTTPS for GitHub CLI clone/remote operations
+  apply     Reapply the saved preference and remove any legacy global rewrite
 
-Browser links remain HTTPS. This only changes Git transport and the GitHub CLI's
-clone/remote protocol.
+Explicit Git URLs keep the protocol they specify. In particular, HTTPS URLs
+used by Xcode, SwiftPM, package managers, and scripts are no longer silently
+rewritten to SSH.
 HELP
 }
 
