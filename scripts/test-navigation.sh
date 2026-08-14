@@ -9,6 +9,7 @@ bash -n "$ROOT/scripts/apply.sh" "$ROOT/scripts/perf.sh"
 if command -v jq >/dev/null 2>&1; then
   [[ "$(jq -r '.shortcuts.bindings.nextSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+tab' ]]
   [[ "$(jq -r '.shortcuts.bindings.prevSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+shift+tab' ]]
+  [[ "$(jq -r '.terminal.showTextBoxOnNewTerminals' "$ROOT/config/cmux/cmux.json.example")" == 'false' ]]
 fi
 
 grep -Fq 'navigation-cache-v1' "$ROOT/scripts/apply.sh"
@@ -24,8 +25,10 @@ grep -Fq 'select-workspace' "$ROOT/scripts/perf.sh"
 grep -Fq 'not the final painted frame' "$ROOT/scripts/perf.sh"
 
 # A failed bare-name cd can fall through to an exact project basename without
-# changing any successful native cd behavior. macOS runners always provide zsh.
+# changing any successful native cd behavior.
 if command -v zsh >/dev/null 2>&1; then
+  zsh -n "$ROOT/config/zsh/navigation.zsh"
+
   navigation_tmp="$(mktemp -d)"
   trap 'rm -rf "$navigation_tmp"' EXIT
   mkdir -p \
