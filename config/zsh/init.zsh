@@ -5,6 +5,7 @@ _terminal_kit_zsh_dir="${${(%):-%N}:A:h}"
 # Also load the baseline here so `source init.zsh` repairs the current shell,
 # even before the installer has added the ~/.zshenv include.
 source "$_terminal_kit_zsh_dir/env.zsh"
+source "$_terminal_kit_zsh_dir/navigation.zsh"
 
 # Older versions exported these sentinels. A child shell inherited them and
 # incorrectly assumed its own plugins were already loaded. Reset them once per
