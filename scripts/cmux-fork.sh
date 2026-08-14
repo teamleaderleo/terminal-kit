@@ -130,14 +130,19 @@ case "$command_name" in
     setup_checkout
     (
       cd "$CMUX_DIR"
-      ./scripts/reload.sh --tag "$CMUX_TAG"
+      # xcodebuild resolves Swift packages during reload. Keep those GitHub
+      # fetches on HTTPS too, while preserving the user's normal global SSH
+      # preference outside this scoped build process.
+      GIT_CONFIG_GLOBAL=/dev/null ./scripts/reload.sh --tag "$CMUX_TAG"
     )
     ;;
   launch|dev)
     setup_checkout
     (
       cd "$CMUX_DIR"
-      ./scripts/reload.sh --tag "$CMUX_TAG" --launch
+      # SwiftPM/Xcode inherits this environment, preventing terminal-kit's
+      # global HTTPS-to-SSH rewrite from leaking into package resolution.
+      GIT_CONFIG_GLOBAL=/dev/null ./scripts/reload.sh --tag "$CMUX_TAG" --launch
     )
     ;;
   path)
