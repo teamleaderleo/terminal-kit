@@ -94,6 +94,74 @@ setup_checkout() {
   )
 }
 
+cmux_tag_slug() {
+  printf '%s' "$CMUX_TAG" \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9]+/-/g; s/^-+//; s/-+$//; s/-+/-/g'
+}
+
+cmux_tagged_app_path() {
+  local slug products app_path
+  slug="$(cmux_tag_slug)"
+  [[ -n "$slug" ]] || return 1
+  products="$HOME/Library/Developer/Xcode/DerivedData/cmux-${slug}/Build/Products/Debug"
+  app_path="$products/cmux DEV ${slug}.app"
+  [[ -d "$app_path" ]] || return 1
+  printf '%s\n' "$app_path"
+}
+
+cmux_tagged_process_ids() {
+  local executable_path="$1" pattern
+  # The path contains spaces and may contain regexp punctuation from $HOME.
+  # Escape it before anchoring pgrep to argv[0] so this cannot match production
+  # cmux or another tagged dev app.
+  pattern="$(printf '%s' "$executable_path" | sed -E 's/[][(){}.^$*+?|\\]/\\&/g')"
+  pgrep -f "^${pattern}([[:space:]]|$)" 2>/dev/null || true
+}
+
+foreground_tagged_cmux() {
+  local app_path plist executable_name executable_path bundle_id pid
+  local -a pids
+
+  app_path="$(cmux_tagged_app_path)" || die "tagged cmux app was not found after launch"
+  plist="$app_path/Contents/Info.plist"
+  [[ -f "$plist" ]] || die "tagged cmux Info.plist is missing: $plist"
+
+  executable_name="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$plist" 2>/dev/null || true)"
+  [[ -n "$executable_name" ]] || executable_name='cmux DEV'
+  executable_path="$app_path/Contents/MacOS/$executable_name"
+  [[ -x "$executable_path" ]] || die "tagged cmux executable is missing: $executable_path"
+
+  bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$plist" 2>/dev/null || true)"
+  [[ -n "$bundle_id" ]] || die "tagged cmux bundle identifier is missing"
+
+  pids=()
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    pids=($(cmux_tagged_process_ids "$executable_path"))
+    (( ${#pids[@]} > 0 )) && break
+    sleep 0.1
+  done
+  (( ${#pids[@]} == 1 )) || die "expected one tagged cmux process at $executable_path; found ${#pids[@]}"
+  pid="${pids[0]}"
+
+  # reload.sh launches the tagged executable directly so it gets a clean,
+  # tag-specific environment. Opening the exact already-running app bundle here
+  # only asks LaunchServices to foreground that instance; it does not choose a
+  # similarly named production cmux window.
+  /usr/bin/open "$app_path" >/dev/null 2>&1 || die "could not foreground tagged cmux app: $app_path"
+  sleep 0.1
+  kill -0 "$pid" 2>/dev/null || die "tagged cmux process exited while being foregrounded"
+
+  printf '\nterminal-kit cmux dogfood\n'
+  printf 'app:      %s\n' "$app_path"
+  printf 'bundle:   %s\n' "$bundle_id"
+  printf 'pid:      %s\n' "$pid"
+  printf 'commit:   %s\n' "$(git -C "$CMUX_DIR" rev-parse --short HEAD)"
+  if git -C "$CMUX_DIR" rev-parse HEAD:ghostty >/dev/null 2>&1; then
+    printf 'ghostty:  %s\n' "$(git -C "$CMUX_DIR" rev-parse --short HEAD:ghostty)"
+  fi
+}
+
 print_status() {
   printf 'terminal-kit cmux fork\n'
   printf 'repo:     %s\n' "$CMUX_REPO"
@@ -140,6 +208,7 @@ case "$command_name" in
       cd "$CMUX_DIR"
       ./scripts/reload.sh --tag "$CMUX_TAG" --launch
     )
+    foreground_tagged_cmux
     ;;
   path)
     printf '%s\n' "$CMUX_DIR"
