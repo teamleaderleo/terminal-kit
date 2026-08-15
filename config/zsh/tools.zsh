@@ -27,57 +27,6 @@ if command -v fd >/dev/null 2>&1; then
   alias findf='fd --hidden --exclude .git'
 fi
 
-# Let a bare `cd repo-name` jump to a direct child of a known project root when
-# normal shell resolution cannot find the target from the current directory.
-# Relative/absolute paths, CDPATH, `cd -`, and every successful builtin `cd`
-# keep their ordinary zsh behavior. Override the default roots with a
-# colon-separated TERMINAL_KIT_PROJECT_ROOTS value when desired.
-_terminal_kit_project_cd_target() {
-  local name="$1" root candidate
-  local -a roots
-
-  [[ -n "$name" && "$name" != -* && "$name" != */* && "$name" != '.' && "$name" != '..' ]] || return 1
-
-  if [[ -n "${TERMINAL_KIT_PROJECT_ROOTS:-}" ]]; then
-    roots=("${(@s/:/)TERMINAL_KIT_PROJECT_ROOTS}")
-  else
-    roots=("$HOME/Projects" "$HOME/Developer" "$HOME/src")
-  fi
-
-  for root in "${roots[@]}"; do
-    [[ -n "$root" ]] || continue
-    candidate="$root/$name"
-    if [[ -d "$candidate" ]]; then
-      print -r -- "$candidate"
-      return 0
-    fi
-  done
-
-  return 1
-}
-
-cd() {
-  # Try zsh first so local paths, CDPATH, named directories, and other native
-  # resolution keep precedence. Suppress only this probe's error; if the
-  # project fallback also misses, rerun it normally so zsh prints its usual
-  # diagnostic and returns its usual status.
-  if builtin cd -- "$@" 2>/dev/null; then
-    return 0
-  fi
-
-  local first_status=$?
-  if (( $# == 1 )); then
-    local project_target
-    if project_target="$(_terminal_kit_project_cd_target "$1")"; then
-      builtin cd -- "$project_target"
-      return $?
-    fi
-  fi
-
-  builtin cd -- "$@"
-  return $?
-}
-
 # Ordinary terminal output should keep wrapping. `wide` is the deliberate escape
 # hatch for long table rows, logs, source lines, and diffs. less -S keeps each
 # input line on one row; Left/Right move the viewport sideways.
