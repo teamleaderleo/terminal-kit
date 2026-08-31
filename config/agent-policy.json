@@ -8,6 +8,7 @@
     "continueAtNaturalBoundaries": true,
     "preferRepoNativeWorkflow": true,
     "preserveUserWork": true,
+    "preserveTerminalProcesses": true,
     "defaultGitIsolation": "terminal-kit-owned worktree",
     "durableContinuation": "receipt-and-events"
   },
@@ -46,6 +47,11 @@
     "legal_effect",
     "financial_effect"
   ],
+  "ownership": {
+    "cleanupRequiresExactOwnedResource": true,
+    "undoRecovery": "hidden-git-refs-before-owned-worktree-removal",
+    "restoreSource": "receipt-and-hidden-git-refs"
+  },
   "evidence": {
     "terminalTables": "display-only",
     "handoff": "machine-readable",
