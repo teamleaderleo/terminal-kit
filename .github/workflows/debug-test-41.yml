@@ -1,0 +1,24 @@
+name: debug issue 41 navigation
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/test-navigation.sh'
+      - 'config/zsh/navigation.zsh'
+      - '.github/workflows/debug-test-41.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  trace:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          show-progress: false
+      - name: Install JSON parser
+        run: brew install jq
+      - name: Trace navigation test
+        run: bash -x scripts/test-navigation.sh
