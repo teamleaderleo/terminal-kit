@@ -19,4 +19,6 @@ jobs:
       - name: Install JSON parser
         run: brew install jq
       - name: Trace navigation test
-        run: bash -x scripts/test-navigation.sh
+        run: |
+          sed 's/zsh -f -c/zsh -x -f -c/' scripts/test-navigation.sh > scripts/test-navigation-debug.sh
+          bash -x scripts/test-navigation-debug.sh
