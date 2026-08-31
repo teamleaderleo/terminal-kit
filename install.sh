@@ -126,19 +126,19 @@ case "$git_protocol" in
 esac
 
 # Memory policy controls how quickly cmux releases off-screen GPU renderers and
-# whether supported idle coding agents may hibernate. Keep both the effective
-# mode and the automatic-controller switch local to this Mac.
+# whether supported idle coding agents may hibernate. `normal` is the current
+# steady-state default; apply.sh still migrates older untouched `balanced` state.
 memory_target="$HOME/.config/terminal-kit/memory-mode"
 if [[ ! -e "$memory_target" ]]; then
-  printf 'balanced\n' >"$memory_target"
+  printf 'normal\n' >"$memory_target"
 fi
 memory_mode="$(tr -d '[:space:]' <"$memory_target")"
 case "$memory_mode" in
   normal|balanced|lean|ultra) ;;
   *)
-    warn "invalid memory mode; resetting to balanced"
-    memory_mode=balanced
-    printf 'balanced\n' >"$memory_target"
+    warn "invalid memory mode; resetting to normal"
+    memory_mode=normal
+    printf 'normal\n' >"$memory_target"
     ;;
 esac
 
