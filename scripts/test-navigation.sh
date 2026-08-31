@@ -41,9 +41,9 @@ if command -v zsh >/dev/null 2>&1; then
     set -e
     source "$1"
 
+    # Project fallback canonicalizes the chosen target with `pwd -P`; successful
+    # native cd forms must keep Zsh's ordinary logical $PWD behavior.
     project_expected="$(builtin cd -- "$HOME/Projects/cloud-hypervisor" && pwd -P)"
-    scratch_expected="$(builtin cd -- "$HOME/scratch" && pwd -P)"
-    local_expected="$(builtin cd -- "$HOME/scratch/local" && pwd -P)"
 
     cd "$HOME/scratch"
     cd cloud-hypervisor
@@ -51,11 +51,11 @@ if command -v zsh >/dev/null 2>&1; then
 
     cd "$HOME/scratch"
     cd local
-    [[ "$PWD" == "$local_expected" ]]
+    [[ "$PWD" == "$HOME/scratch/local" ]]
 
     cd "$HOME/scratch/local"
     cd ..
-    [[ "$PWD" == "$scratch_expected" ]]
+    [[ "$PWD" == "$HOME/scratch" ]]
 
     export TERMINAL_KIT_PROJECT_DIRS="$2/a:$2/b"
     cd "$HOME/scratch"
@@ -63,7 +63,7 @@ if command -v zsh >/dev/null 2>&1; then
       print -u2 "ambiguous project basename unexpectedly resolved"
       exit 1
     fi
-    [[ "$PWD" == "$scratch_expected" ]]
+    [[ "$PWD" == "$HOME/scratch" ]]
   ' terminal-kit-navigation "$ROOT/config/zsh/navigation.zsh" "$navigation_tmp"
 fi
 
