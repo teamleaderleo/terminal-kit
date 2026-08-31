@@ -134,8 +134,10 @@ git_status="$(HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
 grep -Fq 'terminal-kit: saved GitHub protocol ssh' <<< "$git_status"
 grep -Fq 'terminal-kit: legacy HTTPS-to-SSH Git rewrite off' <<< "$git_status"
 
-# Exercise GitHub CLI protocol selection without requiring a real gh login.
-cat > "$test_root/bin/gh" <<'FAKE_GH'
+# Exercise GitHub CLI protocol selection without requiring a real gh login. The
+# dispatcher prepends ~/.local/bin to PATH, so place the fixture there to keep a
+# host-installed gh from shadowing it.
+cat > "$test_root/home/.local/bin/gh" <<'FAKE_GH'
 #!/usr/bin/env bash
 if [[ "${1:-}" == config && "${2:-}" == set && "${3:-}" == git_protocol ]]; then
   printf '%s\n' "${4:-}" >> "$HOME/.config/terminal-kit/gh-test-protocols"
@@ -147,7 +149,7 @@ if [[ "${1:-}" == config && "${2:-}" == get && "${3:-}" == git_protocol ]]; then
 fi
 exit 1
 FAKE_GH
-chmod +x "$test_root/bin/gh"
+chmod +x "$test_root/home/.local/bin/gh"
 
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/.local/bin/terminal-kit" git https >/dev/null
