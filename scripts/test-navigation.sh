@@ -30,6 +30,7 @@ if command -v zsh >/dev/null 2>&1; then
   zsh -n "$ROOT/config/zsh/navigation.zsh"
 
   navigation_tmp="$(mktemp -d)"
+  navigation_tmp="$(cd "$navigation_tmp" && pwd -P)"
   trap 'rm -rf "$navigation_tmp"' EXIT
   mkdir -p \
     "$navigation_tmp/home/Projects/cloud-hypervisor" \
