@@ -60,6 +60,11 @@ echo Darwin
 FAKE_UNAME
 chmod +x "$test_root/bin/uname"
 
+# Simulate an older terminal-kit install. Current installs must clean this global
+# rewrite instead of preserving or recreating it.
+HOME="$test_root/home" git config --global \
+  url.git@github.com:.insteadOf https://github.com/
+
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/Projects/terminal-kit/install.sh" --skip-tools >/dev/null
 
@@ -117,7 +122,55 @@ grep -Fxq 'minimal' "$test_root/home/.config/terminal-kit/prompt"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/hints"
 grep -Fxq 'wrap' "$test_root/home/.config/terminal-kit/editor-wrap"
 grep -Fxq 'ssh' "$test_root/home/.config/terminal-kit/git-protocol"
-HOME="$test_root/home" git config --global --get-all 'url.git@github.com:.insteadOf' | grep -Fxq 'https://github.com/'
+if HOME="$test_root/home" git config --global --get-all \
+  'url.git@github.com:.insteadOf' | grep -Fxq 'https://github.com/'; then
+  printf 'terminal-kit: legacy GitHub HTTPS-to-SSH rewrite survived install\n' >&2
+  exit 1
+fi
+explicit_https='https://github.com/example/repository.git'
+[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+git_status="$(HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+  "$test_root/home/.local/bin/terminal-kit" git current)"
+grep -Fq 'terminal-kit: saved GitHub protocol ssh' <<< "$git_status"
+grep -Fq 'terminal-kit: legacy HTTPS-to-SSH Git rewrite off' <<< "$git_status"
+
+# Exercise GitHub CLI protocol selection without requiring a real gh login.
+cat > "$test_root/bin/gh" <<'FAKE_GH'
+#!/usr/bin/env bash
+if [[ "${1:-}" == config && "${2:-}" == set && "${3:-}" == git_protocol ]]; then
+  printf '%s\n' "${4:-}" >> "$HOME/.config/terminal-kit/gh-test-protocols"
+  exit 0
+fi
+if [[ "${1:-}" == config && "${2:-}" == get && "${3:-}" == git_protocol ]]; then
+  tail -n 1 "$HOME/.config/terminal-kit/gh-test-protocols" 2>/dev/null || printf 'unknown\n'
+  exit 0
+fi
+exit 1
+FAKE_GH
+chmod +x "$test_root/bin/gh"
+
+HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+  "$test_root/home/.local/bin/terminal-kit" git https >/dev/null
+grep -Fxq 'https' "$test_root/home/.config/terminal-kit/git-protocol"
+grep -Fxq 'https' < <(tail -n 1 "$test_root/home/.config/terminal-kit/gh-test-protocols")
+if HOME="$test_root/home" git config --global --get-all \
+  'url.git@github.com:.insteadOf' | grep -Fxq 'https://github.com/'; then
+  printf 'terminal-kit: git https recreated legacy GitHub rewrite\n' >&2
+  exit 1
+fi
+[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+
+HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+  "$test_root/home/.local/bin/terminal-kit" git ssh >/dev/null
+grep -Fxq 'ssh' "$test_root/home/.config/terminal-kit/git-protocol"
+grep -Fxq 'ssh' < <(tail -n 1 "$test_root/home/.config/terminal-kit/gh-test-protocols")
+if HOME="$test_root/home" git config --global --get-all \
+  'url.git@github.com:.insteadOf' | grep -Fxq 'https://github.com/'; then
+  printf 'terminal-kit: git ssh recreated legacy GitHub rewrite\n' >&2
+  exit 1
+fi
+[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+
 grep -Fxq 'balanced' "$test_root/home/.config/terminal-kit/memory-mode"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/memory-auto"
 grep -Fq 'DispatchSource.makeMemoryPressureSource' "$test_root/home/Projects/terminal-kit/tools/memoryd/main.swift"
