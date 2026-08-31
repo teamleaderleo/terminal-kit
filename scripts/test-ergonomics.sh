@@ -30,19 +30,34 @@ export PATH="$test_root/bin:/usr/bin:/bin"
 export TEST_GH_LOG="$test_root/gh.log"
 export TEST_CLIPBOARD="$test_root/clipboard"
 
-# GitHub Git operations default to SSH, including pasted HTTPS clone/remote URLs.
+# The saved GitHub preference defaults to SSH, while explicit URLs retain their
+# transport. Seed the old global rewrite and prove both current modes remove it.
+git config --global url.git@github.com:.insteadOf https://github.com/
 /bin/bash "$ROOT/scripts/git.sh" ssh >/dev/null
-git config --global --get-all 'url.git@github.com:.insteadOf' | grep -Fxq 'https://github.com/'
+if git config --global --get-all 'url.git@github.com:.insteadOf' 2>/dev/null | grep -Fxq 'https://github.com/'; then
+  printf 'terminal-kit: legacy HTTPS rewrite survived ssh mode\n' >&2
+  exit 1
+fi
 grep -Fq 'config set git_protocol ssh --host github.com' "$TEST_GH_LOG"
 grep -Fxq 'ssh' "$HOME/.config/terminal-kit/git-protocol"
+explicit_https='https://github.com/example/project.git'
+[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
 
 /bin/bash "$ROOT/scripts/git.sh" https >/dev/null
 if git config --global --get-all 'url.git@github.com:.insteadOf' 2>/dev/null | grep -Fxq 'https://github.com/'; then
-  printf 'terminal-kit: HTTPS rewrite survived https mode\n' >&2
+  printf 'terminal-kit: legacy HTTPS rewrite survived https mode\n' >&2
   exit 1
 fi
 grep -Fq 'config set git_protocol https --host github.com' "$TEST_GH_LOG"
+grep -Fxq 'https' "$HOME/.config/terminal-kit/git-protocol"
+[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+
 /bin/bash "$ROOT/scripts/git.sh" ssh >/dev/null
+if git config --global --get-all 'url.git@github.com:.insteadOf' 2>/dev/null | grep -Fxq 'https://github.com/'; then
+  printf 'terminal-kit: legacy HTTPS rewrite returned after ssh mode\n' >&2
+  exit 1
+fi
+[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
 
 # Legacy/default terminal editor choices migrate to micro while custom choices stay intact.
 editor_values="$(
@@ -83,7 +98,8 @@ fi
 
 grep -Fq 'brew "micro"' "$ROOT/Brewfile"
 grep -Fq "export DELTA_PAGER='less -FRX'" "$ROOT/config/zsh/init.zsh"
-grep -Fq 'Prefer SSH GitHub remotes for clone, fetch, push, and remote-edit commands.' "$ROOT/AGENTS.md"
-grep -Fq 'perform the edit directly or provide one pasteable command/heredoc' "$ROOT/AGENTS.md"
+grep -Fq 'SSH is the default preference, explicit URLs keep their protocol, and browser/API links use HTTPS.' "$ROOT/AGENTS.md"
+grep -Fq 'Keep `tk do` and ordinary human commands low-ceremony; agent-facing JSON and receipts may be richer.' "$ROOT/AGENTS.md"
+grep -Fq 'Exact GitHub handoff should prefer `gh ... --json ... --jq ...` or `--template`' "$ROOT/AGENTS.md"
 
 printf 'terminal-kit: Git transport, editor, pager, and startup repair checks passed\n'
