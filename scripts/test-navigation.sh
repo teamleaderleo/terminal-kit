@@ -41,17 +41,21 @@ if command -v zsh >/dev/null 2>&1; then
     set -e
     source "$1"
 
+    project_expected="$(builtin cd -- "$HOME/Projects/cloud-hypervisor" && pwd -P)"
+    scratch_expected="$(builtin cd -- "$HOME/scratch" && pwd -P)"
+    local_expected="$(builtin cd -- "$HOME/scratch/local" && pwd -P)"
+
     cd "$HOME/scratch"
     cd cloud-hypervisor
-    [[ "$PWD" == "$HOME/Projects/cloud-hypervisor" ]]
+    [[ "$PWD" == "$project_expected" ]]
 
     cd "$HOME/scratch"
     cd local
-    [[ "$PWD" == "$HOME/scratch/local" ]]
+    [[ "$PWD" == "$local_expected" ]]
 
     cd "$HOME/scratch/local"
     cd ..
-    [[ "$PWD" == "$HOME/scratch" ]]
+    [[ "$PWD" == "$scratch_expected" ]]
 
     export TERMINAL_KIT_PROJECT_DIRS="$2/a:$2/b"
     cd "$HOME/scratch"
@@ -59,7 +63,7 @@ if command -v zsh >/dev/null 2>&1; then
       print -u2 "ambiguous project basename unexpectedly resolved"
       exit 1
     fi
-    [[ "$PWD" == "$HOME/scratch" ]]
+    [[ "$PWD" == "$scratch_expected" ]]
   ' terminal-kit-navigation "$ROOT/config/zsh/navigation.zsh" "$navigation_tmp"
 fi
 
