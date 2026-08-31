@@ -42,7 +42,7 @@ if command -v zsh >/dev/null 2>&1; then
     source "$1"
 
     # Project fallback canonicalizes the chosen target with `pwd -P`; successful
-    # native cd forms must keep Zsh's ordinary logical $PWD behavior.
+    # native cd forms keep the ordinary logical $PWD behavior.
     project_expected="$(builtin cd -- "$HOME/Projects/cloud-hypervisor" && pwd -P)"
 
     cd "$HOME/scratch"
