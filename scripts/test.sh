@@ -82,6 +82,7 @@ before="$(shasum \
   "$test_root/home/.config/terminal-kit/git-protocol" \
   "$test_root/home/.config/terminal-kit/memory-mode" \
   "$test_root/home/.config/terminal-kit/memory-auto" \
+  "$test_root/home/.config/terminal-kit/navigation-cache-v1" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
@@ -100,6 +101,7 @@ after="$(shasum \
   "$test_root/home/.config/terminal-kit/git-protocol" \
   "$test_root/home/.config/terminal-kit/memory-mode" \
   "$test_root/home/.config/terminal-kit/memory-auto" \
+  "$test_root/home/.config/terminal-kit/navigation-cache-v1" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 
@@ -173,8 +175,18 @@ if HOME="$test_root/home" git config --global --get-all \
 fi
 [[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
 
-grep -Fxq 'balanced' "$test_root/home/.config/terminal-kit/memory-mode"
+# Existing installations that still carry the old untouched balanced default
+# migrate once to normal and record the navigation-cache marker.
+printf 'balanced\n' > "$test_root/home/.config/terminal-kit/memory-mode"
+rm -f "$test_root/home/.config/terminal-kit/navigation-cache-v1"
+cp "$test_root/home/Projects/terminal-kit/config/cmux/cmux.json.example" \
+  "$test_root/home/.config/cmux/cmux.json"
+HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+  "$test_root/home/Projects/terminal-kit/install.sh" --skip-tools >/dev/null
+
+grep -Fxq 'normal' "$test_root/home/.config/terminal-kit/memory-mode"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/memory-auto"
+[[ -e "$test_root/home/.config/terminal-kit/navigation-cache-v1" ]]
 grep -Fq 'DispatchSource.makeMemoryPressureSource' "$test_root/home/Projects/terminal-kit/tools/memoryd/main.swift"
 grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.txt"
 grep -Fq 'tk do task Agent worktree' "$test_root/home/Projects/terminal-kit/config/hints.txt"
@@ -213,8 +225,9 @@ grep -Fq '"selectionColor": "#313244"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"scrollSpeed": 1.4' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"wordWrap": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"doubleClickAction": "preview"' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"maxWarmRenderers": 6' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"maxLiveTerminals": 8' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"idleSeconds": 30' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"maxWarmRenderers": 12' "$test_root/home/.config/cmux/cmux.json"
+grep -Fq '"maxLiveTerminals": 12' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"command": "terminal-kit work"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"command": "terminal-kit memory auto on"' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"command": "terminal-kit overview"' "$test_root/home/.config/cmux/cmux.json"
@@ -222,9 +235,6 @@ grep -Fq '"showCustomMetadata": true' "$test_root/home/.config/cmux/cmux.json"
 grep -Fq '"id": "memory"' "$test_root/home/.config/cmux/dock.json"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/tmux/tmux.conf" "$test_root/home/.tmux.conf"
-cmp -s \
-  "$test_root/home/Projects/terminal-kit/config/cmux/cmux.json.example" \
-  "$test_root/home/.config/cmux/cmux.json"
 cmp -s \
   "$test_root/home/Projects/terminal-kit/config/cmux/dock.json.example" \
   "$test_root/home/.config/cmux/dock.json"
@@ -236,7 +246,7 @@ grep -Fq 'tk overview All workspaces' <<< "$keys_output"
 perf_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" perf status)"
 grep -Fq 'terminal-kit performance settings' <<< "$perf_output"
 memory_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status)"
-grep -Fq 'mode:                 balanced' <<< "$memory_output"
+grep -Fq 'mode:                 normal' <<< "$memory_output"
 grep -Fq 'automatic:            off' <<< "$memory_output"
 
 # Exercise the reversible worktree lifecycle and reference routing. A fake cmux
