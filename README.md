@@ -1,6 +1,6 @@
 # terminal-kit
 
-A small public MIT-licensed macOS dotfiles repo for Ghostty, cmux, tmux, and Zsh.
+A public MIT-licensed macOS terminal environment and agent-work launcher for Ghostty, cmux, tmux, and Zsh. It keeps the everyday terminal setup reproducible while giving coding-agent tasks isolated Git worktrees, durable handoffs, and recovery paths.
 
 The checkout lives at `~/Projects/terminal-kit`. The installer adds managed include blocks to existing shell, tmux, and Ghostty host files. cmux lacks config includes, so terminal-kit owns `~/.config/cmux/cmux.json` and `~/.config/cmux/dock.json` and backs up changed copies before replacement.
 
@@ -45,7 +45,7 @@ Agents bootstrap with `tk agent context --json` and record durable progress with
 | Update and repair | `tk`, `tk update`, `tk apply`, `tk tools`, `tk doctor`, `tk test`, `tk uninstall` | [`bin/terminal-kit`](bin/terminal-kit), [`scripts/apply.sh`](scripts/apply.sh), [`scripts/doctor.sh`](scripts/doctor.sh) |
 | Work and agent state | `tk do`, `tk work`, `tk agent` | [`scripts/work.sh`](scripts/work.sh), [`scripts/agent.sh`](scripts/agent.sh), [`config/agent-policy.json`](config/agent-policy.json) |
 | Git and clipboard | `tk status`, `tk git`, `tk copy` | [`scripts/git.sh`](scripts/git.sh), [`scripts/copy.sh`](scripts/copy.sh) |
-| cmux controls | `tk theme`, `tk glass`, `tk scroll`, `tk sidebar`, `tk editor`, `tk overview`, `tk hints`, `tk keys` | [`scripts/theme.sh`](scripts/theme.sh), [`scripts/glass.sh`](scripts/glass.sh), [`scripts/scroll.sh`](scripts/scroll.sh), [`scripts/sidebar.sh`](scripts/sidebar.sh), [`scripts/editor.sh`](scripts/editor.sh), [`scripts/overview.sh`](scripts/overview.sh), [`scripts/hints.sh`](scripts/hints.sh) |
+| cmux controls and fork | `tk theme`, `tk glass`, `tk scroll`, `tk sidebar`, `tk editor`, `tk overview`, `tk hints`, `tk keys`, `tk cmux` | [`scripts/theme.sh`](scripts/theme.sh), [`scripts/glass.sh`](scripts/glass.sh), [`scripts/scroll.sh`](scripts/scroll.sh), [`scripts/sidebar.sh`](scripts/sidebar.sh), [`scripts/editor.sh`](scripts/editor.sh), [`scripts/overview.sh`](scripts/overview.sh), [`scripts/hints.sh`](scripts/hints.sh), [`scripts/cmux-fork.sh`](scripts/cmux-fork.sh) |
 | Shell and resources | `tk prompt`, `tk perf`, `tk memory` | [`scripts/prompt.sh`](scripts/prompt.sh), [`scripts/perf.sh`](scripts/perf.sh), [`scripts/memory.sh`](scripts/memory.sh) |
 | Keyboard mappings | `tk karabiner` | [`config/karabiner/README.md`](config/karabiner/README.md), [`scripts/karabiner.sh`](scripts/karabiner.sh) |
 | Repository access | `tk publish`, `tk edit`, `tk path` | [`bin/terminal-kit`](bin/terminal-kit), [`scripts/publish.sh`](scripts/publish.sh) |
