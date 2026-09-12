@@ -18,17 +18,17 @@ export TEST_LOG="$scratch/calls"
 export PATH="$scratch/bin:$PATH"
 export HOME="$scratch"
 unset TERMINAL_KIT_CMUX_DIR TERMINAL_KIT_CMUX_TAG
-[[ "$(bash "$ROOT/scripts/cmux-fork.sh" path)" == "$scratch/Projects/cmux" ]]
+[[ "$(bash "$ROOT/bin/terminal-kit" cmux path)" == "$scratch/Projects/cmux" ]]
 # An uncommitted feature checkout with no remote still builds: no implicit pull.
 git -C "$scratch/Projects/cmux" symbolic-ref HEAD refs/heads/feature
-bash "$ROOT/scripts/cmux-fork.sh" build
+bash "$ROOT/bin/terminal-kit" cmux build
 [[ "$(cat "$TEST_LOG")" == "warm --project $scratch/Projects/cmux --profile app" ]]
-if TEST_EXIT=7 bash "$ROOT/scripts/cmux-fork.sh" warm; then
+if TEST_EXIT=7 bash "$ROOT/bin/terminal-kit" cmux warm; then
   echo 'warm swallowed build failure' >&2; exit 1
 fi
-if TERMINAL_KIT_CMUX_TAG=custom bash "$ROOT/scripts/cmux-fork.sh" warm 2>/dev/null; then
+if TERMINAL_KIT_CMUX_TAG=custom bash "$ROOT/bin/terminal-kit" cmux warm 2>/dev/null; then
   echo 'warm ignored explicit conflicting tag' >&2; exit 1
 fi
-TERMINAL_KIT_CMUX_TAG=custom bash "$ROOT/scripts/cmux-fork.sh" build
+TERMINAL_KIT_CMUX_TAG=custom bash "$ROOT/bin/terminal-kit" cmux build
 [[ "$(tail -1 "$TEST_LOG")" == 'native --tag custom --no-global-cli-links' ]]
 echo 'cmux canonical checkout and warm build tests passed'
