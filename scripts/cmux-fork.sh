@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/lib.sh"
 
 CMUX_REPO="${TERMINAL_KIT_CMUX_REPO:-https://github.com/teamleaderleo/cmux.git}"
-CMUX_DIR="${TERMINAL_KIT_CMUX_DIR:-$HOME/Projects/cmux-terminal-kit}"
+CMUX_DIR="${TERMINAL_KIT_CMUX_DIR:-$HOME/Projects/cmux}"
 CMUX_TAG="${TERMINAL_KIT_CMUX_TAG:-terminal-kit}"
 LEGACY_GITHUB_REWRITE_KEY='url.git@github.com:.insteadOf'
 LEGACY_GITHUB_HTTPS_PREFIX='https://github.com/'
@@ -23,8 +23,9 @@ Usage: terminal-kit cmux <command>
   status   Show the fork checkout, revision, and Ghostty pin
   sync     Clone or fast-forward the fork and sync its submodules
   setup    Sync the fork and run cmux's normal developer setup
-  build    Setup, then build the isolated terminal-kit tagged app
-  launch   Setup, build, and launch the isolated terminal-kit tagged app
+  warm     Build the checkout's app profile with Glaeda's persistent caches
+  build    Same as warm (explicit CMUX_TAG uses the native tagged helper)
+  launch   Build and launch the isolated terminal-kit tag; never pulls
   path     Print the local cmux fork checkout path
 
 Environment overrides:
@@ -55,7 +56,9 @@ preflight_git_transport() {
 }
 
 ensure_checkout() {
-  if [[ -d "$CMUX_DIR/.git" ]]; then
+  if git -C "$CMUX_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+    [[ "$(cd "$CMUX_DIR" && pwd -P)" == "$(git -C "$CMUX_DIR" rev-parse --show-toplevel)" ]] \
+      || die "cmux path must be the checkout root: $CMUX_DIR"
     return
   fi
   if [[ -e "$CMUX_DIR" ]]; then
@@ -65,6 +68,24 @@ ensure_checkout() {
   mkdir -p "$(dirname "$CMUX_DIR")"
   log "cloning cmux fork into ${CMUX_DIR/#$HOME/\~} over HTTPS"
   git_https clone "$CMUX_REPO" "$CMUX_DIR"
+}
+
+require_checkout() {
+  [[ -f "$CMUX_DIR/scripts/reload.sh" ]] \
+    || die "cmux checkout is not ready; run: tk cmux setup"
+  git -C "$CMUX_DIR" rev-parse --show-toplevel >/dev/null 2>&1 \
+    || die "cmux path is not a Git checkout"
+}
+
+warm_checkout() {
+  require_checkout
+  command -v glaeda-apple >/dev/null 2>&1 \
+    || die "glaeda-apple is required for warm builds; install Glaeda's native Apple helper"
+  [[ -f "$CMUX_DIR/glaeda.apple.json" ]] \
+    || die "checkout needs a glaeda.apple.json app profile"
+  [[ -z "${TERMINAL_KIT_CMUX_TAG:-}" ]] \
+    || die "warm uses the tag declared in glaeda.apple.json; unset TERMINAL_KIT_CMUX_TAG"
+  glaeda-apple warm --project "$CMUX_DIR" --profile app
 }
 
 sync_checkout() {
@@ -168,7 +189,7 @@ print_status() {
   printf 'path:     %s\n' "${CMUX_DIR/#$HOME/\~}"
   printf 'tag:      %s\n' "$CMUX_TAG"
 
-  if [[ ! -d "$CMUX_DIR/.git" ]]; then
+  if ! git -C "$CMUX_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
     printf 'checkout: missing\n'
     return
   fi
@@ -195,18 +216,22 @@ case "$command_name" in
   setup)
     setup_checkout
     ;;
+  warm)
+    warm_checkout
+    ;;
   build)
-    setup_checkout
-    (
-      cd "$CMUX_DIR"
-      ./scripts/reload.sh --tag "$CMUX_TAG"
-    )
+    if [[ -z "${TERMINAL_KIT_CMUX_TAG:-}" ]]; then
+      warm_checkout
+    else
+      require_checkout
+      (cd "$CMUX_DIR" && ./scripts/reload.sh --tag "$CMUX_TAG" --no-global-cli-links)
+    fi
     ;;
   launch|dev)
-    setup_checkout
+    require_checkout
     (
       cd "$CMUX_DIR"
-      ./scripts/reload.sh --tag "$CMUX_TAG" --launch
+      ./scripts/reload.sh --tag "$CMUX_TAG" --launch --no-global-cli-links
     )
     foreground_tagged_cmux
     ;;

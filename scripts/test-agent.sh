@@ -35,6 +35,8 @@ case "${1:-}" in
 esac
 CMUX
 chmod +x "$fake_bin/cmux"
+mkdir -p "$home/.local/bin"
+cp "$fake_bin/cmux" "$home/.local/bin/cmux"
 
 original_path="$PATH"
 export PATH="$fake_bin:$original_path"

@@ -263,6 +263,10 @@ case "${1:-}" in
 esac
 FAKE_CMUX
   chmod +x "$test_root/bin/cmux"
+  # The installed front door prepends ~/.local/bin and Homebrew. Keep both
+  # launch routes local to the fixture even when cmux-chat is installed.
+  cp "$test_root/bin/cmux" "$test_root/home/.local/bin/cmux"
+  cp "$test_root/bin/cmux" "$test_root/home/.local/bin/cmux-chat"
 
   work_repo="$test_root/home/Projects/work-fixture"
   mkdir -p "$work_repo"
@@ -332,4 +336,5 @@ FAKE_CMUX
     "$test_root/home/.local/bin/terminal-kit" work undo "$url_work_id" >/dev/null
 fi
 
+bash "$ROOT/scripts/test-cmux-fork.sh"
 printf 'terminal-kit tests passed\n'
