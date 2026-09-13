@@ -105,3 +105,9 @@ before switching. Keep the saved profile directory to retain the on configuratio
 `tk sidebar quiet` keeps workspace titles and agent attention while hiding descriptions, paths, logs and custom metadata. `tk sidebar details` brings back paths, PRs, ports, progress and descriptions, with notification text limited to one line. Both preserve your theme, shortcuts, Git watching preference and live processes. These are shared cmux settings, not per-window settings. Switch between them from the cmux command palette after installing the updated configuration.
 
 Use these presets with customization on. They deliberately change the listed sidebar visibility preferences; switching presets does not restore earlier custom values. Neither preset changes renderer caching or animation timing, so perceived smoothness is not a measured performance result.
+
+### Claude and Codex together
+
+Run `tk duo /path/to/project` (or `tk duo` from the project) to open a new, evenly split cmux workspace with Claude on the left and Codex on the right. It uses the ordinary installed CLIs and their normal sign-in, directory-trust and approval flows. Existing sessions are left open. Both agents see the same checkout: the layout does not isolate edits, synchronize conversations or assign work. Give overlapping edits to one agent at a time, or use separate worktrees.
+
+This first trial tests direct access to both agents around one project. Next experiments: unmistakable keyboard focus, enlarging one pane without losing the pair, and visible pending input even when sidebar detail is hidden. Measure switching and scrolling with real activity before changing animation or renderer budgets.
