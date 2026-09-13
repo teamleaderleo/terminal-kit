@@ -94,7 +94,8 @@ and recovery data live in `~/.config/terminal-kit/customization/`.
 
 Agent credentials, hooks, history, running processes, shell setup, Karabiner and
 tmux are unaffected. Select cmux's **Default Workspaces** sidebar separately if a
-custom sidebar is active. Reload cmux/Ghostty configuration after switching.
+custom sidebar is active. The command reloads the reachable cmux instance; reload other cmux/Ghostty
+instances separately.
 Install/apply refuse to reapply customization while the off profile is active.
 Python 3 is required. Invalid JSON and symlinked managed config files are rejected
 before switching. Keep the saved profile directory to retain the on configuration.
