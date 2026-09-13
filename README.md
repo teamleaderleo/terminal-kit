@@ -79,3 +79,22 @@ Memory controls reclaim off-screen renderers while keeping the shell process, PT
 ## Public-repo safety
 
 Keep machine credentials and private values outside this repo: tokens, SSH private keys, cloud credentials, work-only hostnames, private aliases, and command history belong in machine-local config outside terminal-kit-managed blocks.
+
+### Turn the cmux/Ghostty customization on or off
+
+Use `tk customization off`, `tk customization on`, or `tk customization toggle`.
+`tk customization status` reports the current profile. This switches shared
+cmux/Ghostty configuration; it does not isolate different cmux app builds.
+
+The first switch saves the current configuration and derives an off profile by
+removing matching Terminal Kit preset settings and its Ghostty include blocks.
+Unrelated settings and values you customized are retained, so off is not a factory
+reset. Later switches preserve edits made independently in both profiles. State
+and recovery data live in `~/.config/terminal-kit/customization/`.
+
+Agent credentials, hooks, history, running processes, shell setup, Karabiner and
+tmux are unaffected. Select cmux's **Default Workspaces** sidebar separately if a
+custom sidebar is active. Reload cmux/Ghostty configuration after switching.
+Install/apply refuse to reapply customization while the off profile is active.
+Python 3 is required. Invalid JSON and symlinked managed config files are rejected
+before switching. Keep the saved profile directory to retain the on configuration.
