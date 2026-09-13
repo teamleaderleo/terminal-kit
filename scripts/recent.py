@@ -9,6 +9,7 @@ import re
 import shlex
 import subprocess
 import time
+from recent_organization import Organization, arrange, codex_rows, identity
 
 UUID = re.compile(r'^[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$')
 
@@ -67,8 +68,13 @@ def discover(home=None, limit=200):
                     pass
     except OSError:
         pass
-    result = []
+    indexed = codex_rows(codex, limit)
+    result = indexed or []
+    for item in result:
+        item['title'] = titles.get(item['id']) or clean(item['title']) or 'Untitled conversation'
     for provider, candidates in [('Claude', claude.glob('projects/*/*.jsonl')), ('Codex', codex.glob('sessions/**/*.jsonl'))]:
+        if provider == "Codex" and indexed is not None:
+            continue
         for modified, path in newest(candidates, limit):
             sid = path.stem if provider == 'Claude' else None
             cwd = title = custom = ''
@@ -94,7 +100,9 @@ def discover(home=None, limit=200):
     unique = {}
     for item in sorted(result, key=lambda x: x['updated'], reverse=True):
         unique.setdefault((item['provider'], item['id']), item)
-    return list(unique.values())[:limit]
+    # Keep provider pins even when recent unpinned work fills the cap.
+    values = list(unique.values())
+    return [x for x in values if x.get('source_pinned')] + [x for x in values if not x.get('source_pinned')][:limit]
 
 
 def resume_args(item):
@@ -121,9 +129,16 @@ def picker(screen, cmux):
     curses.use_default_colors()
     screen.timeout(15000)
     items = discover()
+    organization = Organization()
+    recent = False
+    focus_key = None
     query, selected, notice = '', 0, ''
     while True:
-        rows = [x for x in items if query.casefold() in (x['title']+' '+x['cwd']+' '+x['provider']).casefold()]
+        ordered = arrange(items, organization.read(), recent)
+        rows = [x for x in ordered if query.casefold() in (x['title']+' '+x['cwd']+' '+x['provider']+' '+x['group']).casefold()]
+        if focus_key is not None:
+            selected = next((i for i,x in enumerate(rows) if identity(x) == focus_key), selected)
+            focus_key = None
         selected = min(selected, max(0, len(rows)-1))
         screen.erase()
         height, width = screen.getmaxyx()
@@ -133,15 +148,15 @@ def picker(screen, cmux):
                     screen.addnstr(y, 0, text, max(0, width-1), attr)
                 except curses.error:
                     pass
-        line(0, 'Recent work   ·   Claude + Codex', curses.A_BOLD)
-        line(1, 'Type to search · ↑↓ select · Enter resume · Ctrl-R refresh · Esc close')
+        line(0, ('Recent' if recent else 'Grouped')+' work   ·   Claude + Codex', curses.A_BOLD)
+        line(1, 'Search · ↑↓ select · Enter resume · ^P pin · ^G group · ^O view · ^U inherit pin · Esc close')
         line(2, 'Search: '+query)
         capacity = max(1, (height-7)//2)
         start = max(0, selected-capacity+1)
         for n, item in enumerate(rows[start:start+capacity], start):
             y = 4+(n-start)*2
-            line(y, f"{item['provider']:6}  {item['title']}", curses.A_REVERSE if n == selected else 0)
-            line(y+1, '        '+item['cwd'].replace(str(Path.home()), '~', 1), curses.A_DIM)
+            line(y, f"{'*' if item['pinned'] else ' '} {item['provider']:6}  {item['title']}", curses.A_REVERSE if n == selected else 0)
+            line(y+1, '          '+item['group'].replace(str(Path.home()), '~', 1), curses.A_DIM)
         line(height-3, notice or f'{len(rows)} conversations · local history · activity elsewhere is unknown')
         line(height-2, 'Resume opens a client; it does not move or stop an existing desktop session.', curses.A_DIM)
         screen.refresh()
@@ -150,7 +165,7 @@ def picker(screen, cmux):
         except curses.error:
             previous = (rows[selected]['provider'], rows[selected]['id']) if rows else None
             items = discover()
-            refreshed = [x for x in items if query.casefold() in (x['title']+' '+x['cwd']+' '+x['provider']).casefold()]
+            refreshed = [x for x in arrange(items, organization.read(), recent) if query.casefold() in (x['title']+' '+x['cwd']+' '+x['provider']+' '+x['group']).casefold()]
             selected = next((i for i, x in enumerate(refreshed) if (x['provider'], x['id']) == previous), 0)
             continue
         if key == '\x1b':
@@ -159,6 +174,30 @@ def picker(screen, cmux):
             selected = max(0, selected-1)
         elif key == curses.KEY_DOWN:
             selected = min(len(rows)-1, selected+1)
+        elif key == '\x0f':
+            recent = not recent
+            selected = 0
+        elif key in ('\x10','\x15') and rows:
+            item = rows[selected]
+            focus_key = identity(item)
+            organization.change(identity(item),'pinned',None if key == '\x15' else not item['pinned'])
+            notice = 'Workbench pin updated; source app unchanged.'
+        elif key == '\x07' and rows:
+            screen.timeout(-1)
+            curses.echo()
+            curses.curs_set(1)
+            try:
+                screen.move(height-3,0)
+                screen.clrtoeol()
+                screen.addnstr(height-3,0,'Group name (blank restores source): ',max(0,width-1))
+                name = clean(screen.getstr(120).decode('utf-8',errors='replace'))
+                focus_key = identity(rows[selected])
+                organization.change(focus_key,'group',name or None)
+                notice = 'Workbench group saved; source app unchanged.'
+            finally:
+                curses.noecho()
+                curses.curs_set(0)
+                screen.timeout(15000)
         elif key == '\x12':
             items = discover()
             notice = 'Refreshed from original histories.'
@@ -182,7 +221,7 @@ def main():
     parser.add_argument('--cmux', default='cmux', help='cmux executable (use the tagged build wrapper for dev work)')
     args = parser.parse_args()
     if args.json:
-        print(json.dumps(discover(), ensure_ascii=False, indent=2))
+        print(json.dumps(arrange(discover(), Organization().read()), ensure_ascii=False, indent=2))
     else:
         curses.wrapper(picker, args.cmux)
 

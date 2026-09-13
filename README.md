@@ -130,3 +130,17 @@ Transcript reads are bounded to the first/last 128 KiB; missing titles appear as
 Untitled conversation. Claude sidechain directories and Codex archived sessions
 are excluded. Titles/paths are private local metadata; JSON output contains them.
 This is the live-history/resume prototype, not yet the native sidebar.
+
+The recent-work trial now starts in **Grouped** view. Codex saved desktop project
+assignments and pin order are read locally (including pins outside the recent
+cutoff). Claude falls back to explicitly labelled recorded working folders; Claude
+desktop pins/custom groups are not imported. Saved desktop metadata may lag the
+application; this does not claim a live cloud synchronization API.
+
+Use **Ctrl-P** to toggle a workbench pin, **Ctrl-G** to assign a mixed-provider
+group (blank restores source grouping), **Ctrl-U** to restore the source pin,
+and **Ctrl-O** to switch between stable grouped order and recency. Search includes
+group names. Local choices persist privately in
+`~/.config/terminal-kit/recent-organization.json` and never write back to either
+provider. Changes use a lock and atomic replacement; invalid state is preserved.
+Manual reordering and collapsing groups are not yet implemented.
