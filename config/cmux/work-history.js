@@ -7,17 +7,29 @@ const [pending, setPending] = signal({});
 const [recent, setRecent] = signal(false);
 const [showMore, setShowMore] = signal(false);
 function key(r) { return r.provider + ':' + r.id; }
-function linked(r) {
-  for (const w of data.workspaces() || []) {
+function buildLinks(workspaces) {
+  const links = Object.create(null);
+  const fallback = Object.create(null);
+  for (const w of workspaces) {
+    const panels = new Set((w.tabs || []).map(t => t.id));
     for (const a of w.agents || []) {
-      if (String(a.id).toLowerCase() === r.id.toLowerCase() &&
-          String(a.kind).toLowerCase().includes(r.provider.toLowerCase()) &&
-          (w.tabs || []).some(t => t.id === a.panelId)) return {w, panel: a.panelId};
+      const kind = String(a.kind).toLowerCase();
+      const provider = kind.includes('claude') ? 'Claude' : kind.includes('codex') ? 'Codex' : null;
+      if (!provider || !panels.has(a.panelId)) continue;
+      const id = provider + ':' + String(a.id).toLowerCase();
+      if (!links[id]) links[id] = {w, panel:a.panelId};
     }
-    if (w.description === 'tk-history:' + key(r)) return {w, panel: null};
+    if (String(w.description || '').startsWith('tk-history:')) {
+      const id = w.description.slice('tk-history:'.length);
+      if (!fallback[id]) fallback[id] = {w,panel:null};
+    }
   }
-  return null;
+  // A known hosting agent beats an old placeholder workspace anywhere in the window.
+  return {...fallback,...links};
 }
+const liveLinks = computed(() => buildLinks(data.workspaces() || []));
+function linked(r) { return liveLinks()[r.provider + ':' + r.id.toLowerCase()] || null; }
+
 function focus(r) {
   const target = linked(r);
   if (target) {

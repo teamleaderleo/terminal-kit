@@ -28,3 +28,10 @@ run('resume(history[0])');
 assert.equal(calls[0].method,'workspace.select');
 assert.equal(calls[0].params.workspace_id,'created');
 console.log('Native history actions passed');
+workspaces=[
+  {id:'placeholder',description:'tk-history:Codex:abc',tabs:[]},
+  {id:'live',agents:[{id:'ABC',kind:'codex',panelId:'live-panel'}],tabs:[{id:'live-panel'}]}
+];calls=[];
+run('focus(history[0])');
+assert.equal(calls[0].params.workspace_id,'live','Exact live session takes precedence over an earlier placeholder');
+assert.equal(calls[1].params.surface_id,'live-panel');
