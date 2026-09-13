@@ -143,6 +143,18 @@
   },
   "commands": [
     {
+      "name": "Sidebar: Quiet",
+      "description": "Keep titles and agent attention; hide supporting detail",
+      "keywords": ["sidebar", "density", "quiet"],
+      "command": "terminal-kit sidebar quiet"
+    },
+    {
+      "name": "Sidebar: Details",
+      "description": "Show paths, PRs and bounded notifications without changing theme",
+      "keywords": ["sidebar", "density", "details"],
+      "command": "terminal-kit sidebar details"
+    },
+    {
       "name": "Workspace: Overview",
       "description": "Browse every cmux window and workspace in one calm full-screen view",
       "keywords": ["workspace", "window", "overview", "switcher", "expose"],

@@ -99,3 +99,9 @@ instances separately.
 Install/apply refuse to reapply customization while the off profile is active.
 Python 3 is required. Invalid JSON and symlinked managed config files are rejected
 before switching. Keep the saved profile directory to retain the on configuration.
+
+### Sidebar density trials
+
+`tk sidebar quiet` keeps workspace titles and agent attention while hiding descriptions, paths, logs and custom metadata. `tk sidebar details` brings back paths, PRs, ports, progress and descriptions, with notification text limited to one line. Both preserve your theme, shortcuts, Git watching preference and live processes. These are shared cmux settings, not per-window settings. Switch between them from the cmux command palette after installing the updated configuration.
+
+Use these presets with customization on. They deliberately change the listed sidebar visibility preferences; switching presets does not restore earlier custom values. Neither preset changes renderer caching or animation timing, so perceived smoothness is not a measured performance result.

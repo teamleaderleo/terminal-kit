@@ -1,0 +1,22 @@
+{
+  "quiet": {
+    "showWorkspaceDescription": false,
+    "showNotificationMessage": false,
+    "showBranchDirectory": false,
+    "showPullRequests": false,
+    "showPorts": false,
+    "showLog": false,
+    "showProgress": false,
+    "showCustomMetadata": false
+  },
+  "details": {
+    "showWorkspaceDescription": true,
+    "showNotificationMessage": true,
+    "showBranchDirectory": true,
+    "showPullRequests": true,
+    "showPorts": true,
+    "showLog": false,
+    "showProgress": true,
+    "showCustomMetadata": true
+  }
+}

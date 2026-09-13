@@ -58,6 +58,8 @@ Usage: terminal-kit sidebar <command>
 
   current       Show the configured minimum width
   compact       Allow the left workspace sidebar to shrink to 180 points
+  quiet         Show titles and agent attention with minimal detail
+  details       Show bounded descriptions, paths, PRs and metadata
   tiny          Allow it to shrink to 140 points
   normal        Restore the 240-point cmux default
   set <points>  Set a custom minimum from 120 through 260
@@ -72,6 +74,9 @@ command_name="${1:-current}"
 shift || true
 
 case "$command_name" in
+  quiet|details)
+    python3 "$(dirname "$0")/sidebar-preset.py" "$command_name"
+    ;;
   current|status)
     current_width
     ;;
