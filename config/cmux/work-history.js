@@ -76,7 +76,7 @@ sidebar(() => VStack({spacing: 5}, [
         Circle({size:4}).fill(()=>linked(r()) ? '#A6ADC8' : 'clear')
       ]).paddingHorizontal(7).paddingVertical(5).cornerRadius(5)
         .background(()=>{const x=linked(r());return x && x.w.selected ? '#80808025' : null;})
-        .hoverBackground('#80808018')]),
+        ]),
       ForEach({items:()=>detail()===key(r()) && !linked(r()) ? [r()] : [],key:key},d=>VStack({spacing:5},[
         Text('Not linked in this window. It may be open in another app.').font(11).secondary().lineLimit(3),
         Text(()=>d().cwd).font(10).secondary().lineLimit(2),

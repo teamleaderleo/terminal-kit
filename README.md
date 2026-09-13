@@ -164,3 +164,10 @@ refreshed by rerunning the command; selection, search and collapse state reset
 on refresh. Native group editing, persistent collapse/order and automatic history
 refresh remain follow-up work. Choose **Default Workspaces** from cmux's sidebar
 menu to return to the standard sidebar. No session is closed by switching views.
+
+Hover-stall investigation: Default Workspaces is responsive; Work with its
+custom hover wash disabled also stopped the reported symptom. The wash remains
+disabled as a temporary mitigation, not a finished interaction. A proposed native
+tracking-layer replacement was parked after its package change triggered a broad
+app rebuild. Do not treat the earlier lookup benchmark or fade removal as an
+end-to-end fix for the reported beachball.
