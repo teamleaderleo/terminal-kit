@@ -111,3 +111,22 @@ Use these presets with customization on. They deliberately change the listed sid
 Run `tk duo /path/to/project` (or `tk duo` from the project) to open a new, evenly split cmux workspace with Claude on the left and Codex on the right. It uses the ordinary installed CLIs and their normal sign-in, directory-trust and approval flows. Existing sessions are left open. Both agents see the same checkout: the layout does not isolate edits, synchronize conversations or assign work. Give overlapping edits to one agent at a time, or use separate worktrees.
 
 This first trial tests direct access to both agents around one project. Next experiments: unmistakable keyboard focus, enlarging one pane without losing the pair, and visible pending input even when sidebar detail is hidden. Measure switching and scrolling with real activity before changing animation or renderer budgets.
+
+### Recent conversations (local trial)
+
+`tk recent` opens a compact searchable Claude/Codex history picker. Type a project,
+title or provider, use arrows to select, and Enter to resume in a new cmux workspace.
+The list refreshes every 15 seconds; Ctrl-R refreshes immediately; Escape closes. `tk recent --json` returns metadata for a future
+sidebar adapter. `--cmux /path/to/tag-cli` targets an isolated development build.
+
+The picker reads local client history without modifying it. It uses exact session
+IDs and the recorded project directory. It does not synchronize cloud-only chats,
+import T3 history, detect clients already running elsewhere, or claim all desktop
+sessions are CLI-compatible. Normal client trust prompts remain in place. Do not
+resume a conversation already executing in another client.
+
+Discovery considers the newest 200 files per provider and returns up to 200 rows.
+Transcript reads are bounded to the first/last 128 KiB; missing titles appear as
+Untitled conversation. Claude sidechain directories and Codex archived sessions
+are excluded. Titles/paths are private local metadata; JSON output contains them.
+This is the live-history/resume prototype, not yet the native sidebar.

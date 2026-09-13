@@ -340,3 +340,5 @@ bash "$ROOT/scripts/test-cmux-fork.sh"
 python3 "$ROOT/scripts/test-customization.py"
 python3 "$ROOT/scripts/test-sidebar-preset.py"
 printf 'terminal-kit tests passed\n'
+
+python3 "$ROOT/scripts/test-recent.py"

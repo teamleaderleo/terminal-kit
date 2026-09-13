@@ -27,6 +27,9 @@ command_name="${1:-help}"
 shift || true
 
 case "$command_name" in
+  recent)
+    exec python3 "$ROOT/scripts/recent.py" "$@"
+    ;;
   duo)
     exec /bin/bash "$ROOT/scripts/duo.sh" "$@"
     ;;
@@ -169,6 +172,7 @@ Usage: terminal-kit <command>
   theme        Browse, test, set, rotate, or automate cmux themes
   glass        Switch native macOS glass presets
   scroll       Tune cmux mouse-wheel and trackpad scroll speed
+  recent       Find and resume existing Claude/Codex conversations
   duo          Open Claude and Codex side by side for a project
   sidebar      Tune the minimum width of cmux's left workspace sidebar
   editor       Toggle wrapping or horizontal scrolling in cmux's text editor
