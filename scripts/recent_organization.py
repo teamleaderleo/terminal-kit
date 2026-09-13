@@ -110,5 +110,5 @@ def arrange(items, state, recent=False):
     return sorted(result,key=lambda x:(
         0 if x['pinned'] else 1,
         (0, '') if x['pinned'] else (x.get('source_group_order',100000) if x['group_origin'] != 'Workbench' else -1, x['group']),
-        x['local_order'] if x['pinned'] or x['group_origin']=='Workbench' else x.get('source_pin_order',0),
+        (x['local_order'] if x['local_order'] != 100000 else x.get('source_pin_order',100000)) if x['pinned'] else x['local_order'] if x['group_origin']=='Workbench' else 0,
         x['title'].casefold(), identity(x)))

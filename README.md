@@ -144,3 +144,23 @@ group names. Local choices persist privately in
 `~/.config/terminal-kit/recent-organization.json` and never write back to either
 provider. Changes use a lock and atomic replacement; invalid state is preserved.
 Manual reordering and collapsing groups are not yet implemented.
+
+### Native Work sidebar
+
+`tk recent --sidebar` refreshes the history snapshot and selects **tk-work** in
+cmux's actual left sidebar. Use the tagged `--cmux` wrapper for dev builds. The
+existing terminal picker remains available for editing persistent groups/pins.
+
+The native view has compact conversation buttons, collapsible headings, search
+and a Recents switch. It focuses live agent surfaces using exact session IDs and
+hosting panel IDs. Unknown ownership opens an inline choice; only the explicit
+resume button launches a client. New launches carry a stable conversation marker
+so later clicks focus that workspace. The client still enforces its session lock.
+Repeated clicks are suppressed while creation is pending. A failed request can
+be retried by refreshing the sidebar; inline socket error reporting remains a gap.
+
+Live surface/focus state updates automatically. History itself is a snapshot,
+refreshed by rerunning the command; selection, search and collapse state reset
+on refresh. Native group editing, persistent collapse/order and automatic history
+refresh remain follow-up work. Choose **Default Workspaces** from cmux's sidebar
+menu to return to the standard sidebar. No session is closed by switching views.
