@@ -96,4 +96,37 @@ class CodexOrganizationTests(unittest.TestCase):
             self.assertTrue(rows[0]['source_pinned'])
             self.assertEqual(rows[0]['source_group'],'Codex · Actual project')
 
+
+class LiveHistoryTests(unittest.TestCase):
+    def test_opencode_metadata_read_and_resume(self):
+        import sqlite3
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            db = home/'.local/share/opencode/opencode.db'; db.parent.mkdir(parents=True)
+            with sqlite3.connect(db) as conn:
+                conn.execute('CREATE TABLE session (id TEXT,directory TEXT,title TEXT,time_updated INTEGER,parent_id TEXT,time_archived INTEGER)')
+                conn.executemany('INSERT INTO session VALUES (?,?,?,?,?,?)', [
+                    ('ses_abc123',tmp,'A\\n title',2500,None,None),
+                    ('ses_archived',tmp,'Archived',3000,None,1),
+                    ('ses_child',tmp,'Child',4000,'ses_abc123',None)])
+            before = db.read_bytes()
+            rows = r.discover(home)
+            self.assertEqual(len(rows),1)
+            self.assertEqual(rows[0]['updated'],2.5)
+            self.assertEqual(r.resume_args(rows[0]),['opencode','--session','ses_abc123'])
+            self.assertEqual(db.read_bytes(),before)
+
+    def test_project_recency_chat_recency_pins_and_canonical_folder(self):
+        from recent_organization import arrange
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)/'real'; folder.mkdir()
+            alias = Path(tmp)/'alias'; alias.symlink_to(folder)
+            def row(sid, group, updated, **extra):
+                return dict(provider='Claude',id=sid,cwd=str(alias),title=sid,updated=updated,source_group=group,**extra)
+            rows=arrange([row('old','A',1),row('new','A',9),row('middle','B',5),
+                row('pin2','B',100,source_pinned=True,source_pin_order=2),
+                row('pin1','A',0,source_pinned=True,source_pin_order=1)], {'items':{},'order':[]})
+            self.assertEqual([x['id'] for x in rows],['pin1','pin2','new','old','middle'])
+            self.assertEqual({x['canonical_folder'] for x in rows},{str(folder.resolve())})
+
 if __name__=='__main__':unittest.main()

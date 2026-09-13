@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import shlex
+import sqlite3
 import subprocess
 import time
 import uuid
@@ -53,6 +54,24 @@ def newest(paths, limit):
     return sorted(found, reverse=True)[:limit]
 
 
+def opencode_rows(home, limit):
+    root = Path(os.environ.get('XDG_DATA_HOME', home/'.local/share')) if home == Path.home() else home/'.local/share'
+    db = root/'opencode/opencode.db'
+    if not db.is_file():
+        return []
+    connection = None
+    try:
+        connection = sqlite3.connect(db.as_uri()+'?mode=ro', uri=True, timeout=0.2)
+        rows = connection.execute('SELECT id,directory,title,time_updated FROM session WHERE parent_id IS NULL AND time_archived IS NULL ORDER BY time_updated DESC LIMIT ?', (limit,))
+        return [dict(provider='OpenCode', id=sid, cwd=cwd, title=clean(title) or 'Untitled conversation', updated=updated/1000)
+                for sid,cwd,title,updated in rows if re.fullmatch(r'ses_[A-Za-z0-9]+', sid) and Path(cwd).is_absolute()]
+    except (sqlite3.Error, OSError):
+        return []
+    finally:
+        if connection is not None:
+            connection.close()
+
+
 def discover(home=None, limit=200):
     home = Path(home or Path.home())
     codex = Path(os.environ.get('CODEX_HOME', home/'.codex')) if home == Path.home() else home/'.codex'
@@ -70,9 +89,9 @@ def discover(home=None, limit=200):
     except OSError:
         pass
     indexed = codex_rows(codex, limit)
-    result = indexed or []
+    result = (indexed or []) + opencode_rows(home, limit)
     for item in result:
-        item['title'] = titles.get(item['id']) or clean(item['title']) or 'Untitled conversation'
+        item['title'] = (titles.get(item['id']) if item['provider'] == 'Codex' else None) or clean(item['title']) or 'Untitled conversation'
     for provider, candidates in [('Claude', claude.glob('projects/*/*.jsonl')), ('Codex', codex.glob('sessions/**/*.jsonl'))]:
         if provider == "Codex" and indexed is not None:
             continue
@@ -107,6 +126,10 @@ def discover(home=None, limit=200):
 
 
 def resume_args(item):
+    if item['provider'] == 'OpenCode':
+        if not re.fullmatch(r'ses_[A-Za-z0-9]+', item['id']):
+            raise ValueError('Invalid session identity')
+        return ['opencode', '--session', item['id']]
     if not UUID.fullmatch(item['id']):
         raise ValueError('Invalid session identity')
     if item['provider'] == 'Claude':
@@ -220,9 +243,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--json', action='store_true', help='Print recent conversation metadata without launching clients')
     parser.add_argument('--cmux', default='cmux', help='cmux executable (use the tagged build wrapper for dev work)')
+    parser.add_argument('--native-sidebar', action='store_true', help='Install the live conversation sidebar (requires the promoted cmux build)')
     parser.add_argument('--sidebar', action='store_true', help='Refresh and select the native Work sidebar')
     args = parser.parse_args()
-    if args.sidebar:
+    if args.native_sidebar:
+        destination = Path.home()/'.config/cmux/sidebars/tk-conversations.js'
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text('// cmux:conversation-sidebar\n')
+        destination.chmod(0o600)
+        subprocess.run([args.cmux, 'sidebar', 'select', 'tk-conversations'], check=True)
+    elif args.sidebar:
         rows = arrange(discover(), Organization().read())
         for item in rows:
             item['command'] = shlex.join(resume_args(item))
@@ -243,7 +273,11 @@ def main():
         subprocess.run([args.cmux, 'sidebar', 'validate', 'tk-work'], check=True)
         subprocess.run([args.cmux, 'sidebar', 'select', 'tk-work'], check=True)
     elif args.json:
-        print(json.dumps(arrange(discover(), Organization().read()), ensure_ascii=False, indent=2))
+        rows = arrange(discover(), Organization().read())
+        for item in rows:
+            item['command'] = shlex.join(resume_args(item))
+            item['operation'] = str(uuid.uuid5(uuid.NAMESPACE_URL, 'cmux-history:'+identity(item)))
+        print(json.dumps(rows, ensure_ascii=False))
     else:
         curses.wrapper(picker, args.cmux)
 

@@ -100,6 +100,7 @@ def arrange(items, state, recent=False):
     for original in items:
         item = dict(original)
         local = state['items'].get(identity(item),{})
+        item['canonical_folder'] = str(Path(item['cwd']).resolve()) if Path(item['cwd']).is_absolute() else ''
         item['pinned'] = local.get('pinned',item.get('source_pinned',False))
         item['group'] = local.get('group') or item.get('source_group') or ('Folder · '+item['cwd'])
         item['group_origin'] = 'Workbench' if local.get('group') else item.get('organization_source','Recorded working folder')
@@ -107,8 +108,13 @@ def arrange(items, state, recent=False):
         result.append(item)
     if recent:
         return sorted(result,key=lambda x:-x['updated'])
-    return sorted(result,key=lambda x:(
+    group_activity = {}
+    for item in result:
+        if not item['pinned']:
+            group_activity[item['group']] = max(group_activity.get(item['group'], 0), item['updated'])
+    return sorted(result, key=lambda x: (
         0 if x['pinned'] else 1,
-        (0, '') if x['pinned'] else (x.get('source_group_order',100000) if x['group_origin'] != 'Workbench' else -1, x['group']),
-        (x['local_order'] if x['local_order'] != 100000 else x.get('source_pin_order',100000)) if x['pinned'] else x['local_order'] if x['group_origin']=='Workbench' else 0,
-        x['title'].casefold(), identity(x)))
+        0 if x['pinned'] else -group_activity[x['group']],
+        '' if x['pinned'] else x['group'],
+        (x['local_order'] if x['local_order'] != 100000 else x.get('source_pin_order',100000)) if x['pinned'] else -x['updated'],
+        identity(x)))
