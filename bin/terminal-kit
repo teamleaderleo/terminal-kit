@@ -95,6 +95,9 @@ case "$command_name" in
   overview|workspaces)
     exec /bin/bash "$ROOT/scripts/overview.sh" "$@"
     ;;
+  template|templates)
+    exec /usr/bin/env python3 "$ROOT/scripts/workspace_template.py" "$@"
+    ;;
   hints|hint)
     exec /bin/bash "$ROOT/scripts/hints.sh" "$@"
     ;;
@@ -156,6 +159,7 @@ Usage: terminal-kit <command>
   editor       Toggle wrapping or horizontal scrolling in cmux's text editor
   copy         Copy the last command, visible screen, current path, or project path
   overview     Browse every cmux window and workspace in one full-screen view
+  template     Save a live cmux workspace as a layout template, or re-create one
   hints        Control temporary hints in cmux workspace rows
   keys         Print the compact hotkey and command cheat sheet
   prompt       Choose minimal, detailed, or disabled prompt mode
