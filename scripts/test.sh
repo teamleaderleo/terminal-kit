@@ -337,6 +337,7 @@ FAKE_CMUX
 fi
 
 bash "$ROOT/scripts/test-cmux-fork.sh"
+python3 "$ROOT/scripts/test-cmux-audit.py"
 bash "$ROOT/scripts/test-shell-helpers.sh"
 python3 "$ROOT/scripts/test-git-checkout.py"
 python3 "$ROOT/scripts/test-customization.py"
