@@ -23,6 +23,13 @@ ROOT="$(cd "$BIN_DIR/.." && pwd)"
   exit 1
 }
 
+has_git_checkout() {
+  local toplevel
+  [[ -e "$ROOT/.git" ]] || return 1
+  toplevel="$(git -C "$ROOT" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  [[ "$(cd -P "$toplevel" && pwd)" == "$ROOT" ]]
+}
+
 command_name="${1:-help}"
 shift || true
 
@@ -50,8 +57,19 @@ case "$command_name" in
     exec /bin/bash "$ROOT/scripts/apply.sh" "$@"
     ;;
   update)
-    if [[ -d "$ROOT/.git" ]]; then
+    if has_git_checkout; then
+      changes="$(git -C "$ROOT" status --porcelain --untracked-files=no)" || {
+        printf 'terminal-kit: cannot inspect tracked changes; update stopped\n' >&2
+        exit 1
+      }
+      if [[ -n "$changes" ]]; then
+        printf 'terminal-kit: commit or stash tracked changes before updating; use tk apply to apply local files\n' >&2
+        exit 1
+      fi
       git -C "$ROOT" pull --ff-only
+    elif [[ -e "$ROOT/.git" || -L "$ROOT/.git" ]]; then
+      printf 'terminal-kit: invalid Git metadata at %s; update stopped\n' "$ROOT" >&2
+      exit 1
     else
       printf 'terminal-kit: this checkout has no Git history; applying current files\n'
     fi
@@ -60,7 +78,7 @@ case "$command_name" in
     /bin/bash "$ROOT/install.sh"
     ;;
   status)
-    if [[ ! -d "$ROOT/.git" ]]; then
+    if ! has_git_checkout; then
       printf 'terminal-kit: checkout has no Git history at %s\n' "$ROOT"
       exit 0
     fi
