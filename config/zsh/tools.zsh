@@ -201,19 +201,19 @@ scratch() {
     file="$scratch_root/$(date +%Y-%m-%d).txt"
   fi
 
-  command mkdir -p -- "${file:h}"
+  command mkdir -p -- "${file:h}" || return
   if [[ ! -e "$file" ]]; then
-    printf '%s\n\n' "$(date '+%A, %B %e, %Y')" > "$file"
+    printf '%s\n\n' "$(date '+%A, %B %e, %Y')" > "$file" || return
   fi
 
   if command -v cmux >/dev/null 2>&1; then
-    command cmux "$file"
+    command cmux "$file" || return
   elif [[ -n "${EDITOR:-}" ]]; then
     local -a editor_command
     editor_command=(${(z)EDITOR})
-    command "${editor_command[@]}" "$file"
+    command "${editor_command[@]}" "$file" || return
   else
-    command open -e "$file"
+    command open -e "$file" || return
   fi
 
   print -r -- "$file"
