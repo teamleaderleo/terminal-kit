@@ -72,6 +72,7 @@ Memory controls reclaim off-screen renderers while keeping the shell process, PT
 
 - [Familiar interaction model](docs/interaction-model.md) owns browser/Finder-style navigation and terminal selection constraints.
 - [Ricing roadmap](docs/ricing-roadmap.md) owns the broader cmux customization surface.
+- [Native builds](docs/native-builds.md) explains the canonical cmux checkout, Glaeda warm builds, and explicit update/launch flows.
 - [Theme shortlist](docs/theme-shortlist.md) owns the curated theme notes.
 - `config/ghostty/`, `config/cmux/`, `config/zsh/`, and `config/starship/` own the active appearance and shell behavior.
 

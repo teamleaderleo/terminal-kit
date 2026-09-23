@@ -74,6 +74,9 @@ case "$command_name" in
   git|github)
     exec /bin/bash "$ROOT/scripts/git.sh" "$@"
     ;;
+  cmux)
+    exec /bin/bash "$ROOT/scripts/cmux-fork.sh" "$@"
+    ;;
   theme|themes)
     exec /bin/bash "$ROOT/scripts/theme.sh" "$@"
     ;;
@@ -147,6 +150,7 @@ Usage: terminal-kit <command>
   agent        Machine-facing context, policy, durable checkpoints, and task events
   karabiner    Export and sync portable Karabiner key mappings
   git          Choose SSH or HTTPS for GitHub Git operations
+  cmux         Update, warm-build, or launch the canonical cmux checkout
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
   theme        Browse, test, set, rotate, or automate cmux themes
