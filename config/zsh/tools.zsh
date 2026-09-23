@@ -123,8 +123,31 @@ clip() {
 
 # Compact, on-demand view of listening TCP ports. Pass a port number to filter.
 ports() {
-  local wanted="${1:-}" rows
-  rows="$(command lsof -nP -iTCP -sTCP:LISTEN 2>/dev/null | awk -v wanted="$wanted" '
+  local wanted="${1:-}" rows listing diagnostics errors_file lsof_result=0
+  if (( $# > 1 )) || { (( $# == 1 )) && [[ "$wanted" != <-> || ${#wanted} -gt 5 ]]; }; then
+    print -u2 -- 'Usage: ports [TCP port 1-65535]'
+    return 2
+  fi
+  if (( $# == 1 )); then
+    wanted=$(( 10#$wanted ))
+    if (( wanted < 1 || wanted > 65535 )); then
+      print -u2 -- 'Usage: ports [TCP port 1-65535]'
+      return 2
+    fi
+  fi
+
+  errors_file="$(mktemp -t 'terminal-kit-ports.XXXXXX')" || return
+  listing="$(command lsof -nP -iTCP -sTCP:LISTEN 2> "$errors_file")" || lsof_result=$?
+  diagnostics="$(< "$errors_file")"
+  command rm -f -- "$errors_file"
+  [[ -z "$diagnostics" ]] || print -ru2 -- "$diagnostics"
+  # lsof uses status 1 for both errors and a search with no matching files.
+  # Only a quiet, empty status 1 is an ordinary empty listener list.
+  if (( lsof_result != 0 )) && ! { (( lsof_result == 1 )) && [[ -z "$listing" && -z "$diagnostics" ]]; }; then
+    [[ -n "$diagnostics" ]] || print -u2 -- "ports: lsof failed (status $lsof_result)"
+    return $lsof_result
+  fi
+  rows="$(print -r -- "$listing" | awk -v wanted="$wanted" '
     NR == 1 { next }
     {
       endpoint = $9
@@ -133,7 +156,7 @@ ports() {
       if (wanted != "" && port != wanted) next
       printf "%-18s %-8s %-7s %s\n", $1, $2, port, endpoint
     }
-  ')"
+  ')" || return
 
   if [[ -z "$rows" ]]; then
     if [[ -n "$wanted" ]]; then
