@@ -341,6 +341,7 @@ python3 "$ROOT/scripts/test-cmux-audit.py"
 bash "$ROOT/scripts/test-shell-helpers.sh"
 bash "$ROOT/scripts/test-shell-env.sh"
 python3 "$ROOT/scripts/test-git-checkout.py"
+python3 "$ROOT/scripts/test-update.py"
 python3 "$ROOT/scripts/test-customization.py"
 python3 "$ROOT/scripts/test-sidebar-preset.py"
 printf 'terminal-kit tests passed\n'

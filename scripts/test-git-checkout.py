@@ -52,40 +52,18 @@ with tempfile.TemporaryDirectory(prefix='terminal-kit-git-') as temporary:
     branch = git(repo, 'branch', '--show-current')
     git(repo, 'branch', '--set-upstream-to=origin/' + branch)
     assert 'working tree: clean' in invoke(repo, 'status')
-    assert 'INSTALLER' in invoke(repo, 'update')
-    # Generated/untracked files must not prevent updates.
-    (repo / 'cache.pyc').write_bytes(b'generated')
-    assert 'INSTALLER' in invoke(repo, 'update')
-    (repo / 'install.sh').write_text("printf 'INSTALLER modified\\n'\n")
-    invoke(repo, 'update', success=False)
-    git(repo, 'add', 'install.sh')
-    invoke(repo, 'update', success=False)
-    git(repo, 'reset', '--hard', 'HEAD')
-    # Repository discovery can succeed while reading the index fails.
-    index = repo / '.git/index'
-    original_index = index.read_bytes()
-    index.write_bytes(b'corrupted index')
-    invoke(repo, 'update', success=False)
-    index.write_bytes(original_index)
     linked = base / 'linked'
     git(repo, 'worktree', 'add', '-qb', 'linked-test', str(linked))
     git(linked, 'branch', '--set-upstream-to=origin/' + branch)
     assert (linked / '.git').is_file()
     assert 'branch: linked-test' in invoke(linked, 'status')
-    assert 'INSTALLER' in invoke(linked, 'update')
-    # Failed pull must not progress to installation.
-    git(linked, 'config', 'branch.linked-test.merge', 'refs/heads/missing')
-    invoke(linked, 'update', success=False)
-    # Archives keep their deliberate apply-only behavior, even inside a parent repo.
+    # A source archive nested inside a repo must not borrow its history.
     archive = repo / 'archive'
     shutil.copytree(repo / 'bin', archive / 'bin')
     shutil.copy2(repo / 'install.sh', archive / 'install.sh')
     assert 'no Git history' in invoke(archive, 'status')
-    assert 'applying current files\nINSTALLER' in invoke(archive, 'update')
     (archive / '.git').write_text('gitdir: nonexistent\n')
-    invoke(archive, 'update', success=False)
     (archive / '.git').unlink()
     (archive / '.git').symlink_to('nonexistent')
-    invoke(archive, 'update', success=False)
 
 print('Git checkout regression tests passed')

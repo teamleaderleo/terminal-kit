@@ -56,26 +56,8 @@ case "$command_name" in
   apply|reload)
     exec /bin/bash "$ROOT/scripts/apply.sh" "$@"
     ;;
-  update)
-    if has_git_checkout; then
-      changes="$(git -C "$ROOT" status --porcelain --untracked-files=no)" || {
-        printf 'terminal-kit: cannot inspect tracked changes; update stopped\n' >&2
-        exit 1
-      }
-      if [[ -n "$changes" ]]; then
-        printf 'terminal-kit: commit or stash tracked changes before updating; use tk apply to apply local files\n' >&2
-        exit 1
-      fi
-      git -C "$ROOT" pull --ff-only
-    elif [[ -e "$ROOT/.git" || -L "$ROOT/.git" ]]; then
-      printf 'terminal-kit: invalid Git metadata at %s; update stopped\n' "$ROOT" >&2
-      exit 1
-    else
-      printf 'terminal-kit: this checkout has no Git history; applying current files\n'
-    fi
-    # Run the normal installer so additions to the Brewfile arrive through the
-    # same one-command update. Homebrew skips packages that are already present.
-    /bin/bash "$ROOT/install.sh"
+  update|rollback)
+    exec python3 "$ROOT/scripts/update.py" --root "$ROOT" "$command_name" "$@"
     ;;
   status)
     if ! has_git_checkout; then
@@ -181,7 +163,8 @@ case "$command_name" in
     cat <<'HELP'
 Usage: terminal-kit <command>
 
-  update       Pull Git changes, install new tools, and reload terminal settings
+  update       Fetch and inspect; --apply FULL_SHA installs the exact inspected plan
+  rollback     Restore the previous SOURCE revision (not installer host effects)
   status       Show the terminal-kit branch, stashes, and working-tree state
   work / do    Resolve a project, make a reversible task checkout, and launch an agent
   agent        Machine-facing context, policy, durable checkpoints, and task events
@@ -213,7 +196,7 @@ Usage: terminal-kit <command>
   edit         Open the repository
   path         Print the repository location
 
-After Zsh loads the kit, plain `tk` updates everything. `tk update` is the explicit form.
+After Zsh loads the kit, plain `tk` inspects available updates. Use the printed exact apply command to install.
 `tk do fix the tests` hands the current repo to an agent in a reversible task checkout.
 Agents should bootstrap with `tk agent context --json` and record durable checkpoints.
 Use `tk status` when you deliberately want Git branch, stash, and working-tree details.

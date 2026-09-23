@@ -12,7 +12,7 @@ git clone git@github.com:teamleaderleo/terminal-kit.git ~/Projects/terminal-kit
 exec zsh
 ```
 
-Then use `tk` or `tk update` for the normal pull/install/reload path. `tk apply` reapplies the current checkout without pulling; `tk doctor` checks the installation; `tk test` runs repository checks. Updates support regular checkouts and linked Git worktrees. Commit or stash tracked local changes before updating; untracked files do not block updates. Source archives without Git metadata keep the apply-current-files behavior, while invalid Git metadata stops the update.
+Then use `tk` or `tk update` to fetch and inspect available changes without changing the checkout or installing code. Review the displayed diff, then use `tk update --apply FULL_SHA` with the exact printed commit. The application step retains the previous source revision and prints an independent recovery command. `tk rollback` restores source only; packages, host files, and running services are not restored. See [source update recovery](docs/update-recovery.md) for the contract and limitations. `tk apply` reapplies local settings without fetching; `tk doctor` checks the installation.
 
 ## Work with an agent
 
