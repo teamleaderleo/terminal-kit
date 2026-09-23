@@ -64,6 +64,8 @@ Explicit Git URLs keep the protocol they specify. terminal-kit removes its legac
 
 Shell shortcuts use opt-in names: `ll` lists with eza, `lg` opens lazygit, `bt` opens btop, and `findf` searches with fd when installed. Standard commands such as `ls`, `tree`, and `cat` retain their native behavior. Use `eza --tree`, `bat`, or `grc COMMAND` explicitly for enhanced output.
 
+Shell startup preserves the incoming `PATH` order, including activated Python environments and other toolchains, and appends any missing local, Homebrew, and system directories.
+
 After upgrading from the old aliases, open a new shell (or run `exec zsh`). Sourcing the config does not remove aliases or wrappers already loaded in a running shell.
 
 Machine-local preferences stay outside Git. The full ownership map, backup directory, task receipts, worktree locations, and recovery refs are documented in [managed state and recovery](docs/managed-state.md).
