@@ -73,3 +73,7 @@ JSON Schema's [`default` is an annotation](https://json-schema.org/understanding
 not an instruction to fill missing values. Do not automatically remove pinned
 settings based on this report. Text output shortens long values; `--json`
 preserves complete values.
+
+The [2026-09-22 pinned-setting review](cmux-pinned-settings.md) records why all
+16 observed pins were retained, including a schema/runtime default mismatch
+and cmux's restoration of prior preferences when managed keys disappear.
