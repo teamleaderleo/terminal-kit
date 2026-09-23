@@ -368,16 +368,8 @@ if (( $+functions[_zsh_autosuggest_bind_widgets] )); then
   _zsh_autosuggest_bind_widgets
 fi
 
-# One command updates the checkout, installs newly-added tools, reloads apps, and
-# refreshes this shell.
-terminal-update() {
-  command terminal-kit update "$@" || return
-  local _terminal_kit_root
-  _terminal_kit_root="$(command terminal-kit path)" || return
-  source "$_terminal_kit_root/config/zsh/terminal.zsh"
-  unset _terminal_kit_root
-}
-alias tk='terminal-update'
+# Keep standalone terminal.zsh and the full bootstrap on the same dispatcher.
+source "${${(%):-%N}:A:h}/update.zsh"
 
 # Syntax highlighting stays last and loads once.
 if [[ -z "${TERMINAL_KIT_HIGHLIGHTING_LOADED:-}" ]]; then
