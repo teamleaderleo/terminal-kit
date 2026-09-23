@@ -93,8 +93,8 @@ clip() {
       }
       case "$remote" in
         git@*:*)
-          value="https://${remote#git@}"
-          value="${value/:/\/}"
+          remote="${remote#git@}"
+          value="https://${remote%%:*}/${remote#*:}"
           ;;
         ssh://git@*)
           value="https://${remote#ssh://git@}"
