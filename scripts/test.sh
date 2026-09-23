@@ -31,6 +31,7 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/init.zsh" \
     "$ROOT/config/zsh/terminal.zsh" \
     "$ROOT/config/zsh/tools.zsh" \
+    "$ROOT/config/zsh/update.zsh" \
     "$ROOT/config/zsh/hints.zsh" \
     "$ROOT/config/zsh/highlight.zsh"
 fi
@@ -339,6 +340,7 @@ fi
 bash "$ROOT/scripts/test-cmux-fork.sh"
 python3 "$ROOT/scripts/test-cmux-audit.py"
 bash "$ROOT/scripts/test-shell-helpers.sh"
+bash "$ROOT/scripts/test-shell-dispatch.sh"
 bash "$ROOT/scripts/test-shell-env.sh"
 python3 "$ROOT/scripts/test-git-checkout.py"
 python3 "$ROOT/scripts/test-update.py"
