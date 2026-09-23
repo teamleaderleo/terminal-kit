@@ -27,6 +27,16 @@ command_name="${1:-help}"
 shift || true
 
 case "$command_name" in
+  customization)
+    python3 "$ROOT/scripts/customization.py" "$@"
+    if [[ "${1:-status}" != status ]]; then
+      if command -v cmux >/dev/null 2>&1 && cmux reload-config >/dev/null 2>&1; then
+        printf 'Reloaded cmux configuration.\n'
+      else
+        printf 'Reload cmux/Ghostty configuration to display the selected profile.\n'
+      fi
+    fi
+    ;;
   install)
     exec /bin/bash "$ROOT/install.sh" "$@"
     ;;

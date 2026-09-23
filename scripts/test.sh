@@ -337,4 +337,5 @@ FAKE_CMUX
 fi
 
 bash "$ROOT/scripts/test-cmux-fork.sh"
+python3 "$ROOT/scripts/test-customization.py"
 printf 'terminal-kit tests passed\n'

@@ -4,6 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/lib.sh"
 
+if [[ -f "$HOME/.config/terminal-kit/customization/state.json" ]] && python3 "$ROOT/scripts/customization.py" status | grep -q ": off$"; then
+  log "customization is off; use terminal-kit customization on before apply"
+  exit 0
+fi
+
 if command -v zsh >/dev/null 2>&1; then
   zsh -n "$ROOT/config/zsh/terminal.zsh"
 fi

@@ -4,6 +4,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$ROOT/scripts/lib.sh"
 
+if [[ -f "$HOME/.config/terminal-kit/customization/state.json" ]] && python3 "$ROOT/scripts/customization.py" status | grep -q ": off$"; then
+  die "customization is off; use terminal-kit customization on before install/update"
+fi
+
 [[ "$(uname -s)" == "Darwin" ]] || die "this kit currently targets macOS"
 
 install_tools=true
