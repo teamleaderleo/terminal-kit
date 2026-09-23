@@ -1,9 +1,10 @@
 # terminal-kit: baseline environment loaded from ~/.zshenv.
 
-# Keep the user's existing paths, but guarantee that macOS and Homebrew tools
-# remain reachable even if another startup script accidentally replaces PATH.
+# Preserve the user's command precedence, including activated environments.
+# Append missing baseline paths so macOS and Homebrew tools remain reachable.
 typeset -gU path PATH
 path=(
+  "${path[@]}"
   "$HOME/.local/bin"
   /opt/homebrew/bin
   /opt/homebrew/sbin
@@ -13,7 +14,6 @@ path=(
   /bin
   /usr/sbin
   /sbin
-  $path
 )
 export PATH
 
