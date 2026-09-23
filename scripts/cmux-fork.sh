@@ -21,6 +21,8 @@ usage() {
 Usage: terminal-kit cmux <command>
 
   status   Show the fork checkout, revision, and Ghostty pin
+  audit [--pinned] [--json] [--config FILE] [--schema FILE]
+           Compare installed config with declared schema defaults (read-only)
   sync     Clone or fast-forward the fork and sync its submodules
   setup    Sync the fork and run cmux's normal developer setup
   warm [--generation LABEL]
@@ -250,6 +252,10 @@ command_name="${1:-status}"
 shift || true
 
 case "$command_name" in
+  audit)
+    command -v python3 >/dev/null 2>&1 || die "cmux audit requires python3"
+    exec python3 "$ROOT/scripts/cmux-audit.py" --schema "$CMUX_DIR/web/data/cmux.schema.json" "$@"
+    ;;
   status)
     print_status
     ;;

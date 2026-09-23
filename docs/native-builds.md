@@ -41,3 +41,35 @@ silently building a different tag.
 
 For build-only use, prefer warm. A successful build does not launch or replace
 the production app. Native signing, launch and tag identity remain cmux's job.
+
+## Audit installed cmux settings
+
+Run `tk cmux audit` after an upgrade to compare the installed
+`~/.config/cmux/cmux.json` with `web/data/cmux.schema.json` in the checkout
+reported by `tk cmux path`. `--pinned` selects settings equal to a declared
+default; `--json` emits stable JSON-pointer paths, values, defaults, counts,
+and source paths. Both options can be combined. Counts always cover the entire
+config, even when rows are filtered. Use `--config FILE` and `--schema FILE`
+to compare another config or a saved schema without changing either file.
+
+The report distinguishes overridden values, pinned values, declared settings
+without defaults (`undeclared`), and unknown paths. It compares arrays as whole,
+ordered values. Objects with explicit defaults are compared as whole values;
+otherwise it walks nonempty objects and compares empty objects as values.
+Parent-object defaults are not expanded into child settings. Objects accepted
+through unrestricted extension points are reported as undeclared whole values,
+not as unknown descendant settings. Local JSON-pointer references are resolved;
+external, cyclic, conflicting, and conditional schemas are treated
+conservatively and annotated. Direct defaults alongside validation alternatives
+can still be compared, but defaults inside alternatives are not inferred.
+
+This is a read-only comparison of schema annotations, not a schema validator or
+a report of effective application settings. Schema defaults may differ from
+runtime behavior. Pinned settings can be intentional; the command does not
+remove settings, fetch schemas, build, reload, or write config. Missing or
+malformed files are errors. The top-level `$schema` metadata is excluded.
+
+JSON Schema's [`default` is an annotation](https://json-schema.org/understanding-json-schema/reference/annotations),
+not an instruction to fill missing values. Do not automatically remove pinned
+settings based on this report. Text output shortens long values; `--json`
+preserves complete values.
