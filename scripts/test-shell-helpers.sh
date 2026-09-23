@@ -5,11 +5,12 @@ command -v zsh >/dev/null || { printf 'SKIP shell helpers: zsh unavailable\n'; e
 test_root="$(mktemp -d)"
 trap 'rm -rf "$test_root"' EXIT
 mkdir -p "$test_root/bin" "$test_root/home"
-for tool in pbcopy yazi cmux osascript git; do
+for tool in pbcopy yazi cmux osascript git editor open; do
   cat > "$test_root/bin/$tool" <<'STUB'
 #!/bin/sh
 case "${0##*/}" in
   pbcopy) cat > "$CLIPBOARD_LOG"; exit "${COPY_RESULT:-0}" ;;
+  cmux|editor|open) printf '%s\n' "${0##*/}" "$@" > "$OPENER_LOG"; exit "${OPENER_RESULT:-0}" ;;
   git) printf '%s\n' "$TEST_REMOTE" ;;
   yazi)
     for arg do
@@ -22,7 +23,7 @@ STUB
   chmod +x "$test_root/bin/$tool"
 done
 export ROOT
-HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" CLIPBOARD_LOG="$test_root/clipboard" YAZI_TEMP_LOG="$test_root/yazi-temp" zsh -f <<'ZSH'
+HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" CLIPBOARD_LOG="$test_root/clipboard" YAZI_TEMP_LOG="$test_root/yazi-temp" OPENER_LOG="$test_root/opener" TEST_BIN="$test_root/bin" zsh -f <<'ZSH'
 source "$ROOT/config/zsh/tools.zsh"
 check_result() {
   local expected=$1 result=0
@@ -53,5 +54,38 @@ check_result 19 clip < "$HOME/input"
 before=$PWD
 check_result 23 y
 [[ $PWD == $before && ! -e "$(< "$YAZI_TEMP_LOG")" ]] || exit 1
+# Scratch creation and each opener must report their actual result.
+export OPENER_RESULT=17
+check_result 17 scratch "$HOME/note with spaces.txt"
+[[ ! -s "$HOME/result" && -f "$HOME/note with spaces.txt" ]] || exit 1
+[[ "$(< "$OPENER_LOG")" == $'cmux\n'"$HOME/note with spaces.txt" ]] || exit 1
+export OPENER_RESULT=0
+check_result 0 scratch "$HOME/note with spaces.txt"
+[[ "$(< "$HOME/result")" == "$HOME/note with spaces.txt" ]] || exit 1
+command rm "$TEST_BIN/cmux"
+export EDITOR='editor --wait' OPENER_RESULT=23
+check_result 23 scratch "$HOME/note with spaces.txt"
+[[ ! -s "$HOME/result" ]] || exit 1
+[[ "$(< "$OPENER_LOG")" == $'editor\n--wait\n'"$HOME/note with spaces.txt" ]] || exit 1
+export OPENER_RESULT=0
+check_result 0 scratch "$HOME/note with spaces.txt"
+[[ "$(< "$HOME/result")" == "$HOME/note with spaces.txt" ]] || exit 1
+unset EDITOR
+export OPENER_RESULT=31
+check_result 31 scratch "$HOME/note with spaces.txt"
+[[ ! -s "$HOME/result" ]] || exit 1
+[[ "$(< "$OPENER_LOG")" == $'open\n-e\n'"$HOME/note with spaces.txt" ]] || exit 1
+export OPENER_RESULT=0
+check_result 0 scratch "$HOME/note with spaces.txt"
+[[ "$(< "$HOME/result")" == "$HOME/note with spaces.txt" ]] || exit 1
+# A file cannot serve as a parent directory; no opener should be attempted.
+: > "$HOME/invalid-parent"
+: > "$OPENER_LOG"
+check_result 1 scratch "$HOME/invalid-parent/note.txt" 2>/dev/null
+[[ ! -s "$HOME/result" && ! -s "$OPENER_LOG" ]] || exit 1
+# A dangling link makes mkdir succeed and writing the note fail.
+command ln -s "$HOME/nonexistent/note.txt" "$HOME/unwritable-note"
+check_result 1 scratch "$HOME/unwritable-note" 2>/dev/null
+[[ ! -s "$HOME/result" && ! -s "$OPENER_LOG" ]] || exit 1
 ZSH
 printf 'terminal-kit shell helper failure paths passed\n'
