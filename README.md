@@ -12,7 +12,7 @@ git clone git@github.com:teamleaderleo/terminal-kit.git ~/Projects/terminal-kit
 exec zsh
 ```
 
-Then use `tk` or `tk update` for the normal pull/install/reload path. `tk apply` reapplies the current checkout without pulling; `tk doctor` checks the installation; `tk test` runs repository checks.
+Then use `tk` or `tk update` for the normal pull/install/reload path. `tk apply` reapplies the current checkout without pulling; `tk doctor` checks the installation; `tk test` runs repository checks. Updates support regular checkouts and linked Git worktrees. Commit or stash tracked local changes before updating; untracked files do not block updates. Source archives without Git metadata keep the apply-current-files behavior, while invalid Git metadata stops the update.
 
 ## Work with an agent
 
