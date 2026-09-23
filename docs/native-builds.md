@@ -10,6 +10,23 @@ do not pull, switch branches, or rerun setup. The profile owns the build tag and
 Glaeda owns its persistent toolchain-specific cache. Run again after edits or a
 completed pull; native incremental compilation decides what needs rebuilding.
 
+If a build cache is quarantined after interruption, choose a new generation:
+
+```sh
+tk cmux warm --generation recovery-1
+```
+
+`build` accepts the same option. Labels are 1–64 lowercase letters, digits, or
+hyphens and must start with a letter or digit. Keep using the selected label on
+subsequent builds to reuse that generation. A new label starts a cold build,
+which can take tens of minutes; existing caches are retained. The option cannot
+be combined with `TERMINAL_KIT_CMUX_TAG`.
+
+For a stale active-run record, Glaeda's `recover --run-id` requires the exact
+interrupted run ID and an absent build process group. Recovery records the
+interruption and quarantines its cache; it does not resume compilation. Follow
+Glaeda's recovery instructions, then select a new generation through `tk`.
+
 `tk cmux sync` remains an explicit fast-forward of a clean fork `main`.
 `tk cmux setup` additionally prepares dependencies and the native toolchain.
 Updating from upstream is a separate reviewed Git operation: sync does not merge
