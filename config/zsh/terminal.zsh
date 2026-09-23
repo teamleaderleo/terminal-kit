@@ -112,28 +112,15 @@ if [[ -z "${TERMINAL_KIT_HELPERS_LOADED:-}" ]]; then
     fi
   done
 
-  # grc adds colour to selected traditional commands such as ping, make, diff,
-  # ps, and traceroute without changing their underlying programs.
-  for _terminal_kit_grc_file in /opt/homebrew/etc/grc.zsh /usr/local/etc/grc.zsh; do
-    if [[ -r "$_terminal_kit_grc_file" ]]; then
-      source "$_terminal_kit_grc_file"
-      break
-    fi
-  done
-
-  unset _terminal_kit_brew_prefix _terminal_kit_grc_file
+  unset _terminal_kit_brew_prefix
 fi
 
-# Small, colour-aware replacements. These are interactive aliases only.
+# Keep standard listing commands unchanged; opt into eza with ll.
 if command -v eza >/dev/null 2>&1; then
-  alias ls='eza --group-directories-first --icons=auto'
   alias ll='eza -lah --group-directories-first --git --icons=auto'
-  alias tree='eza --tree --icons=auto'
 fi
 
-if command -v bat >/dev/null 2>&1; then
-  alias cat='bat --paging=never --style=plain'
-fi
+# Use bat and grc explicitly; standard commands keep their native flags and output.
 
 # -----------------------------------------------------------------------------
 # Native-ish macOS editing inside the Zsh command buffer.

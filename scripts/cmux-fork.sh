@@ -21,10 +21,14 @@ usage() {
 Usage: terminal-kit cmux <command>
 
   status   Show the fork checkout, revision, and Ghostty pin
+  audit [--pinned] [--json] [--config FILE] [--schema FILE]
+           Compare installed config with declared schema defaults (read-only)
   sync     Clone or fast-forward the fork and sync its submodules
   setup    Sync the fork and run cmux's normal developer setup
-  warm     Build the checkout's app profile with Glaeda's persistent caches
-  build    Same as warm (explicit CMUX_TAG uses the native tagged helper)
+  warm [--generation LABEL]
+           Build the checkout's app profile with Glaeda's persistent caches
+  build [--generation LABEL]
+           Same as warm (explicit CMUX_TAG uses the native tagged helper)
   launch   Build and launch the isolated terminal-kit tag; never pulls
   path     Print the local cmux fork checkout path
 
@@ -77,7 +81,27 @@ require_checkout() {
     || die "cmux path is not a Git checkout"
 }
 
-warm_checkout() {
+parse_build_options() {
+  local LC_ALL=C
+  GENERATION=""
+  while (( $# )); do
+    case "$1" in
+      --generation)
+        [[ $# -ge 2 && -n "$2" ]] || die "--generation requires a label"
+        [[ -z "$GENERATION" ]] || die "--generation may only be supplied once"
+        [[ "$2" =~ ^[a-z0-9][a-z0-9-]{0,63}$ ]] \
+          || die "generation must be 1–64 lowercase letters, digits, or hyphens, starting with a letter or digit"
+        GENERATION="$2"
+        shift 2
+        ;;
+      *) die "unknown cmux build argument: $1; use: tk cmux warm [--generation LABEL]" ;;
+    esac
+  done
+  [[ -z "$GENERATION" || -z "${TERMINAL_KIT_CMUX_TAG:-}" ]] \
+    || die "--generation selects a managed cache; unset TERMINAL_KIT_CMUX_TAG"
+}
+
+warm_checkout() (
   require_checkout
   command -v glaeda-apple >/dev/null 2>&1 \
     || die "glaeda-apple is required for warm builds; install Glaeda's native Apple helper"
@@ -85,8 +109,30 @@ warm_checkout() {
     || die "checkout needs a glaeda.apple.json app profile"
   [[ -z "${TERMINAL_KIT_CMUX_TAG:-}" ]] \
     || die "warm uses the tag declared in glaeda.apple.json; unset TERMINAL_KIT_CMUX_TAG"
-  glaeda-apple warm --project "$CMUX_DIR" --profile app
-}
+  local_args=(warm --project "$CMUX_DIR" --profile app)
+  if [[ -n "$GENERATION" ]]; then
+    local_args+=(--generation "$GENERATION")
+    warn "generation '$GENERATION': an unused label starts a cold build and may take tens of minutes; existing caches are retained"
+  fi
+
+  # Stream diagnostics while retaining enough evidence to explain quarantine.
+  diagnostics_dir="$(mktemp -d)"
+  diagnostics="$diagnostics_dir/output"
+  trap 'rm -rf "$diagnostics_dir"' EXIT
+  mkfifo "$diagnostics_dir/stderr"
+  tee "$diagnostics" < "$diagnostics_dir/stderr" >&2 &
+  diagnostics_pid=$!
+  exec 3> "$diagnostics_dir/stderr"
+  result=0
+  glaeda-apple "${local_args[@]}" 2>&3 || result=$?
+  exec 3>&-
+  wait "$diagnostics_pid" || true
+  if [[ "$result" -ne 0 ]] && command -v jq >/dev/null 2>&1 && \
+    jq -Rse 'split("\n") | any(.[]; (fromjson? | objects | .state == "refused" and .reason == "cache was interrupted; choose a new --generation for a cold rebuild"))' "$diagnostics" >/dev/null 2>&1; then
+    warn "cmux build cache was interrupted and will not be reused; run: tk cmux warm --generation <new-label> (a cold build)"
+  fi
+  exit "$result"
+)
 
 sync_checkout() {
   ensure_checkout
@@ -206,6 +252,10 @@ command_name="${1:-status}"
 shift || true
 
 case "$command_name" in
+  audit)
+    command -v python3 >/dev/null 2>&1 || die "cmux audit requires python3"
+    exec python3 "$ROOT/scripts/cmux-audit.py" --schema "$CMUX_DIR/web/data/cmux.schema.json" "$@"
+    ;;
   status)
     print_status
     ;;
@@ -217,9 +267,11 @@ case "$command_name" in
     setup_checkout
     ;;
   warm)
+    parse_build_options "$@"
     warm_checkout
     ;;
   build)
+    parse_build_options "$@"
     if [[ -z "${TERMINAL_KIT_CMUX_TAG:-}" ]]; then
       warm_checkout
     else

@@ -12,7 +12,7 @@ git clone git@github.com:teamleaderleo/terminal-kit.git ~/Projects/terminal-kit
 exec zsh
 ```
 
-Then use `tk` or `tk update` for the normal pull/install/reload path. `tk apply` reapplies the current checkout without pulling; `tk doctor` checks the installation; `tk test` runs repository checks.
+Then use `tk` or `tk update` for the normal pull/install/reload path. `tk apply` reapplies the current checkout without pulling; `tk doctor` checks the installation; `tk test` runs repository checks. Updates support regular checkouts and linked Git worktrees. Commit or stash tracked local changes before updating; untracked files do not block updates. Source archives without Git metadata keep the apply-current-files behavior, while invalid Git metadata stops the update.
 
 ## Work with an agent
 
@@ -61,6 +61,12 @@ Explicit Git URLs keep the protocol they specify. terminal-kit removes its legac
 `clip remote` copies the configured Git remote; `clip web` copies its browser URL.
 
 ## Local state and running processes
+
+Shell shortcuts use opt-in names: `ll` lists with eza, `lg` opens lazygit, `bt` opens btop, and `findf` searches with fd when installed. Standard commands such as `ls`, `tree`, and `cat` retain their native behavior. Use `eza --tree`, `bat`, or `grc COMMAND` explicitly for enhanced output.
+
+Shell startup preserves the incoming `PATH` order, including activated Python environments and other toolchains, and appends any missing local, Homebrew, and system directories.
+
+After upgrading from the old aliases, open a new shell (or run `exec zsh`). Sourcing the config does not remove aliases or wrappers already loaded in a running shell.
 
 Machine-local preferences stay outside Git. The full ownership map, backup directory, task receipts, worktree locations, and recovery refs are documented in [managed state and recovery](docs/managed-state.md).
 

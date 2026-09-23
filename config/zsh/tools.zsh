@@ -5,7 +5,12 @@ if command -v yazi >/dev/null 2>&1; then
   y() {
     local _terminal_kit_yazi_tmp _terminal_kit_yazi_cwd
     _terminal_kit_yazi_tmp="$(mktemp -t 'yazi-cwd.XXXXXX')" || return
-    command yazi "$@" --cwd-file="$_terminal_kit_yazi_tmp"
+    local yazi_result=0
+    command yazi "$@" --cwd-file="$_terminal_kit_yazi_tmp" || yazi_result=$?
+    if (( yazi_result != 0 )); then
+      command rm -f -- "$_terminal_kit_yazi_tmp"
+      return $yazi_result
+    fi
     IFS= read -r -d '' _terminal_kit_yazi_cwd < "$_terminal_kit_yazi_tmp"
     if [[ -n "$_terminal_kit_yazi_cwd" && "$_terminal_kit_yazi_cwd" != "$PWD" && -d "$_terminal_kit_yazi_cwd" ]]; then
       builtin cd -- "$_terminal_kit_yazi_cwd"
@@ -50,7 +55,7 @@ clip() {
       print -u2 -- '       command | clip'
       return 2
     fi
-    command pbcopy
+    command pbcopy || return
     print -r -- 'copied stdin'
     return 0
   fi
@@ -88,8 +93,8 @@ clip() {
       }
       case "$remote" in
         git@*:*)
-          value="https://${remote#git@}"
-          value="${value/:/\/}"
+          remote="${remote#git@}"
+          value="https://${remote%%:*}/${remote#*:}"
           ;;
         ssh://git@*)
           value="https://${remote#ssh://git@}"
@@ -103,7 +108,7 @@ clip() {
       ;;
     *)
       if (( $# == 1 )) && [[ -f "$1" ]]; then
-        command pbcopy < "$1"
+        command pbcopy < "$1" || return
         print -r -- "copied file: $1"
         return 0
       fi
@@ -112,7 +117,7 @@ clip() {
       ;;
   esac
 
-  print -rn -- "$value" | command pbcopy
+  print -rn -- "$value" | command pbcopy || return
   print -r -- "copied $label: $value"
 }
 
@@ -152,16 +157,15 @@ after() {
   }
 
   local command_text="${(j: :)${(q)@}}"
-  local started=$SECONDS status elapsed title body
+  local started=$SECONDS command_result=0 elapsed title body
 
-  "$@"
-  status=$?
+  "$@" || command_result=$?
   elapsed=$(( SECONDS - started ))
 
-  if (( status == 0 )); then
+  if (( command_result == 0 )); then
     title='Command finished'
   else
-    title="Command failed ($status)"
+    title="Command failed ($command_result)"
   fi
   body="$command_text · ${elapsed}s"
 
@@ -177,7 +181,7 @@ APPLESCRIPT
   fi
 
   print -r -- "$title: $body"
-  return $status
+  return $command_result
 }
 
 # A tiny daily scratch file. cmux opens it in-app; other terminals fall back to
@@ -197,19 +201,19 @@ scratch() {
     file="$scratch_root/$(date +%Y-%m-%d).txt"
   fi
 
-  command mkdir -p -- "${file:h}"
+  command mkdir -p -- "${file:h}" || return
   if [[ ! -e "$file" ]]; then
-    printf '%s\n\n' "$(date '+%A, %B %e, %Y')" > "$file"
+    printf '%s\n\n' "$(date '+%A, %B %e, %Y')" > "$file" || return
   fi
 
   if command -v cmux >/dev/null 2>&1; then
-    command cmux "$file"
+    command cmux "$file" || return
   elif [[ -n "${EDITOR:-}" ]]; then
     local -a editor_command
     editor_command=(${(z)EDITOR})
-    command "${editor_command[@]}" "$file"
+    command "${editor_command[@]}" "$file" || return
   else
-    command open -e "$file"
+    command open -e "$file" || return
   fi
 
   print -r -- "$file"
