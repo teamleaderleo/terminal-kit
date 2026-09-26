@@ -3,9 +3,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/lib.sh"
+source "$ROOT/scripts/work-lib.sh"
 
 PROJECTS_ROOT="${TERMINAL_KIT_PROJECTS_ROOT:-$HOME/Projects}"
-STATE_ROOT="${TERMINAL_KIT_WORK_STATE_ROOT:-$HOME/.local/state/terminal-kit/work}"
 WORKTREE_ROOT="${TERMINAL_KIT_WORKTREE_ROOT:-$HOME/.local/share/terminal-kit/worktrees}"
 RECOVERY_REF_ROOT="refs/terminal-kit/recovery"
 
@@ -36,10 +36,6 @@ HELP
 
 need_command() {
   command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
-}
-
-canonical_dir() {
-  (cd "$1" 2>/dev/null && pwd -P)
 }
 
 canonical_file() {
@@ -281,25 +277,13 @@ select_agent() {
   printf '%s\n' codex
 }
 
-agent_policy_prompt() {
+agent_prompt() {
   local user_prompt="$1" seeded_dirty="$2"
-  cat <<EOF
-Work autonomously in this repository and own the ordinary implementation loop.
-Read repository guidance such as AGENTS.md, CLAUDE.md, CONTRIBUTING.md, and repo-native bootstrap/check scripts before changing code. Prefer the commands and workflows the repository already defines. Inspect the current state, make the requested changes, chain the relevant checks yourself, and finish with a concise summary of edits, checks, and any blocker.
-
-Preserve existing user work and stay inside this task checkout. Ordinary repository edits, local tests, formatting, dependency commands, branches, commits, and pull-request preparation are within scope. Stop and ask before privileged host changes, credential or account changes, destructive external actions, releases/publication, paid-resource changes, or irreversible data migrations.
-EOF
+  agent_brief
   if [[ "$seeded_dirty" == true ]]; then
-    cat <<'EOF'
-
-This task checkout was seeded from local tracked and untracked changes in the source checkout. Treat those changes as user work and preserve their intent.
-EOF
+    printf '\nThis checkout was seeded with uncommitted changes from the source checkout. Treat them as user work.\n'
   fi
-  cat <<EOF
-
-User task:
-$user_prompt
-EOF
+  printf '\nTask:\n%s\n' "${user_prompt:-None given. Inspect the repository and choose the most valuable bounded outcome you can finish.}"
 }
 
 write_receipt() {
@@ -341,16 +325,7 @@ update_receipt_state() {
 }
 
 receipt_for() {
-  local requested="${1:-last}" id file
-  if [[ "$requested" == last ]]; then
-    [[ -r "$STATE_ROOT/last" ]] || die "no terminal-kit work receipt yet"
-    id="$(tr -d '[:space:]' < "$STATE_ROOT/last")"
-  else
-    id="$requested"
-  fi
-  file="$STATE_ROOT/$id.json"
-  [[ -r "$file" ]] || die "unknown work receipt: $id"
-  printf '%s\n' "$file"
+  find_receipt "${1:-last}" || die "unknown work receipt: ${1:-last}"
 }
 
 list_work() {
@@ -603,7 +578,7 @@ start_work() {
     base_sha=""; branch=""; work_path="$repo_root"
   fi
 
-  [[ -n "$prompt" ]] && full_prompt="$(agent_policy_prompt "$prompt" "$seeded_dirty")"
+  full_prompt="$(agent_prompt "$prompt" "$seeded_dirty")"
   write_receipt "$receipt" "$id" "$created_at" "$target" "$repo_name" "$repo_root" \
     "$work_path" "$branch" "$base_sha" "$agent" "$launcher" "$prompt" "$reference" \
     "$CLONED" "$seeded_dirty" "$mode"

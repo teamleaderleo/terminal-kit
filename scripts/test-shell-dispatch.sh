@@ -60,10 +60,10 @@ export LSOF_RESULT=0
 check_result 29 ports
 [[ ! -s "$HOME/result" && "$(< "$HOME/errors")" == 'awk: fixture parser failure' ]] || exit 1
 ZSH
-# Each entrypoint dispatches subcommands exactly once. Stub exec in the fixture
-# so restart intent is verified without replacing or restarting any process.
+# `tk` passes arguments through once, never replaces the shell, and only
+# suggests `exec zsh` after a successful update or install.
 for entrypoint in update terminal init; do
-  for operation in default update apply install doctor rollback failure; do
+  for operation in default update check install doctor failure; do
     rm -f "$DISPATCH_LOG" "$RESTART_LOG"
     result=0
     ENTRYPOINT="$entrypoint" OPERATION="$operation" "$zsh_bin" -f > "$test_root/output" <<'ZSH' || result=$?
@@ -75,25 +75,34 @@ TERMINAL_KIT_STARSHIP_LOADED=1
 source "$ROOT/config/zsh/$ENTRYPOINT.zsh"
 exec() { print -r -- "$*" > "$RESTART_LOG"; }
 case "$OPERATION" in
-  default) terminal-update ;;
-  apply) terminal-update update --apply fixture-sha ;;
-  failure) export DISPATCH_RESULT=17; terminal-update update --apply fixture-sha || exit $? ;;
-  *) terminal-update "$OPERATION" ;;
+  default) tk ;;
+  check) tk update --check ;;
+  failure) export DISPATCH_RESULT=17; tk update || exit $? ;;
+  *) tk "$OPERATION" ;;
 esac
 print -r -- 'returned to caller'
 ZSH
-    if [[ "$operation" == failure ]]; then
-      [[ "$result" == 17 && ! -e "$RESTART_LOG" ]]
-    elif [[ "$operation" != apply && "$operation" != install ]]; then
-      [[ "$result" == 0 && ! -e "$RESTART_LOG" ]]
-      grep -Fq 'returned to caller' "$test_root/output"
-    else
-      [[ "$result" == 0 && -e "$RESTART_LOG" ]]
-      [[ "$(cat "$RESTART_LOG")" == zsh ]]
-    fi
-    expected="$operation"
-    [[ "$operation" != default ]] || expected=update
-    [[ "$operation" != apply && "$operation" != failure ]] || expected=$'update\n--apply\nfixture-sha'
+    [[ ! -e "$RESTART_LOG" ]]
+    case "$operation" in
+      failure)
+        [[ "$result" == 17 ]]
+        if grep -Fq 'exec zsh' "$test_root/output"; then exit 1; fi
+        ;;
+      update|install)
+        [[ "$result" == 0 ]]
+        grep -Fq 'run exec zsh' "$test_root/output"
+        ;;
+      *)
+        [[ "$result" == 0 ]]
+        if grep -Fq 'exec zsh' "$test_root/output"; then exit 1; fi
+        ;;
+    esac
+    case "$operation" in
+      default) expected='' ;;
+      check) expected=$'update\n--check' ;;
+      failure) expected=update ;;
+      *) expected="$operation" ;;
+    esac
     [[ "$(cat "$DISPATCH_LOG")" == "$expected" ]]
   done
 done

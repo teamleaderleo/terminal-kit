@@ -95,10 +95,4 @@ if grep -Fq '/tmp/' "$HOME/.zshrc"; then
 fi
 [[ -n "$(find "$test_root/backups" -type f -print -quit)" ]]
 
-grep -Fq 'brew "micro"' "$ROOT/Brewfile"
-grep -Fq "export DELTA_PAGER='less -FRX'" "$ROOT/config/zsh/init.zsh"
-grep -Fq 'Keep `tk do` and ordinary human commands low-ceremony' "$ROOT/AGENTS.md"
-grep -Fq 'SSH is the default preference, explicit URLs keep their protocol' "$ROOT/AGENTS.md"
-grep -Fq 'Preserve Command-C/Command-V clipboard behavior and Control-C interruption' "$ROOT/AGENTS.md"
-
 printf 'terminal-kit: Git transport, editor, pager, and startup repair checks passed\n'

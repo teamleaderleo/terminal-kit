@@ -3,9 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/lib.sh"
-
-POLICY_FILE="$ROOT/config/agent-policy.json"
-STATE_ROOT="${TERMINAL_KIT_WORK_STATE_ROOT:-$HOME/.local/state/terminal-kit/work}"
+source "$ROOT/scripts/work-lib.sh"
 
 usage() {
   cat <<'HELP'
@@ -16,9 +14,8 @@ Usage:
   terminal-kit agent events [id|last]
   terminal-kit agent checkpoint <todo|working|needs-attention|review|done> [summary] [--proof text] [--next text] [--id id]
 
-This interface is primarily for coding agents and automation. `context --json` is
-the stable bootstrap: policy, repository state, task receipt, guidance files,
-available agent CLIs, cmux context, and recent terminal-kit work in one object.
+For coding agents. `context --json` returns the repository state, task receipt,
+guidance files, available agent CLIs, cmux context, recent work, and the brief.
 HELP
 }
 
@@ -26,28 +23,11 @@ need_jq() {
   command -v jq >/dev/null 2>&1 || die "jq is required for the agent interface"
 }
 
-canonical_dir() {
-  (cd "$1" 2>/dev/null && pwd -P)
-}
-
 current_repo_root() {
   local root
   root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
   [[ -n "$root" ]] || return 1
   canonical_dir "$root"
-}
-
-receipt_for_id() {
-  local requested="${1:-last}" id file
-  if [[ "$requested" == last ]]; then
-    [[ -r "$STATE_ROOT/last" ]] || return 1
-    id="$(tr -d '[:space:]' < "$STATE_ROOT/last")"
-  else
-    id="$requested"
-  fi
-  file="$STATE_ROOT/$id.json"
-  [[ -r "$file" ]] || return 1
-  printf '%s\n' "$file"
 }
 
 current_receipt() {
@@ -70,10 +50,10 @@ current_receipt() {
 resolve_receipt() {
   local requested="${1:-}"
   if [[ -n "$requested" ]]; then
-    receipt_for_id "$requested" || die "unknown terminal-kit work receipt: $requested"
+    find_receipt "$requested" || die "unknown terminal-kit work receipt: $requested"
     return 0
   fi
-  current_receipt || receipt_for_id last || die "no terminal-kit work receipt is available"
+  current_receipt || find_receipt last || die "no terminal-kit work receipt is available"
 }
 
 json_array_from_lines() {
@@ -82,7 +62,6 @@ json_array_from_lines() {
 
 context_json() {
   need_jq
-  [[ -r "$POLICY_FILE" ]] || die "agent policy missing at $POLICY_FILE"
 
   local cwd repo branch head remote dirty=false guidance_json agents_json work_json recent_json
   local cmux_available=false receipt name
@@ -152,7 +131,7 @@ context_json() {
     --argjson agents "$agents_json" \
     --argjson work "$work_json" \
     --argjson recent "$recent_json" \
-    --argjson policy "$(cat "$POLICY_FILE")" \
+    --arg policy "$(agent_brief)" \
     --argjson cmux_available "$cmux_available" \
     '{
       protocol: $protocol,
@@ -192,8 +171,7 @@ context_human() {
 }
 
 show_policy() {
-  need_jq
-  jq . "$POLICY_FILE"
+  agent_brief
 }
 
 show_current() {

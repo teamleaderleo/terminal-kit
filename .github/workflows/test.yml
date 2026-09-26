@@ -19,15 +19,7 @@ jobs:
       - name: Install JSON parser
         run: brew install jq
       - name: Run repository tests
-        run: |
-          bash scripts/test.sh > test.log 2>&1
-          bash scripts/test-copy.sh >> test.log 2>&1
-          bash scripts/test-ergonomics.sh >> test.log 2>&1
-          bash scripts/test-familiar-controls.sh >> test.log 2>&1
-          bash scripts/test-prompt-clipboard.sh >> test.log 2>&1
-          bash scripts/test-navigation.sh >> test.log 2>&1
-          bash scripts/test-agent.sh >> test.log 2>&1
-          bash scripts/test-karabiner.sh >> test.log 2>&1
+        run: bash scripts/test-all.sh 2>&1 | tee test.log
       - name: Upload failed test log
         if: failure()
         uses: actions/upload-artifact@v4

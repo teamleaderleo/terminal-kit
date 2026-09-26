@@ -46,8 +46,8 @@ case "$command_name" in
   apply|reload)
     exec /bin/bash "$ROOT/scripts/apply.sh" "$@"
     ;;
-  update|rollback)
-    exec python3 "$ROOT/scripts/update.py" --root "$ROOT" "$command_name" "$@"
+  update)
+    exec /bin/bash "$ROOT/scripts/update.sh" "$@"
     ;;
   status)
     if ! has_git_checkout; then
@@ -69,7 +69,7 @@ case "$command_name" in
     fi
     ;;
   work|do)
-    exec /bin/bash "$ROOT/scripts/work-entry.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/work.sh" "$@"
     ;;
   agent|machine)
     exec /bin/bash "$ROOT/scripts/agent.sh" "$@"
@@ -129,11 +129,7 @@ case "$command_name" in
     exec /bin/bash "$ROOT/scripts/doctor.sh" "$@"
     ;;
   test)
-    /bin/bash "$ROOT/scripts/test-copy.sh"
-    /bin/bash "$ROOT/scripts/test-ergonomics.sh"
-    /bin/bash "$ROOT/scripts/test-familiar-controls.sh"
-    /bin/bash "$ROOT/scripts/test-prompt-clipboard.sh"
-    exec /bin/bash "$ROOT/scripts/test.sh" "$@"
+    exec /bin/bash "$ROOT/scripts/test-all.sh" "$@"
     ;;
   publish)
     exec /bin/bash "$ROOT/scripts/publish.sh" "$@"
@@ -155,8 +151,7 @@ case "$command_name" in
     cat <<'HELP'
 Usage: terminal-kit <command>
 
-  update       Fetch and inspect; --apply FULL_SHA installs the exact inspected plan
-  rollback     Restore the previous SOURCE revision (not installer host effects)
+  update       Fetch, show incoming commits, fast-forward, reinstall (--check: show only)
   status       Show the terminal-kit branch, stashes, and working-tree state
   work / do    Resolve a project, make a reversible task checkout, and launch an agent
   agent        Machine-facing context, policy, durable checkpoints, and task events
@@ -183,10 +178,7 @@ Usage: terminal-kit <command>
   edit         Open the repository
   path         Print the repository location
 
-After Zsh loads the kit, plain `tk` inspects available updates. Use the printed exact apply command to install.
-`tk do fix the tests` hands the current repo to an agent in a reversible task checkout.
-Agents should bootstrap with `tk agent context --json` and record durable checkpoints.
-Use `tk status` when you deliberately want Git branch, stash, and working-tree details.
+`tk do fix the tests` hands the current repo to an agent in its own worktree.
 HELP
     ;;
   *)
