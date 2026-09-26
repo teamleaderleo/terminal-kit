@@ -1,5 +1,7 @@
 # terminal-kit: Zsh line editing, history, and optional helpers.
 
+source "${${(%):-%N}:A:h}/cache.zsh"
+
 bindkey -e
 bindkey '^I' expand-or-complete
 KEYTIMEOUT=1
@@ -83,6 +85,9 @@ ZSH_HIGHLIGHT_STYLES[globbing]='fg=#A4AFD0'
 ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=#A4AFD0'
 ZSH_HIGHLIGHT_STYLES[comment]='fg=#656D82'
 ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#596074'
+# Bind the autosuggestion wrappers once, at the first prompt, instead of
+# rewrapping ~200 widgets before every prompt.
+typeset -g ZSH_AUTOSUGGEST_MANUAL_REBIND=1
 
 # Use the same restrained indigo selection colour as the terminal theme.
 zle_highlight=(
@@ -98,11 +103,11 @@ if [[ -z "${TERMINAL_KIT_HELPERS_LOADED:-}" ]]; then
   export TERMINAL_KIT_HELPERS_LOADED=1
 
   if command -v fzf >/dev/null 2>&1; then
-    source <(fzf --zsh)
+    _terminal_kit_cached_init fzf --zsh && source "$REPLY"
   fi
 
   if command -v atuin >/dev/null 2>&1; then
-    eval "$(atuin init zsh --disable-up-arrow)"
+    _terminal_kit_cached_init atuin init zsh --disable-up-arrow && source "$REPLY"
   fi
 
   for _terminal_kit_brew_prefix in /opt/homebrew /usr/local; do
@@ -363,9 +368,11 @@ bindkey '\ed' _terminal_kit_kill_word_or_region
 bindkey '^U' _terminal_kit_backward_kill_line_or_region
 bindkey '^K' _terminal_kit_kill_line_or_region
 
-# Autosuggestions wraps ZLE widgets. Refresh its wrappers after redefining self-insert.
-if (( $+functions[_zsh_autosuggest_bind_widgets] )); then
-  _zsh_autosuggest_bind_widgets
+# Autosuggestions wraps ZLE widgets once at the next prompt, after the widgets
+# above and syntax highlighting exist. Re-arm that when this file is re-sourced.
+if (( $+functions[_zsh_autosuggest_start] )); then
+  autoload -Uz add-zsh-hook
+  add-zsh-hook precmd _zsh_autosuggest_start
 fi
 
 # Keep standalone terminal.zsh and the full bootstrap on the same dispatcher.
