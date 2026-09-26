@@ -103,11 +103,21 @@ if [[ -z "${TERMINAL_KIT_HELPERS_LOADED:-}" ]]; then
   export TERMINAL_KIT_HELPERS_LOADED=1
 
   if command -v fzf >/dev/null 2>&1; then
-    _terminal_kit_cached_init fzf --zsh && source "$REPLY"
+    if _terminal_kit_cached_init fzf --zsh; then
+      source "$REPLY"
+    else
+      source <(fzf --zsh)
+    fi
   fi
 
   if command -v atuin >/dev/null 2>&1; then
-    _terminal_kit_cached_init atuin init zsh --disable-up-arrow && source "$REPLY"
+    if _terminal_kit_cached_init \
+      -d "${ATUIN_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/atuin}/config.toml" \
+      atuin init zsh --disable-up-arrow; then
+      source "$REPLY"
+    else
+      eval "$(atuin init zsh --disable-up-arrow)"
+    fi
   fi
 
   for _terminal_kit_brew_prefix in /opt/homebrew /usr/local; do

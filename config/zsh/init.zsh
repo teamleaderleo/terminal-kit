@@ -44,7 +44,11 @@ if command -v zoxide >/dev/null 2>&1; then
   if [[ -z "${TERMINAL_KIT_ZOXIDE_LOADED:-}" ]]; then
     typeset -g TERMINAL_KIT_ZOXIDE_LOADED=1
     typeset +x TERMINAL_KIT_ZOXIDE_LOADED 2>/dev/null || true
-    _terminal_kit_cached_init zoxide init zsh && source "$REPLY"
+    if _terminal_kit_cached_init -e _ZO_ECHO -e _ZO_RESOLVE_SYMLINKS zoxide init zsh; then
+      source "$REPLY"
+    else
+      eval "$(zoxide init zsh)"
+    fi
   fi
 fi
 
@@ -68,7 +72,11 @@ if [[ "$_terminal_kit_prompt_state" != "off" ]] \
   typeset -g TERMINAL_KIT_STARSHIP_LOADED=1
   typeset +x TERMINAL_KIT_STARSHIP_LOADED 2>/dev/null || true
   export STARSHIP_CONFIG="$_terminal_kit_starship_config"
-  _terminal_kit_cached_init starship init zsh && source "$REPLY"
+  if _terminal_kit_cached_init starship init zsh; then
+    source "$REPLY"
+  else
+    eval "$(starship init zsh)"
+  fi
 fi
 
 # terminal.zsh defines all ZLE widgets and deliberately loads syntax highlighting
