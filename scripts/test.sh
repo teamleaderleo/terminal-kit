@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Never reload the live cmux, Ghostty, or tmux from a fake-HOME test run.
 export TERMINAL_KIT_NO_RELOAD=1
+trap 'printf "terminal-kit: test.sh failed at line %s\n" "$LINENO" >&2' ERR
 
 validate_json() {
   local file="$1"
