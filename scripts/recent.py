@@ -243,36 +243,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--json', action='store_true', help='Print recent conversation metadata without launching clients')
     parser.add_argument('--cmux', default='cmux', help='cmux executable (use the tagged build wrapper for dev work)')
-    parser.add_argument('--native-sidebar', action='store_true', help='Install the live conversation sidebar (requires the promoted cmux build)')
-    parser.add_argument('--sidebar', action='store_true', help='Refresh and select the native Work sidebar')
     args = parser.parse_args()
-    if args.native_sidebar:
-        destination = Path.home()/'.config/cmux/sidebars/tk-conversations.js'
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_text('// cmux:conversation-sidebar\n')
-        destination.chmod(0o600)
-        subprocess.run([args.cmux, 'sidebar', 'select', 'tk-conversations'], check=True)
-    elif args.sidebar:
-        rows = arrange(discover(), Organization().read())
-        for item in rows:
-            item['command'] = shlex.join(resume_args(item))
-            item['operation'] = str(uuid.uuid4())
-        template = Path(__file__).resolve().parent.parent/'config/cmux/work-history.js'
-        destination = Path.home()/'.config/cmux/sidebars/tk-work.js'
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        source = template.read_text().replace('__HISTORY__', json.dumps(rows, ensure_ascii=True))
-        import tempfile
-        fd, temporary = tempfile.mkstemp(dir=destination.parent, prefix='.tk-work-')
-        try:
-            with os.fdopen(fd, 'w') as f:
-                f.write(source)
-            os.replace(temporary, destination)
-        finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
-        subprocess.run([args.cmux, 'sidebar', 'validate', 'tk-work'], check=True)
-        subprocess.run([args.cmux, 'sidebar', 'select', 'tk-work'], check=True)
-    elif args.json:
+    if args.json:
         rows = arrange(discover(), Organization().read())
         for item in rows:
             item['command'] = shlex.join(resume_args(item))

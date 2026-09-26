@@ -1,45 +1,39 @@
-# Managed state and recovery
+# Managed state
 
-This document owns terminal-kit's cross-cutting file/state map and task recovery paths. Command-family behavior stays with the corresponding scripts.
+Everything terminal-kit writes outside its own checkout, and how task recovery works.
 
-## Host-file ownership
+## Host files
 
-The installer keeps the Git checkout at `~/Projects/terminal-kit` and adds small managed include blocks to existing shell, tmux, and Ghostty host files. It preserves the rest of those files. cmux has no config-include mechanism, so terminal-kit owns the rendered `~/.config/cmux/cmux.json` and `~/.config/cmux/dock.json` files.
-
-Backups created while changing managed host state go to `~/.config/terminal-kit-backups/`.
-
-## Repo and machine-local state
-
-| Repo or local file | Role / loaded by |
+| File | What terminal-kit does |
 | --- | --- |
-| `config/ghostty/config` | Ghostty and cmux behavior, home-directory default, and keybindings |
-| `config/ghostty/appearance` | Ghostty and cmux theme fallback and typography |
-| `~/.config/terminal-kit/settings.json` | All `tk set` choices (only values that differ from the defaults) |
-| `~/.config/terminal-kit/glass.ghostty` | Rendered from `glass`; included by Ghostty and cmux |
-| `~/.config/terminal-kit/hints` | Machine-local automatic-hint switch |
-| `~/.config/terminal-kit/hint-index` | Machine-local hint rotation position |
-| `~/.config/terminal-kit/git-protocol` | Machine-local GitHub Git transport choice |
-| `config/cmux/cmux.json.example` | Template; `scripts/settings.py` renders it plus the settings overlay to `~/.config/cmux/cmux.json` |
-| `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
-| `config/hints.txt` | Compact cmux and terminal-kit hint catalogue |
-| `config/starship/terminal-kit.toml` | Calm minimal prompt |
-| `config/starship/detailed.toml` | Optional Git-detailed prompt |
-| `config/tmux/tmux.conf` | `~/.tmux.conf` |
-| `config/zsh/env.zsh` | `~/.zshenv`; restores command paths and friendly editor defaults early |
-| `config/zsh/init.zsh` | Per-shell helper, prompt, completion, pager, optional hint, and plugin bootstrap |
-| `config/zsh/terminal.zsh` | Editing widgets, history, and aliases |
-| `config/zsh/tools.zsh` | Yazi, wide view, clipboard, and modern-tool wrappers |
-| `config/zsh/hints.zsh` | Opt-in fresh-surface hint display and first-command cleanup hook |
-| `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
-| `scripts/git.sh` | Saved GitHub SSH/HTTPS preference and legacy rewrite cleanup |
-| `scripts/perf.sh` | Shell benchmarks, Zsh profiling, and cmux resource reports |
+| `~/.zshenv` | Managed block sourcing `config/zsh/env.zsh` |
+| `~/.zshrc` | Managed block sourcing `config/zsh/init.zsh`; drops stale `source /tmp/.../env` lines |
+| `~/.tmux.conf` | Managed block sourcing `config/tmux/tmux.conf` |
+| `~/.config/ghostty/config` and `~/Library/Application Support/com.mitchellh.ghostty/config` | Managed block including `config/ghostty/config`, `config/ghostty/appearance`, and the glass file |
+| `~/.config/cmux/cmux.json` | Whole file, rendered by `scripts/settings.py` from `config/cmux/cmux.json.example` plus your settings |
+| `~/.config/cmux/dock.json` | Whole file, copied from `config/cmux/dock.json.example` |
+| `~/.config/karabiner/karabiner.json` | Adds or refreshes one rule (from `config/karabiner/terminal-kit.json`) in the selected profile; also copies it to `assets/complex_modifications/` |
+| `~/.gitconfig`, `gh` config | `tk git` sets the GitHub CLI protocol and removes an old global HTTPS-to-SSH rewrite |
+| `~/.local/bin/terminal-kit` | Symlink to `bin/terminal-kit` |
 
-## Agent task receipts and recovery
+A managed block sits between `# >>> terminal-kit: NAME >>>` and `# <<< terminal-kit: NAME <<<`. Everything outside it is yours.
 
-`tk do` / `tk work` keeps durable task receipts in `~/.local/state/terminal-kit/work/` and creates owned task worktrees under `~/.local/share/terminal-kit/worktrees/` by default.
+Before replacing a file, terminal-kit copies it to `~/.config/terminal-kit-backups/<timestamp>/`.
 
-`tk work undo [id|last]` removes only a receipt-recorded disposable worktree. Before removal it verifies that the path is still the recorded Git worktree and that its branch still matches the receipt. It records the worktree HEAD at `refs/terminal-kit/recovery/<id>/head`; dirty work also gets a snapshot ref at `refs/terminal-kit/recovery/<id>/snapshot`. If a snapshot cannot be created, the worktree stays in place.
+## Local state
 
-`tk work restore [id|last]` recreates the recorded branch and worktree from those refs. Existing conflicting paths or branches stop restoration. A snapshot-application conflict leaves the recreated worktree in place for manual resolution and records `restore-conflict` in the receipt.
+| Path | Contents |
+| --- | --- |
+| `~/.config/terminal-kit/settings.json` | `tk set` choices that differ from the defaults |
+| `~/.config/terminal-kit/glass.ghostty` | Generated from the `glass` setting |
+| `~/.config/terminal-kit/git-protocol` | `ssh` or `https` |
+| `~/.config/terminal-kit/recent-organization.json` | `tk recent` pins and groups |
+| `~/.local/state/terminal-kit/work/` | `tk do` task receipts and checkpoint events |
+| `~/.local/share/terminal-kit/worktrees/` | Task worktrees |
+| `~/.cache/terminal-kit/` | Shell startup caches (safe to delete) |
 
-`tk agent checkpoint` appends durable state/events to the same task state so a fresh agent can continue after a dead terminal or abandoned chat.
+## Task recovery
+
+`tk work undo [id|last]` removes a task worktree only if it still matches its receipt (same path, same branch). First it saves the worktree HEAD to `refs/terminal-kit/recovery/<id>/head` and, if there are uncommitted changes, a snapshot to `refs/terminal-kit/recovery/<id>/snapshot`. If the snapshot cannot be made, nothing is removed.
+
+`tk work restore [id|last]` recreates the branch and worktree from those refs. It stops if the path or branch already exists. A conflict while re-applying the snapshot leaves the worktree for you to resolve and marks the receipt `restore-conflict`.

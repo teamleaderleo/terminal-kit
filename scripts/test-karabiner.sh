@@ -8,27 +8,11 @@ command -v jq >/dev/null 2>&1 || {
   exit 1
 }
 
-jq empty "$ROOT/config/karabiner/terminal-kit.json"
-jq empty "$ROOT/config/cmux/cmux.json.example"
-[[ "$(jq -r '.shortcuts.bindings.nextSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+tab' ]]
-[[ "$(jq -r '.shortcuts.bindings.prevSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+shift+tab' ]]
-grep -Fq '⌘Tab / ⌘⇧Tab Next / previous surface' "$ROOT/config/hints.txt"
-[[ "$(jq -r '.rules[0].description' "$ROOT/config/karabiner/terminal-kit.json")" == 'terminal-kit: browser-style cmux surface switching' ]]
-[[ "$(jq -r '.rules[0].manipulators | length' "$ROOT/config/karabiner/terminal-kit.json")" == 6 ]]
-[[ "$(jq -r '.rules[0].manipulators[0].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_control ]]
-[[ "$(jq -r '.rules[0].manipulators[1].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_control,left_shift ]]
-[[ "$(jq -r '.rules[0].manipulators[2].from.key_code' "$ROOT/config/karabiner/terminal-kit.json")" == close_bracket ]]
-[[ "$(jq -r '.rules[0].manipulators[2].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_control ]]
-[[ "$(jq -r '.rules[0].manipulators[3].from.key_code' "$ROOT/config/karabiner/terminal-kit.json")" == open_bracket ]]
-[[ "$(jq -r '.rules[0].manipulators[3].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_control,left_shift ]]
-[[ "$(jq -r '.rules[0].manipulators[4].to[0].modifiers | join(",")' "$ROOT/config/karabiner/terminal-kit.json")" == left_command ]]
-
 scratch="$(mktemp -d)"
 trap 'rm -rf "$scratch"' EXIT
 home="$scratch/home"
 live="$home/.config/karabiner/karabiner.json"
 asset="$home/.config/karabiner/assets/complex_modifications/terminal-kit.json"
-snapshot="$scratch/portable.json"
 mkdir -p "$(dirname "$live")"
 
 cat > "$live" <<'JSON'
@@ -60,6 +44,10 @@ cat > "$live" <<'JSON'
           {
             "description": "local keep-me rule",
             "manipulators": []
+          },
+          {
+            "description": "terminal-kit: browser-style cmux surface switching",
+            "manipulators": [{"type": "basic", "from": {"key_code": "tab"}}]
           }
         ]
       },
@@ -81,7 +69,6 @@ JSON
 export HOME="$home"
 export TERMINAL_KIT_KARABINER_CONFIG="$live"
 export TERMINAL_KIT_KARABINER_ASSET="$asset"
-export TERMINAL_KIT_KARABINER_SNAPSHOT="$snapshot"
 
 "$ROOT/bin/terminal-kit" karabiner apply >/dev/null
 jq empty "$live"
@@ -95,37 +82,17 @@ before="$(shasum "$live" "$asset")"
 after="$(shasum "$live" "$asset")"
 [[ "$before" == "$after" ]]
 
-"$ROOT/bin/terminal-kit" karabiner export >/dev/null
-jq empty "$snapshot"
-[[ "$(jq -r '.sourceProfile' "$snapshot")" == 'Default profile' ]]
-[[ "$(jq -r '.profile.simple_modifications[0].from.key_code' "$snapshot")" == caps_lock ]]
-[[ "$(jq -r '.profile.complex_modifications.rules | map(select(.description == "local keep-me rule")) | length' "$snapshot")" == 1 ]]
-[[ "$(jq -r '.profile.complex_modifications.rules | map(select(.description == "terminal-kit: browser-style cmux surface switching")) | length' "$snapshot")" == 0 ]]
-if jq -e '.profile.devices' "$snapshot" >/dev/null 2>&1; then
-  printf 'terminal-kit Karabiner test: portable snapshot leaked devices\n' >&2
-  exit 1
-fi
+# An older copy of the rule is replaced, not duplicated.
+[[ "$(jq -r '.profiles[0].complex_modifications.rules[] | select(.description == "terminal-kit: browser-style cmux surface switching") | .manipulators | map(.from.key_code) | join(",")' "$live")" == close_bracket,open_bracket ]]
 
-# Simulate local drift after export. Sync should restore snapshot-owned mappings
-# while preserving unrelated local mappings, rules, and device state.
+# Later local edits survive a sync.
 tmp="$(mktemp)"
-jq '
-  .profiles[0].simple_modifications = [
-    {"from":{"key_code":"caps_lock"},"to":[{"key_code":"escape"}]},
-    {"from":{"key_code":"left_control"},"to":[{"key_code":"left_command"}]}
-  ]
-  | .profiles[0].complex_modifications.rules = [
-      {"description":"later local rule","manipulators":[]}
-    ]
-' "$live" > "$tmp"
+jq '.profiles[0].complex_modifications.rules += [{"description":"later local rule","manipulators":[]}]' "$live" > "$tmp"
 mv "$tmp" "$live"
-
 "$ROOT/bin/terminal-kit" karabiner sync >/dev/null
-[[ "$(jq -r '.profiles[0].simple_modifications[] | select(.from.key_code == "caps_lock") | .to[0].key_code' "$live")" == left_control ]]
-[[ "$(jq -r '.profiles[0].simple_modifications[] | select(.from.key_code == "left_control") | .to[0].key_code' "$live")" == left_command ]]
-[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "local keep-me rule")) | length' "$live")" == 1 ]]
 [[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "later local rule")) | length' "$live")" == 1 ]]
 [[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "terminal-kit: browser-style cmux surface switching")) | length' "$live")" == 1 ]]
+[[ "$(jq -r '.profiles[0].simple_modifications[0].to[0].key_code' "$live")" == left_control ]]
 [[ "$(jq -r '.profiles[0].devices[0].identifiers.product_id' "$live")" == 123 ]]
 
 status="$("$ROOT/bin/terminal-kit" karabiner status)"

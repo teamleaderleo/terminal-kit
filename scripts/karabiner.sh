@@ -7,7 +7,6 @@ source "$ROOT/scripts/lib.sh"
 LIVE_CONFIG="${TERMINAL_KIT_KARABINER_CONFIG:-$HOME/.config/karabiner/karabiner.json}"
 ASSET_SOURCE="$ROOT/config/karabiner/terminal-kit.json"
 ASSET_TARGET="${TERMINAL_KIT_KARABINER_ASSET:-$HOME/.config/karabiner/assets/complex_modifications/terminal-kit.json}"
-PORTABLE_SNAPSHOT="${TERMINAL_KIT_KARABINER_SNAPSHOT:-$ROOT/config/karabiner/portable.json}"
 MANAGED_DESCRIPTION="terminal-kit: browser-style cmux surface switching"
 KARABINER_APP="/Applications/Karabiner-Elements.app"
 KARABINER_CLI="/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli"
@@ -18,12 +17,11 @@ usage() {
   cat <<'HELP'
 Usage: terminal-kit karabiner <command>
 
-  status          Show live config, selected profile, managed rule, and snapshot state
-  apply | sync    Merge the repo snapshot and terminal-kit rule into the selected profile
-  export          Save portable key mappings from the selected live profile into the repo
+  status          Show whether the terminal-kit rule is in the selected profile
+  apply | sync    Add or refresh the terminal-kit rule in the selected profile
 
-The portable snapshot intentionally excludes device-specific settings and Karabiner
-profile/global metadata. terminal-kit's own cmux rule stays in a separate managed file.
+The rule maps Cmd-Shift-] / Cmd-Shift-[ to Ctrl-Tab / Ctrl-Shift-Tab inside cmux.
+Everything else in your Karabiner config is left alone.
 HELP
 }
 
@@ -90,54 +88,17 @@ sync_asset() {
 }
 
 render_applied_config() {
-  local index="$1" tmp="$2" rule snapshot_json
+  local index="$1" tmp="$2" rule
   rule="$(jq '.rules[0]' "$ASSET_SOURCE")"
   [[ "$rule" != null ]] || die "managed Karabiner rule file has no rule"
-
-  snapshot_json='null'
-  if [[ -r "$PORTABLE_SNAPSHOT" ]]; then
-    jq empty "$PORTABLE_SNAPSHOT" || die "portable Karabiner snapshot is invalid JSON"
-    snapshot_json="$(cat "$PORTABLE_SNAPSHOT")"
-  fi
 
   jq \
     --argjson index "$index" \
     --argjson managed_rule "$rule" \
-    --arg managed_description "$MANAGED_DESCRIPTION" \
-    --argjson snapshot "$snapshot_json" '
-      def merge_by_from($base; $incoming):
-        reduce (($incoming // [])[]) as $item (($base // []);
-          ([.[] | select(.from != $item.from)] + [$item])
-        );
-      def merge_rules($base; $incoming):
-        reduce (($incoming // [])[]) as $item (($base // []);
-          ([.[] | select((.description // "") != ($item.description // ""))] + [$item])
-        );
-
+    --arg managed_description "$MANAGED_DESCRIPTION" '
       .profiles[$index].complex_modifications //= {} |
-      .profiles[$index].complex_modifications.rules //= [] |
-
-      if $snapshot != null then
-        .profiles[$index].simple_modifications = merge_by_from(
-          .profiles[$index].simple_modifications;
-          $snapshot.profile.simple_modifications
-        ) |
-        .profiles[$index].fn_function_keys = merge_by_from(
-          .profiles[$index].fn_function_keys;
-          $snapshot.profile.fn_function_keys
-        ) |
-        .profiles[$index].complex_modifications.parameters = (
-          (.profiles[$index].complex_modifications.parameters // {})
-          * ($snapshot.profile.complex_modifications.parameters // {})
-        ) |
-        .profiles[$index].complex_modifications.rules = merge_rules(
-          .profiles[$index].complex_modifications.rules;
-          $snapshot.profile.complex_modifications.rules
-        )
-      else . end |
-
       .profiles[$index].complex_modifications.rules = (
-        [.profiles[$index].complex_modifications.rules[]
+        [(.profiles[$index].complex_modifications.rules // [])[]
           | select((.description // "") != $managed_description)]
         + [$managed_rule]
       )
@@ -172,47 +133,6 @@ apply_settings() {
   rm -f "$tmp"
 }
 
-export_settings() {
-  need_jq
-  validate_live_config || die "Karabiner config is not available: $LIVE_CONFIG"
-
-  local index profile tmp
-  index="$(selected_profile_index)"
-  [[ -n "$index" ]] || die "could not resolve a Karabiner profile"
-  profile="$(selected_profile_name "$index")"
-  tmp="$(mktemp -t terminal-kit-karabiner-export.XXXXXX)"
-
-  jq \
-    --argjson index "$index" \
-    --arg managed_description "$MANAGED_DESCRIPTION" '
-      {
-        version: 1,
-        sourceProfile: (.profiles[$index].name // ""),
-        profile: {
-          simple_modifications: (.profiles[$index].simple_modifications // []),
-          fn_function_keys: (.profiles[$index].fn_function_keys // []),
-          complex_modifications: {
-            parameters: (.profiles[$index].complex_modifications.parameters // {}),
-            rules: [
-              (.profiles[$index].complex_modifications.rules // [])[]
-              | select((.description // "") != $managed_description)
-            ]
-          }
-        }
-      }
-    ' "$LIVE_CONFIG" > "$tmp"
-
-  mkdir -p "$(dirname "$PORTABLE_SNAPSHOT")"
-  if [[ ! -e "$PORTABLE_SNAPSHOT" ]] || ! cmp -s "$tmp" "$PORTABLE_SNAPSHOT"; then
-    mv "$tmp" "$PORTABLE_SNAPSHOT"
-    say "exported portable Karabiner settings from profile: $profile"
-    say "snapshot: ${PORTABLE_SNAPSHOT/#$HOME/\~}"
-  else
-    rm -f "$tmp"
-    say "portable Karabiner settings already match profile: $profile"
-  fi
-}
-
 show_status() {
   need_jq
   printf 'terminal-kit Karabiner\n'
@@ -234,11 +154,6 @@ show_status() {
     printf 'profile:     unavailable\n'
     printf 'cmux alias:  false\n'
   fi
-  if [[ -r "$PORTABLE_SNAPSHOT" ]]; then
-    printf 'snapshot:    %s\n' "${PORTABLE_SNAPSHOT/#$HOME/\~}"
-  else
-    printf 'snapshot:    none (run tk karabiner export when you want to capture portable mappings)\n'
-  fi
 }
 
 command_name="${1:-status}"
@@ -248,10 +163,6 @@ case "$command_name" in
     if [[ "${1:-}" == --quiet ]]; then quiet=true; shift; fi
     (( $# == 0 )) || die "unexpected Karabiner arguments: $*"
     apply_settings
-    ;;
-  export)
-    (( $# == 0 )) || die "unexpected Karabiner arguments: $*"
-    export_settings
     ;;
   status)
     (( $# == 0 )) || die "unexpected Karabiner arguments: $*"

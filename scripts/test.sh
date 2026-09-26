@@ -36,7 +36,6 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/terminal.zsh" \
     "$ROOT/config/zsh/tools.zsh" \
     "$ROOT/config/zsh/update.zsh" \
-    "$ROOT/config/zsh/hints.zsh" \
     "$ROOT/config/zsh/highlight.zsh"
 fi
 
@@ -69,8 +68,6 @@ before="$(shasum \
   "$test_root/home/.config/ghostty/config" \
   "$test_root/home/.config/terminal-kit/glass.ghostty" \
   "$test_root/home/.config/terminal-kit/settings.json" \
-  "$test_root/home/.config/terminal-kit/hints" \
-  "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/git-protocol" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
@@ -83,8 +80,6 @@ after="$(shasum \
   "$test_root/home/.config/ghostty/config" \
   "$test_root/home/.config/terminal-kit/glass.ghostty" \
   "$test_root/home/.config/terminal-kit/settings.json" \
-  "$test_root/home/.config/terminal-kit/hints" \
-  "$test_root/home/.config/terminal-kit/hints-layout-v2" \
   "$test_root/home/.config/terminal-kit/git-protocol" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
@@ -99,7 +94,6 @@ grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/config" "$test_ro
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/.config/terminal-kit/glass.ghostty" "$test_root/home/.config/ghostty/config"
 grep -Fq 'background-blur = macos-glass-regular' "$test_root/home/.config/terminal-kit/glass.ghostty"
-grep -Fxq 'off' "$test_root/home/.config/terminal-kit/hints"
 grep -Fxq 'ssh' "$test_root/home/.config/terminal-kit/git-protocol"
 if HOME="$test_root/home" git config --global --get-all \
   'url.git@github.com:.insteadOf' | grep -Fxq 'https://github.com/'; then

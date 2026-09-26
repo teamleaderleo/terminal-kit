@@ -155,28 +155,10 @@
       "command": "terminal-kit set sidebar details"
     },
     {
-      "name": "Workspace: Overview",
-      "description": "Browse every cmux window and workspace in one calm full-screen view",
-      "keywords": ["workspace", "window", "overview", "switcher", "expose"],
-      "command": "terminal-kit overview"
-    },
-    {
       "name": "Agent: Work Here",
       "description": "Create a reversible task checkout and open an agent for the current project",
       "keywords": ["agent", "work", "task", "codex", "claude", "worktree"],
       "command": "terminal-kit work"
-    },
-    {
-      "name": "Karabiner: Export Portable Settings",
-      "description": "Capture portable Karabiner mappings from the selected profile into terminal-kit",
-      "keywords": ["karabiner", "keyboard", "export", "sync", "keys"],
-      "command": "terminal-kit karabiner export"
-    },
-    {
-      "name": "Karabiner: Sync Settings",
-      "description": "Merge terminal-kit Karabiner mappings into the selected local profile",
-      "keywords": ["karabiner", "keyboard", "apply", "sync", "keys"],
-      "command": "terminal-kit karabiner sync"
     },
     {
       "name": "Theme: Browse",
@@ -195,18 +177,6 @@
       "description": "Render ANSI, source code, and diff samples",
       "keywords": ["theme", "contrast", "accessibility", "test"],
       "command": "terminal-kit theme test"
-    },
-    {
-      "name": "Hints: Show Next",
-      "description": "Explicitly place one shortcut hint in the current workspace row",
-      "keywords": ["hints", "keys", "shortcuts", "learn", "sidebar"],
-      "command": "terminal-kit hints next"
-    },
-    {
-      "name": "Hints: Clear",
-      "description": "Remove the optional terminal-kit hint from this workspace",
-      "keywords": ["hints", "clear", "sidebar"],
-      "command": "terminal-kit hints clear"
     },
     {
       "name": "Keys: Cheat Sheet",

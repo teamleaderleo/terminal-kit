@@ -112,14 +112,8 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/init.zsh" \
     "$ROOT/config/zsh/terminal.zsh" \
     "$ROOT/config/zsh/tools.zsh" \
-    "$ROOT/config/zsh/hints.zsh" \
     "$ROOT/config/zsh/highlight.zsh"
   printf 'OK   Zsh settings parse cleanly\n'
-fi
-
-if [[ -r "$HOME/.config/terminal-kit/hints" ]]; then
-  hints_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/hints")"
-  printf 'OK   fresh-shell hints         %s\n' "$hints_state"
 fi
 
 if settings="$(python3 "$ROOT/scripts/settings.py" 2>&1)"; then

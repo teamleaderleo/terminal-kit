@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# `tk copy` (and the `clip` shell function): explicit clipboard writes only.
 set -euo pipefail
 
 fail() {
@@ -7,74 +8,82 @@ fail() {
 }
 
 copy_text() {
-  local label="$1"
-  local text="$2"
+  local label="$1" text="$2"
   command -v pbcopy >/dev/null 2>&1 || fail "pbcopy is unavailable"
   printf '%s' "$text" | pbcopy
   printf 'terminal-kit: copied %s\n' "$label"
 }
 
-copy_path() {
-  copy_text "current path" "$(pwd -P)"
+git_value() {
+  git "$@" 2>/dev/null || fail "not in a Git repository with that information"
 }
 
-copy_project() {
-  local root
-  root="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || pwd -P)"
-  copy_text "project path" "$root"
-}
-
-copy_command() {
-  local command_text="${TERMINAL_KIT_LAST_COMMAND:-}"
-  [[ -n "$command_text" ]] || fail "no previous command has been recorded in this shell yet"
-  copy_text "last command" "$command_text"
-}
-
-copy_screen() {
-  [[ -n "${CMUX_SURFACE_ID:-}" ]] || fail "copy screen requires a cmux terminal surface"
-  command -v cmux >/dev/null 2>&1 || fail "cmux is unavailable"
-
-  local screen
-  screen="$(cmux read-screen --surface "$CMUX_SURFACE_ID")"
-  [[ -n "$screen" ]] || fail "the current cmux screen is empty"
-  copy_text "visible screen" "$screen"
+web_url() {
+  local remote value
+  remote="$(git_value remote get-url origin)" || exit 1
+  case "$remote" in
+    git@*:*) remote="${remote#git@}"; value="https://${remote%%:*}/${remote#*:}" ;;
+    ssh://git@*) value="https://${remote#ssh://git@}" ;;
+    *) value="$remote" ;;
+  esac
+  printf '%s\n' "${value%.git}"
 }
 
 usage() {
   cat <<'HELP'
-Usage: terminal-kit copy <command>
+Usage: terminal-kit copy <what>     (clip <what> in the shell)
 
-  command       Copy the last shell command recorded before this helper ran
-  screen        Copy the visible cmux terminal screen
-  path          Copy the current working directory
-  project       Copy the current Git root, or the working directory outside Git
+  command   the last shell command
+  screen    the visible cmux terminal screen
+  path      the current directory
+  project   the Git root, or the current directory outside Git
+  branch    the current Git branch
+  commit    the current commit SHA
+  remote    the origin remote URL
+  web       the origin as an https:// browser URL
+  FILE      the contents of a file
+  TEXT      the text itself
+  ... | tk copy   standard input
 HELP
 }
 
-command_name="${1:-help}"
-shift || true
+if (( $# == 0 )); then
+  if [[ -t 0 ]]; then
+    usage >&2
+    exit 2
+  fi
+  command -v pbcopy >/dev/null 2>&1 || fail "pbcopy is unavailable"
+  pbcopy
+  printf 'terminal-kit: copied stdin\n'
+  exit 0
+fi
 
-case "$command_name" in
+case "$1" in
   command|cmd|last)
-    [[ $# -eq 0 ]] || fail "copy command takes no arguments"
-    copy_command
+    [[ -n "${TERMINAL_KIT_LAST_COMMAND:-}" ]] || fail "no previous command has been recorded in this shell yet"
+    copy_text "last command" "$TERMINAL_KIT_LAST_COMMAND"
     ;;
-  screen|visible|output)
-    [[ $# -eq 0 ]] || fail "copy screen takes no arguments"
-    copy_screen
+  screen)
+    [[ -n "${CMUX_SURFACE_ID:-}" ]] || fail "copy screen requires a cmux terminal surface"
+    command -v cmux >/dev/null 2>&1 || fail "cmux is unavailable"
+    screen="$(cmux read-screen --surface "$CMUX_SURFACE_ID")"
+    [[ -n "$screen" ]] || fail "the current cmux screen is empty"
+    copy_text "visible screen" "$screen"
     ;;
-  path|cwd)
-    [[ $# -eq 0 ]] || fail "copy path takes no arguments"
-    copy_path
-    ;;
-  project|root)
-    [[ $# -eq 0 ]] || fail "copy project takes no arguments"
-    copy_project
-    ;;
-  help|-h|--help)
-    usage
-    ;;
+  path|pwd) copy_text path "$(pwd -P)" ;;
+  project|root) value="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null || pwd -P)"; copy_text "project path" "$value" ;;
+  branch) value="$(git_value rev-parse --abbrev-ref HEAD)"; copy_text branch "$value" ;;
+  commit|sha) value="$(git_value rev-parse HEAD)"; copy_text commit "$value" ;;
+  remote) value="$(git_value remote get-url origin)"; copy_text remote "$value" ;;
+  web|url) value="$(web_url)"; copy_text "web URL" "$value" ;;
+  help|-h|--help) usage ;;
   *)
-    fail "unknown copy command: $command_name"
+    if (( $# == 1 )) && [[ -f "$1" ]]; then
+      command -v pbcopy >/dev/null 2>&1 || fail "pbcopy is unavailable"
+      pbcopy < "$1"
+      printf 'terminal-kit: copied file %s\n' "$1"
+    else
+      copy_text text "$*"
+    fi
     ;;
 esac

@@ -80,9 +80,6 @@ case "$command_name" in
   git|github)
     exec /bin/bash "$ROOT/scripts/git.sh" "$@"
     ;;
-  cmux)
-    exec /bin/bash "$ROOT/scripts/cmux-fork.sh" "$@"
-    ;;
   theme|themes)
     exec /bin/bash "$ROOT/scripts/theme.sh" "$@"
     ;;
@@ -107,17 +104,8 @@ case "$command_name" in
   copy|clipboard)
     exec /bin/bash "$ROOT/scripts/copy.sh" "$@"
     ;;
-  overview|workspaces)
-    exec /bin/bash "$ROOT/scripts/overview.sh" "$@"
-    ;;
-  template|templates)
-    exec /usr/bin/env python3 "$ROOT/scripts/workspace_template.py" "$@"
-    ;;
-  hints|hint)
-    exec /bin/bash "$ROOT/scripts/hints.sh" "$@"
-    ;;
   keys|cheatsheet)
-    exec /bin/bash "$ROOT/scripts/hints.sh" list
+    exec cat "$ROOT/config/hints.txt"
     ;;
   perf|performance)
     exec /bin/bash "$ROOT/scripts/perf.sh" "$@"
@@ -130,9 +118,6 @@ case "$command_name" in
     ;;
   test)
     exec /bin/bash "$ROOT/scripts/test-all.sh" "$@"
-    ;;
-  publish)
-    exec /bin/bash "$ROOT/scripts/publish.sh" "$@"
     ;;
   uninstall)
     exec /bin/bash "$ROOT/scripts/uninstall.sh" "$@"
@@ -155,25 +140,20 @@ Usage: terminal-kit <command>
   status       Show the terminal-kit branch, stashes, and working-tree state
   work / do    Resolve a project, make a reversible task checkout, and launch an agent
   agent        Machine-facing context, policy, durable checkpoints, and task events
-  karabiner    Export and sync portable Karabiner key mappings
+  karabiner    Add the Cmd-Shift-] / [ surface-switching rule to Karabiner
   git          Choose SSH or HTTPS for GitHub Git operations
-  cmux         Update, warm-build, or launch the canonical cmux checkout
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
   set          List or change settings: scroll, wrap, prompt, memory, sidebar, glass
-  theme        Browse, test, set, rotate, or automate cmux themes
+  theme        Browse, test, or set cmux themes; next cycles the shortlist
   recent       Find and resume existing Claude/Codex conversations
   duo          Open Claude and Codex side by side for a project
-  copy         Copy the last command, visible screen, current path, or project path
-  overview     Browse every cmux window and workspace in one full-screen view
-  template     Save a live cmux workspace as a layout template, or re-create one
-  hints        Control temporary hints in cmux workspace rows
+  copy         Copy the last command, screen, path, branch, remote, a file, or text
   keys         Print the compact hotkey and command cheat sheet
   perf         Benchmark and profile shell and cmux performance
   tools        Install recommended Homebrew packages
   doctor       Check files and commands
   test         Run repository checks
-  publish      Create or push a public GitHub repository
   uninstall    Remove managed include blocks and command link
   edit         Open the repository
   path         Print the repository location
