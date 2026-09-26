@@ -12,7 +12,7 @@ git clone git@github.com:teamleaderleo/terminal-kit.git ~/Projects/terminal-kit
 exec zsh
 ```
 
-Then use `tk` or `tk update` to fetch and inspect available changes without changing the checkout or installing code. Review the displayed diff, then use `tk update --apply FULL_SHA` with the exact printed commit. The application step retains the previous source revision and prints an independent recovery command. `tk rollback` restores source only; packages, host files, and running services are not restored. See [source update recovery](docs/update-recovery.md) for the contract and limitations. `tk apply` reapplies local settings without fetching; `tk doctor` checks the installation.
+`tk update` fetches, shows the incoming commits, fast-forwards, and reinstalls; `tk update --check` only shows. Then run `exec zsh`. `tk apply` reapplies local settings without fetching; `tk doctor` checks the installation.
 
 ## Work with an agent
 
@@ -34,16 +34,16 @@ tk work undo [id|last]
 tk work restore [id|last]
 ```
 
-`undo` validates the recorded worktree and branch, creates hidden Git recovery refs, then removes only that owned checkout. `restore` reconstructs it from the receipt and recovery refs. See [managed state and recovery](docs/managed-state.md) and the machine policy in [`config/agent-policy.json`](config/agent-policy.json).
+`undo` validates the recorded worktree and branch, creates hidden Git recovery refs, then removes only that owned checkout. `restore` reconstructs it from the receipt and recovery refs. See [managed state and recovery](docs/managed-state.md).
 
-Agents bootstrap with `tk agent context --json` and record durable progress with `tk agent checkpoint`.
+Each agent gets a short brief (`tk agent policy`); it can read its task with `tk agent context --json` and record progress with `tk agent checkpoint`.
 
 ## Command families
 
 | Family | Commands | Narrow owner |
 | --- | --- | --- |
 | Update and repair | `tk`, `tk update`, `tk apply`, `tk tools`, `tk doctor`, `tk test`, `tk uninstall` | [`bin/terminal-kit`](bin/terminal-kit), [`scripts/apply.sh`](scripts/apply.sh), [`scripts/doctor.sh`](scripts/doctor.sh) |
-| Work and agent state | `tk do`, `tk work`, `tk agent` | [`scripts/work.sh`](scripts/work.sh), [`scripts/agent.sh`](scripts/agent.sh), [`config/agent-policy.json`](config/agent-policy.json) |
+| Work and agent state | `tk do`, `tk work`, `tk agent` | [`scripts/work.sh`](scripts/work.sh), [`scripts/agent.sh`](scripts/agent.sh) |
 | Git and clipboard | `tk status`, `tk git`, `tk copy` | [`scripts/git.sh`](scripts/git.sh), [`scripts/copy.sh`](scripts/copy.sh) |
 | Settings | `tk set` (scroll, wrap, prompt, memory, sidebar, glass) | [`scripts/settings.py`](scripts/settings.py) |
 | cmux controls and fork | `tk theme`, `tk overview`, `tk hints`, `tk keys`, `tk cmux` | [`scripts/theme.sh`](scripts/theme.sh), [`scripts/overview.sh`](scripts/overview.sh), [`scripts/hints.sh`](scripts/hints.sh), [`scripts/cmux-fork.sh`](scripts/cmux-fork.sh) |

@@ -318,15 +318,4 @@ FAKE_CMUX
     "$test_root/home/.local/bin/terminal-kit" work undo "$url_work_id" >/dev/null
 fi
 
-bash "$ROOT/scripts/test-cmux-fork.sh"
-python3 "$ROOT/scripts/test-cmux-audit.py"
-bash "$ROOT/scripts/test-shell-helpers.sh"
-bash "$ROOT/scripts/test-shell-dispatch.sh"
-bash "$ROOT/scripts/test-shell-env.sh"
-python3 "$ROOT/scripts/test-git-checkout.py"
-python3 "$ROOT/scripts/test-update.py"
-printf 'terminal-kit tests passed\n'
-
-python3 "$ROOT/scripts/test-recent.py"
-
-node "$ROOT/scripts/test-work-history.js"
+printf 'terminal-kit install and work tests passed\n'

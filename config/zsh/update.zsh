@@ -1,21 +1,10 @@
-# Preview updates in the current shell. Applying an inspected revision or running
-# install replaces this shell so prompt and ZLE changes load once from startup.
-terminal-update() {
-  local _terminal_kit_command="${1:-update}" _terminal_kit_update_action="${2:-}"
-  if (( $# == 0 )); then
-    set -- update
-  fi
-
+# `tk` is terminal-kit. After update or install, reload this shell yourself;
+# nothing replaces the running shell behind your back.
+tk() {
   command terminal-kit "$@" || return
-  case "$_terminal_kit_command" in
-    install)
-      exec zsh
-      ;;
-    update)
-      if [[ "$_terminal_kit_update_action" == --apply ]]; then
-        exec zsh
-      fi
+  case "${1:-}" in
+    install|update)
+      [[ "${2:-}" == --check ]] || print -r -- 'terminal-kit: run exec zsh to load the new shell config'
       ;;
   esac
 }
-alias tk='terminal-update'
