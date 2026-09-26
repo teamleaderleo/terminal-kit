@@ -126,3 +126,29 @@ remove_managed_block() {
     rm -f "$output"
   fi
 }
+
+reload_cmux() {
+  # Tests and other non-interactive callers set TERMINAL_KIT_NO_RELOAD so a
+  # fake-HOME run never touches the live cmux instance.
+  [[ -z "${TERMINAL_KIT_NO_RELOAD:-}" ]] || return 0
+  command -v cmux >/dev/null 2>&1 || return 0
+  cmux ping >/dev/null 2>&1 || return 0
+  cmux reload-config >/dev/null 2>&1 || cmux config reload >/dev/null 2>&1 || true
+  log "reloaded cmux"
+}
+
+# Remove host state created by older terminal-kit versions.
+remove_retired_state() {
+  local label agent
+  for label in com.terminal-kit.memory-auto; do
+    agent="$HOME/Library/LaunchAgents/$label.plist"
+    [[ -e "$agent" ]] || continue
+    launchctl bootout "gui/$(id -u)/$label" >/dev/null 2>&1 || true
+    rm -f "$agent"
+    log "removed retired LaunchAgent $label"
+  done
+  rm -f \
+    "$HOME/.local/lib/terminal-kit/terminal-kit-memoryd" \
+    "$HOME/.local/lib/terminal-kit/memoryd-source.sha256"
+  rmdir "$HOME/.local/lib/terminal-kit" >/dev/null 2>&1 || true
+}

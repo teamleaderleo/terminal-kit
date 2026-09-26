@@ -4,10 +4,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$ROOT/scripts/lib.sh"
 
-if [[ -f "$HOME/.config/terminal-kit/customization/state.json" ]] && python3 "$ROOT/scripts/customization.py" status | grep -q ": off$"; then
-  die "customization is off; use terminal-kit customization on before install/update"
-fi
-
 [[ "$(uname -s)" == "Darwin" ]] || die "this kit currently targets macOS"
 
 install_tools=true
@@ -37,53 +33,11 @@ if [[ "$install_tools" == true ]]; then
   /bin/bash "$ROOT/scripts/install-tools.sh"
 fi
 
-# Keep changeable glass state outside Git so switching presets never dirties the
-# checkout or blocks a later `tk` pull.
+# Machine-local settings (tk set) live in ~/.config/terminal-kit/settings.json.
+# Render them into cmux.json and the Ghostty glass include; files are only
+# replaced (with a backup) when their content changes.
+python3 "$ROOT/scripts/settings.py" _render
 glass_target="$HOME/.config/terminal-kit/glass.ghostty"
-mkdir -p "$(dirname "$glass_target")"
-if [[ ! -e "$glass_target" ]]; then
-  cat >"$glass_target" <<'EOF_GLASS'
-# terminal-kit glass preset: regular
-# Local machine state; intentionally kept outside the Git repository.
-background-opacity = 0.90
-background-blur = macos-glass-regular
-background-opacity-cells = false
-EOF_GLASS
-fi
-
-# Scroll speed is machine-local for the same reason: Mos settings, mice, and
-# trackpads vary, and choosing a preset should never create a Git conflict.
-scroll_target="$HOME/.config/terminal-kit/scroll-speed"
-if [[ ! -e "$scroll_target" ]]; then
-  printf '1.4\n' >"$scroll_target"
-fi
-scroll_speed="$(tr -d '[:space:]' <"$scroll_target")"
-if ! [[ "$scroll_speed" =~ ^[0-9]+([.][0-9]+)?$ ]] \
-  || ! awk -v speed="$scroll_speed" 'BEGIN { exit !(speed >= 0.25 && speed <= 4) }'; then
-  warn "invalid saved scroll speed; resetting to 1.4"
-  scroll_speed=1.4
-  printf '1.4\n' >"$scroll_target"
-fi
-
-# The calm prompt is the default. Preserve explicit detailed/off choices and
-# migrate the older generic "on" value to minimal.
-prompt_target="$HOME/.config/terminal-kit/prompt"
-if [[ ! -e "$prompt_target" ]]; then
-  printf 'minimal\n' >"$prompt_target"
-else
-  prompt_mode="$(tr -d '[:space:]' <"$prompt_target")"
-  case "$prompt_mode" in
-    on|enable)
-      printf 'minimal\n' >"$prompt_target"
-      ;;
-    minimal|detailed|off)
-      ;;
-    *)
-      warn "invalid prompt mode; resetting to minimal"
-      printf 'minimal\n' >"$prompt_target"
-      ;;
-  esac
-fi
 
 # Automatic sidebar status hints arrived after the workspace row was first drawn,
 # which made row heights jump. Migrate the original experiment to off once, then
@@ -96,22 +50,6 @@ if [[ ! -e "$hints_layout_marker" ]]; then
 elif [[ ! -e "$hints_target" ]]; then
   printf 'off\n' >"$hints_target"
 fi
-
-# cmux's built-in text editor wraps by default. Wide mode is stored locally so
-# enabling horizontal scrolling survives updates without changing tracked JSON.
-editor_wrap_target="$HOME/.config/terminal-kit/editor-wrap"
-if [[ ! -e "$editor_wrap_target" ]]; then
-  printf 'wrap\n' >"$editor_wrap_target"
-fi
-editor_wrap_mode="$(tr -d '[:space:]' <"$editor_wrap_target")"
-case "$editor_wrap_mode" in
-  wrap|wide) ;;
-  *)
-    warn "invalid editor mode; resetting to wrap"
-    editor_wrap_mode=wrap
-    printf 'wrap\n' >"$editor_wrap_target"
-    ;;
-esac
 
 # GitHub Git transport is machine-local. SSH is the terminal-kit default so a
 # pasted https://github.com/... clone or remote still uses the configured SSH key.
@@ -126,37 +64,6 @@ case "$git_protocol" in
     warn "invalid GitHub protocol; resetting to ssh"
     git_protocol=ssh
     printf 'ssh\n' >"$git_protocol_target"
-    ;;
-esac
-
-# Memory policy controls how quickly cmux releases off-screen GPU renderers and
-# whether supported idle coding agents may hibernate. `normal` is the current
-# steady-state default; apply.sh still migrates older untouched `balanced` state.
-memory_target="$HOME/.config/terminal-kit/memory-mode"
-if [[ ! -e "$memory_target" ]]; then
-  printf 'normal\n' >"$memory_target"
-fi
-memory_mode="$(tr -d '[:space:]' <"$memory_target")"
-case "$memory_mode" in
-  normal|balanced|lean|ultra) ;;
-  *)
-    warn "invalid memory mode; resetting to normal"
-    memory_mode=normal
-    printf 'normal\n' >"$memory_target"
-    ;;
-esac
-
-memory_auto_target="$HOME/.config/terminal-kit/memory-auto"
-if [[ ! -e "$memory_auto_target" ]]; then
-  printf 'off\n' >"$memory_auto_target"
-fi
-memory_auto_state="$(tr -d '[:space:]' <"$memory_auto_target")"
-case "$memory_auto_state" in
-  on|off) ;;
-  *)
-    warn "invalid automatic memory state; resetting to off"
-    memory_auto_state=off
-    printf 'off\n' >"$memory_auto_target"
     ;;
 esac
 
@@ -199,55 +106,13 @@ if [[ -r "$ROOT/config/zsh/init.zsh" ]]; then
 fi
 EOF_ZSH
 
+remove_retired_state
+
 mkdir -p "$HOME/.local/bin"
 ln -sfn "$ROOT/bin/terminal-kit" "$HOME/.local/bin/terminal-kit"
 
 # Keep GitHub CLI cloning and raw Git HTTPS URLs on the same saved transport.
 /bin/bash "$ROOT/scripts/git.sh" apply >/dev/null
-
-# cmux has no include mechanism, so render its managed config with machine-local
-# scroll, editor, and memory preferences before comparing or installing it.
-cmux_source="$ROOT/config/cmux/cmux.json.example"
-cmux_target="$HOME/.config/cmux/cmux.json"
-cmux_rendered="$(mktemp -t terminal-kit-cmux)"
-cp "$cmux_source" "$cmux_rendered"
-if [[ "$scroll_speed" != "1.4" ]]; then
-  /usr/bin/plutil -replace terminal.scrollSpeed -float "$scroll_speed" "$cmux_rendered"
-fi
-if [[ "$editor_wrap_mode" == "wide" ]]; then
-  /usr/bin/plutil -replace fileEditor.wordWrap -bool false "$cmux_rendered"
-fi
-case "$memory_mode" in
-  normal)
-    /usr/bin/plutil -replace terminal.rendererRealization.idleSeconds -integer 30 "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.rendererRealization.maxWarmRenderers -integer 12 "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.agentHibernation.enabled -bool false "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.agentHibernation.maxLiveTerminals -integer 12 "$cmux_rendered"
-    ;;
-  balanced)
-    ;;
-  lean)
-    /usr/bin/plutil -replace terminal.rendererRealization.idleSeconds -integer 5 "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.rendererRealization.maxWarmRenderers -integer 2 "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.agentHibernation.enabled -bool true "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.agentHibernation.maxLiveTerminals -integer 4 "$cmux_rendered"
-    ;;
-  ultra)
-    /usr/bin/plutil -replace terminal.rendererRealization.idleSeconds -integer 5 "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.rendererRealization.maxWarmRenderers -integer 1 "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.agentHibernation.enabled -bool true "$cmux_rendered"
-    /usr/bin/plutil -replace terminal.agentHibernation.maxLiveTerminals -integer 2 "$cmux_rendered"
-    ;;
-esac
-mkdir -p "$(dirname "$cmux_target")"
-if [[ ! -e "$cmux_target" ]] || ! cmp -s "$cmux_rendered" "$cmux_target"; then
-  if [[ -e "$cmux_target" ]]; then
-    backup_file "$cmux_target"
-  fi
-  cp "$cmux_rendered" "$cmux_target"
-  log "synced cmux settings"
-fi
-rm -f "$cmux_rendered"
 
 # The personal Dock is deliberately generic. Project-local .cmux/dock.json files
 # can replace it with repo-specific logs, tests, servers, and Git controls.
@@ -262,12 +127,6 @@ if [[ ! -e "$dock_target" ]] || ! cmp -s "$dock_source" "$dock_target"; then
 fi
 
 /bin/bash "$ROOT/scripts/apply.sh"
-
-# Recompile and restart the event-driven daemon after an update only when the user
-# has explicitly enabled automatic memory mode.
-if [[ "$memory_auto_state" == on ]]; then
-  /bin/bash "$ROOT/scripts/memory.sh" auto refresh
-fi
 
 display_root="${ROOT/#$HOME/\~}"
 display_backup="${BACKUP_DIR/#$HOME/\~}"

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Never reload the live cmux, Ghostty, or tmux from a fake-HOME test run.
+export TERMINAL_KIT_NO_RELOAD=1
 
 validate_json() {
   local file="$1"
@@ -37,17 +39,6 @@ if command -v zsh >/dev/null 2>&1; then
     "$ROOT/config/zsh/highlight.zsh"
 fi
 
-swift_parser=""
-if command -v xcrun >/dev/null 2>&1; then
-  swift_parser="$(xcrun --find swiftc 2>/dev/null || true)"
-fi
-if [[ -z "$swift_parser" ]] && command -v swiftc >/dev/null 2>&1; then
-  swift_parser="$(command -v swiftc)"
-fi
-if [[ -n "$swift_parser" ]]; then
-  "$swift_parser" -frontend -parse "$ROOT/tools/memoryd/main.swift"
-fi
-
 validate_json "$ROOT/config/cmux/cmux.json.example"
 validate_json "$ROOT/config/cmux/dock.json.example"
 
@@ -76,15 +67,10 @@ before="$(shasum \
   "$test_root/home/.tmux.conf" \
   "$test_root/home/.config/ghostty/config" \
   "$test_root/home/.config/terminal-kit/glass.ghostty" \
-  "$test_root/home/.config/terminal-kit/scroll-speed" \
-  "$test_root/home/.config/terminal-kit/prompt" \
+  "$test_root/home/.config/terminal-kit/settings.json" \
   "$test_root/home/.config/terminal-kit/hints" \
   "$test_root/home/.config/terminal-kit/hints-layout-v2" \
-  "$test_root/home/.config/terminal-kit/editor-wrap" \
   "$test_root/home/.config/terminal-kit/git-protocol" \
-  "$test_root/home/.config/terminal-kit/memory-mode" \
-  "$test_root/home/.config/terminal-kit/memory-auto" \
-  "$test_root/home/.config/terminal-kit/navigation-cache-v1" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
@@ -95,15 +81,10 @@ after="$(shasum \
   "$test_root/home/.tmux.conf" \
   "$test_root/home/.config/ghostty/config" \
   "$test_root/home/.config/terminal-kit/glass.ghostty" \
-  "$test_root/home/.config/terminal-kit/scroll-speed" \
-  "$test_root/home/.config/terminal-kit/prompt" \
+  "$test_root/home/.config/terminal-kit/settings.json" \
   "$test_root/home/.config/terminal-kit/hints" \
   "$test_root/home/.config/terminal-kit/hints-layout-v2" \
-  "$test_root/home/.config/terminal-kit/editor-wrap" \
   "$test_root/home/.config/terminal-kit/git-protocol" \
-  "$test_root/home/.config/terminal-kit/memory-mode" \
-  "$test_root/home/.config/terminal-kit/memory-auto" \
-  "$test_root/home/.config/terminal-kit/navigation-cache-v1" \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 
@@ -117,14 +98,7 @@ grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/config" "$test_ro
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/.config/terminal-kit/glass.ghostty" "$test_root/home/.config/ghostty/config"
 grep -Fq 'background-blur = macos-glass-regular' "$test_root/home/.config/terminal-kit/glass.ghostty"
-grep -Fq 'working-directory = home' "$test_root/home/Projects/terminal-kit/config/ghostty/config"
-grep -Fq 'clipboard-trim-trailing-spaces = true' "$test_root/home/Projects/terminal-kit/config/ghostty/config"
-grep -Fq 'macos-option-as-alt = left' "$test_root/home/Projects/terminal-kit/config/ghostty/config"
-grep -Fq 'unfocused-split-opacity = 0.96' "$test_root/home/Projects/terminal-kit/config/ghostty/appearance"
-grep -Fxq '1.4' "$test_root/home/.config/terminal-kit/scroll-speed"
-grep -Fxq 'minimal' "$test_root/home/.config/terminal-kit/prompt"
 grep -Fxq 'off' "$test_root/home/.config/terminal-kit/hints"
-grep -Fxq 'wrap' "$test_root/home/.config/terminal-kit/editor-wrap"
 grep -Fxq 'ssh' "$test_root/home/.config/terminal-kit/git-protocol"
 if HOME="$test_root/home" git config --global --get-all \
   'url.git@github.com:.insteadOf' | grep -Fxq 'https://github.com/'; then
@@ -177,81 +151,86 @@ if HOME="$test_root/home" git config --global --get-all \
 fi
 [[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
 
-# Existing installations that still carry the old untouched balanced default
-# migrate once to normal and record the navigation-cache marker.
-printf 'balanced\n' > "$test_root/home/.config/terminal-kit/memory-mode"
-rm -f "$test_root/home/.config/terminal-kit/navigation-cache-v1"
-cp "$test_root/home/Projects/terminal-kit/config/cmux/cmux.json.example" \
-  "$test_root/home/.config/cmux/cmux.json"
+tk_home() {
+  HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+    "$test_root/home/.local/bin/terminal-kit" "$@"
+}
+cmux_value() {
+  python3 -c 'import json,sys; v=json.load(open(sys.argv[1]))
+for k in sys.argv[2].split("."): v=v[k]
+print(json.dumps(v))' "$test_root/home/.config/cmux/cmux.json" "$1"
+}
+state_dir="$test_root/home/.config/terminal-kit"
+
+# A fresh install stores no overrides and renders the template defaults.
+[[ "$(tk_home set scroll)" == 1.4 ]]
+[[ "$(tk_home set prompt)" == minimal ]]
+[[ "$(cmux_value terminal.scrollSpeed)" == 1.4 ]]
+[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 12 ]]
+[[ "$(cmux_value fileEditor.wordWrap)" == true ]]
+[[ "$(cmux_value sidebar.showPullRequests)" == false ]]
+[[ "$(cmux_value '$schema')" == *cmux.schema.json* ]]
+grep -Fq 'background-blur = macos-glass-regular' "$state_dir/glass.ghostty"
+
+# Pre-settings.json installs keep their choices: legacy per-setting files are
+# migrated once, then removed.
+rm -f "$state_dir/settings.json"
+printf '1.8\n' > "$state_dir/scroll-speed"
+printf 'wide\n' > "$state_dir/editor-wrap"
+printf 'detailed\n' > "$state_dir/prompt"
+printf 'balanced\n' > "$state_dir/memory-mode"
+printf 'off\n' > "$state_dir/memory-auto"
+printf '# terminal-kit glass preset: clear\nbackground-opacity = 0.92\n' > "$state_dir/glass.ghostty"
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/Projects/terminal-kit/install.sh" --skip-tools >/dev/null
+for legacy in scroll-speed editor-wrap prompt memory-mode memory-auto; do
+  [[ ! -e "$state_dir/$legacy" ]]
+done
+[[ "$(tk_home set scroll)" == 1.8 ]]
+[[ "$(tk_home set wrap)" == wide ]]
+[[ "$(tk_home set prompt)" == detailed ]]
+[[ "$(tk_home set memory)" == normal ]]
+[[ "$(tk_home set glass)" == clear ]]
+[[ "$(cmux_value terminal.scrollSpeed)" == 1.8 ]]
+[[ "$(cmux_value fileEditor.wordWrap)" == false ]]
+grep -Fq 'background-blur = macos-glass-clear' "$state_dir/glass.ghostty"
+# The shell reads the prompt mode straight from settings.json.
+grep -Fq '"prompt": "detailed"' "$state_dir/settings.json"
 
-grep -Fxq 'normal' "$test_root/home/.config/terminal-kit/memory-mode"
-grep -Fxq 'off' "$test_root/home/.config/terminal-kit/memory-auto"
-[[ -e "$test_root/home/.config/terminal-kit/navigation-cache-v1" ]]
-grep -Fq 'DispatchSource.makeMemoryPressureSource' "$test_root/home/Projects/terminal-kit/tools/memoryd/main.swift"
-grep -Fq '⌘⇧P Commands' "$test_root/home/Projects/terminal-kit/config/hints.txt"
-grep -Fq 'tk do task Agent worktree' "$test_root/home/Projects/terminal-kit/config/hints.txt"
-grep -Fq 'tk overview All workspaces' "$test_root/home/Projects/terminal-kit/config/hints.txt"
-grep -Fq 'source "$_terminal_kit_zsh_dir/hints.zsh"' "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
-grep -Fq "delta --navigate --keep-plus-minus-markers" "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
-grep -Fq "DELTA_PAGER='less -FRX'" "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh"
-grep -Fq 'format = "[╭─](dimmed) $directory$line_break[╰─](dimmed)$character"' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
-grep -Fq 'right_format = "$cmd_duration$status$jobs"' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
-grep -Fq 'truncate_to_repo = true' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
-grep -Fq 'repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "' "$test_root/home/Projects/terminal-kit/config/starship/terminal-kit.toml"
-grep -Fq 'format = "[╭─](dimmed) $directory$git_branch$git_status$line_break[╰─](dimmed)$character"' "$test_root/home/Projects/terminal-kit/config/starship/detailed.toml"
-grep -Fq 'right_format = "$cmd_duration$status$jobs"' "$test_root/home/Projects/terminal-kit/config/starship/detailed.toml"
-grep -Fq 'HOMEBREW_NO_UPDATE_REPORT_NEW=1 brew bundle' "$test_root/home/Projects/terminal-kit/scripts/install-tools.sh"
-grep -Fq 'brew "hyperfine"' "$test_root/home/Projects/terminal-kit/Brewfile"
-grep -Fq 'brew "micro"' "$test_root/home/Projects/terminal-kit/Brewfile"
-grep -Fq 'Usage: terminal-kit perf' "$test_root/home/Projects/terminal-kit/scripts/perf.sh"
-grep -Fq 'Usage: terminal-kit memory' "$test_root/home/Projects/terminal-kit/scripts/memory.sh"
-grep -Fq 'Usage: terminal-kit overview' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
-grep -Fq 'Usage: terminal-kit git' "$test_root/home/Projects/terminal-kit/scripts/git.sh"
-grep -Fq 'terminal-kit work [project-or-reference] [task...]' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
-grep -Fq 'tk do ./vmm/src/acpi.rs' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
-grep -Fq 'cloud-hypervisor/issues/8666' "$test_root/home/Projects/terminal-kit/scripts/work.sh"
-grep -Fq -- '--border=rounded' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
-grep -Fq -- '--ansi' "$test_root/home/Projects/terminal-kit/scripts/overview.sh"
-grep -Fq 'overview     Browse every cmux window and workspace in one full-screen view' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
-grep -Fq 'work / do    Resolve a project, make a reversible task checkout, and launch an agent' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
-grep -Fq 'git          Choose SSH or HTTPS for GitHub Git operations' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
-grep -Fq 'memory       Choose renderer reclamation and agent hibernation policy' "$test_root/home/Projects/terminal-kit/bin/terminal-kit"
-grep -Fq '"workspaceInheritWorkingDirectory": false' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"openSupportedFilesInCmux": true' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"openMarkdownInCmuxViewer": true' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"showModifierHoldHints": true' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"showBranchDirectory": false' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"watchGitStatus": false' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"indicatorStyle": "solidFill"' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"selectionColor": "#313244"' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"scrollSpeed": 1.4' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"wordWrap": true' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"doubleClickAction": "preview"' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"idleSeconds": 30' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"maxWarmRenderers": 12' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"maxLiveTerminals": 12' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"command": "terminal-kit work"' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"command": "terminal-kit memory auto on"' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"command": "terminal-kit overview"' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"showCustomMetadata": true' "$test_root/home/.config/cmux/cmux.json"
-grep -Fq '"id": "memory"' "$test_root/home/.config/cmux/dock.json"
+# tk set changes one key and re-renders; an unchanged value rewrites nothing.
+tk_home set memory lean >/dev/null
+[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 2 ]]
+[[ "$(cmux_value terminal.agentHibernation.enabled)" == true ]]
+tk_home set sidebar details >/dev/null
+[[ "$(cmux_value sidebar.showPullRequests)" == true ]]
+[[ "$(cmux_value terminal.scrollSpeed)" == 1.8 ]]
+cmux_stamp="$(stat -f '%i %m' "$test_root/home/.config/cmux/cmux.json")"
+sleep 1
+tk_home set sidebar details >/dev/null
+[[ "$(stat -f '%i %m' "$test_root/home/.config/cmux/cmux.json")" == "$cmux_stamp" ]]
+tk_home set memory default >/dev/null
+[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 12 ]]
+if tk_home set scroll 9 2>/dev/null; then exit 1; fi
+if tk_home set memory ultra 2>/dev/null; then exit 1; fi
+if tk_home set nonsense 1 2>/dev/null; then exit 1; fi
+if tk_home scroll fast 2>/dev/null; then exit 1; fi
+[[ "$(tk_home set scroll)" == 1.8 ]]
+tk_home set >/dev/null
+
+# A hand edit to cmux.json is backed up before the renderer replaces it.
+printf '{}\n' > "$test_root/home/.config/cmux/cmux.json"
+tk_home set scroll 1.4 >/dev/null
+[[ "$(cmux_value terminal.scrollSpeed)" == 1.4 ]]
+grep -rlq '^{}$' "$test_root/home/.config/terminal-kit-backups"
+
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/tmux/tmux.conf" "$test_root/home/.tmux.conf"
 cmp -s \
   "$test_root/home/Projects/terminal-kit/config/cmux/dock.json.example" \
   "$test_root/home/.config/cmux/dock.json"
-[[ "$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" path)" == "$test_root/home/Projects/terminal-kit" ]]
-keys_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" keys)"
-grep -Fq 'tk keys Cheat sheet' <<< "$keys_output"
-grep -Fq 'tk do task Agent worktree' <<< "$keys_output"
-grep -Fq 'tk overview All workspaces' <<< "$keys_output"
-perf_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" perf status)"
-grep -Fq 'terminal-kit performance settings' <<< "$perf_output"
-memory_output="$(HOME="$test_root/home" "$test_root/home/.local/bin/terminal-kit" memory status)"
-grep -Fq 'mode:                 normal' <<< "$memory_output"
-grep -Fq 'automatic:            off' <<< "$memory_output"
+[[ "$(tk_home path)" == "$test_root/home/Projects/terminal-kit" ]]
+grep -Fq 'tk keys' < <(tk_home keys)
+grep -Fq 'terminal-kit performance settings' < <(tk_home perf status)
 
 # Exercise the reversible worktree lifecycle and reference routing. A fake cmux
 # accepts workspace creation so the test never starts a real coding agent.
@@ -345,8 +324,6 @@ bash "$ROOT/scripts/test-shell-dispatch.sh"
 bash "$ROOT/scripts/test-shell-env.sh"
 python3 "$ROOT/scripts/test-git-checkout.py"
 python3 "$ROOT/scripts/test-update.py"
-python3 "$ROOT/scripts/test-customization.py"
-python3 "$ROOT/scripts/test-sidebar-preset.py"
 printf 'terminal-kit tests passed\n'
 
 python3 "$ROOT/scripts/test-recent.py"

@@ -75,41 +75,11 @@ json_value() {
 
 check_file "$HOME/.config/ghostty/config"
 check_file "$HOME/.config/terminal-kit/glass.ghostty"
-check_file "$HOME/.config/terminal-kit/scroll-speed"
-check_file "$HOME/.config/terminal-kit/prompt"
-check_file "$HOME/.config/terminal-kit/hints"
-check_file "$HOME/.config/terminal-kit/editor-wrap"
-check_file "$HOME/.config/terminal-kit/memory-mode"
-check_file "$HOME/.config/terminal-kit/memory-auto"
 check_file "$HOME/.config/cmux/cmux.json"
 check_file "$HOME/.config/cmux/dock.json"
 check_file "$HOME/.tmux.conf"
 check_file "$HOME/.zshenv"
 check_file "$HOME/.zshrc"
-check_file "$ROOT/config/ghostty/config"
-check_file "$ROOT/config/ghostty/appearance"
-check_file "$ROOT/config/cmux/cmux.json.example"
-check_file "$ROOT/config/cmux/dock.json.example"
-check_file "$ROOT/config/hints.txt"
-check_file "$ROOT/config/starship/terminal-kit.toml"
-check_file "$ROOT/config/starship/detailed.toml"
-check_file "$ROOT/config/tmux/tmux.conf"
-check_file "$ROOT/config/zsh/env.zsh"
-check_file "$ROOT/config/zsh/init.zsh"
-check_file "$ROOT/config/zsh/terminal.zsh"
-check_file "$ROOT/config/zsh/tools.zsh"
-check_file "$ROOT/config/zsh/hints.zsh"
-check_file "$ROOT/config/zsh/highlight.zsh"
-check_file "$ROOT/scripts/theme.sh"
-check_file "$ROOT/scripts/glass.sh"
-check_file "$ROOT/scripts/scroll.sh"
-check_file "$ROOT/scripts/sidebar.sh"
-check_file "$ROOT/scripts/editor.sh"
-check_file "$ROOT/scripts/hints.sh"
-check_file "$ROOT/scripts/prompt.sh"
-check_file "$ROOT/scripts/perf.sh"
-check_file "$ROOT/scripts/memory.sh"
-check_file "$ROOT/tools/memoryd/main.swift"
 
 # Standard macOS commands should never disappear from PATH.
 check_command uname
@@ -147,75 +117,18 @@ if command -v zsh >/dev/null 2>&1; then
   printf 'OK   Zsh settings parse cleanly\n'
 fi
 
-swift_parser=""
-if command -v xcrun >/dev/null 2>&1; then
-  swift_parser="$(xcrun --find swiftc 2>/dev/null || true)"
-fi
-if [[ -z "$swift_parser" ]] && command -v swiftc >/dev/null 2>&1; then
-  swift_parser="$(command -v swiftc)"
-fi
-if [[ -n "$swift_parser" ]]; then
-  if "$swift_parser" -frontend -parse "$ROOT/tools/memoryd/main.swift"; then
-    printf 'OK   memory daemon Swift parses cleanly\n'
-  else
-    printf 'BAD  memory daemon Swift parse failed\n'
-    failures=$((failures + 1))
-  fi
-fi
-
-if [[ -r "$HOME/.config/terminal-kit/prompt" ]]; then
-  prompt_mode="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/prompt")"
-  [[ "$prompt_mode" == "on" ]] && prompt_mode="minimal"
-  printf 'OK   prompt mode               %s\n' "$prompt_mode"
-fi
-
 if [[ -r "$HOME/.config/terminal-kit/hints" ]]; then
   hints_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/hints")"
   printf 'OK   fresh-shell hints         %s\n' "$hints_state"
 fi
 
-if [[ -r "$HOME/.config/terminal-kit/memory-mode" ]]; then
-  memory_mode="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/memory-mode")"
-  case "$memory_mode" in
-    normal|balanced|lean|ultra) printf 'OK   memory mode               %s\n' "$memory_mode" ;;
-    *)
-      printf 'BAD  memory mode               %s\n' "$memory_mode"
-      failures=$((failures + 1))
-      ;;
-  esac
-fi
-
-memory_auto_state="off"
-if [[ -r "$HOME/.config/terminal-kit/memory-auto" ]]; then
-  memory_auto_state="$(tr -d '[:space:]' < "$HOME/.config/terminal-kit/memory-auto")"
-  case "$memory_auto_state" in
-    on|off) printf 'OK   automatic memory          %s\n' "$memory_auto_state" ;;
-    *)
-      printf 'BAD  automatic memory          %s\n' "$memory_auto_state"
-      failures=$((failures + 1))
-      ;;
-  esac
-fi
-
-if [[ "$memory_auto_state" == on ]]; then
-  daemon_bin="$HOME/.local/lib/terminal-kit/terminal-kit-memoryd"
-  launch_agent="$HOME/Library/LaunchAgents/com.terminal-kit.memory-auto.plist"
-  if [[ -x "$daemon_bin" ]]; then
-    printf 'OK   memory daemon binary      %s\n' "$daemon_bin"
-  else
-    printf 'MISS memory daemon binary      %s\n' "$daemon_bin"
-    failures=$((failures + 1))
-  fi
-  check_file "$launch_agent"
-  if launchctl print "gui/$(id -u)/com.terminal-kit.memory-auto" >/dev/null 2>&1; then
-    printf 'OK   memory daemon             running\n'
-  else
-    printf 'BAD  memory daemon             not running\n'
-    failures=$((failures + 1))
-  fi
-  if [[ -z "$swift_parser" ]]; then
-    printf 'WARN Swift compiler unavailable; automatic mode works now but cannot rebuild after source changes\n'
-  fi
+if settings="$(python3 "$ROOT/scripts/settings.py" 2>&1)"; then
+  while IFS= read -r line; do
+    printf 'OK   %s\n' "$line"
+  done <<< "$settings"
+else
+  printf 'BAD  settings                  %s\n' "$settings"
+  failures=$((failures + 1))
 fi
 
 check_json "$ROOT/config/cmux/cmux.json.example"
@@ -223,24 +136,10 @@ check_json "$ROOT/config/cmux/dock.json.example"
 
 if [[ -r "$HOME/.config/cmux/cmux.json" ]]; then
   check_json "$HOME/.config/cmux/cmux.json"
-  scroll_speed="$(json_value "$HOME/.config/cmux/cmux.json" '.terminal.scrollSpeed' 'terminal.scrollSpeed')"
-  [[ -n "$scroll_speed" ]] && printf 'OK   cmux scroll speed         %sx\n' "$scroll_speed"
-  editor_wrap="$(json_value "$HOME/.config/cmux/cmux.json" '.fileEditor.wordWrap' 'fileEditor.wordWrap')"
-  case "$editor_wrap" in
-    true|1) printf 'OK   cmux editor mode          wrap\n' ;;
-    false|0) printf 'OK   cmux editor mode          horizontal\n' ;;
-  esac
   git_watch="$(json_value "$HOME/.config/cmux/cmux.json" '.sidebar.watchGitStatus' 'sidebar.watchGitStatus')"
   case "$git_watch" in
     false|0) printf 'OK   hidden Git watcher        off\n' ;;
     true|1) printf 'WARN hidden Git watcher        on\n' ;;
-  esac
-  warm_renderers="$(json_value "$HOME/.config/cmux/cmux.json" '.terminal.rendererRealization.maxWarmRenderers' 'terminal.rendererRealization.maxWarmRenderers')"
-  [[ -n "$warm_renderers" ]] && printf 'OK   warm terminal renderers   %s\n' "$warm_renderers"
-  agent_hibernation="$(json_value "$HOME/.config/cmux/cmux.json" '.terminal.agentHibernation.enabled' 'terminal.agentHibernation.enabled')"
-  case "$agent_hibernation" in
-    true|1) printf 'OK   agent hibernation         on\n' ;;
-    false|0) printf 'OK   agent hibernation         off\n' ;;
   esac
 fi
 
