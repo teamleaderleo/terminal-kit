@@ -20,24 +20,31 @@ setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_REDUCE_BLANKS
 setopt HIST_FIND_NO_DUPS
 
-# Give cmux a stable, project-level process title whenever the prompt is ready.
-# A child process may temporarily set its own title while it runs; precmd restores
-# the Git root name afterwards. Outside Git, fall back to the current directory.
+# Give cmux a stable, project-level title whenever the prompt is ready. A child
+# process may set its own title while it runs; precmd restores the Git root name
+# afterwards (outside Git, the directory name). The title is cached per directory
+# so precmd does not spawn git after every command.
+typeset -g _TERMINAL_KIT_PROJECT_TITLE_PWD=''
+typeset -g _TERMINAL_KIT_PROJECT_TITLE=''
 _terminal_kit_project_title() {
   local title root
-  if [[ "$PWD" == "$HOME" ]]; then
-    title='~'
-  elif root="$(command git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)"; then
-    title="${root:t}"
-  else
-    title="${PWD:t}"
-    [[ -n "$title" ]] || title='/'
-  fi
+  if [[ "$_TERMINAL_KIT_PROJECT_TITLE_PWD" != "$PWD" || -z "$_TERMINAL_KIT_PROJECT_TITLE" ]]; then
+    if [[ "$PWD" == "$HOME" ]]; then
+      title='~'
+    elif root="$(command git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)"; then
+      title="${root:t}"
+    else
+      title="${PWD:t}"
+      [[ -n "$title" ]] || title='/'
+    fi
 
-  title="${title//$'\e'/}"
-  title="${title//$'\a'/}"
-  title="${title//$'\n'/ }"
-  printf '\e]2;%s\a' "$title"
+    title="${title//$'\e'/}"
+    title="${title//$'\a'/}"
+    title="${title//$'\n'/ }"
+    typeset -g _TERMINAL_KIT_PROJECT_TITLE_PWD="$PWD"
+    typeset -g _TERMINAL_KIT_PROJECT_TITLE="$title"
+  fi
+  printf '\e]2;%s\a' "$_TERMINAL_KIT_PROJECT_TITLE"
 }
 
 # Remember the previous real command for `tk copy command`. It is exported only
@@ -45,7 +52,7 @@ _terminal_kit_project_title() {
 _terminal_kit_record_command() {
   local command_text="$1"
   case "$command_text" in
-    terminal-kit\ copy\ *|tk\ copy\ *)
+    terminal-kit\ copy\ *|tk\ copy\ *|clip\ *)
       [[ -n "${_terminal_kit_last_command:-}" ]] \
         && typeset -gx TERMINAL_KIT_LAST_COMMAND="$_terminal_kit_last_command"
       return 0
@@ -63,32 +70,7 @@ add-zsh-hook precmd _terminal_kit_project_title
 add-zsh-hook chpwd _terminal_kit_project_title
 add-zsh-hook preexec _terminal_kit_record_command
 
-# Calm command-line colours. Keep ordinary typing close to the terminal foreground;
-# reserve indigo for useful distinctions and dim comments/suggestions.
-typeset -gA ZSH_HIGHLIGHT_STYLES
-ZSH_HIGHLIGHT_STYLES[default]='fg=#D8DBE8'
-ZSH_HIGHLIGHT_STYLES[unknown-token]='fg=#B9C0D4'
-ZSH_HIGHLIGHT_STYLES[reserved-word]='fg=#9AA9D8'
-ZSH_HIGHLIGHT_STYLES[command]='fg=#D8DBE8'
-ZSH_HIGHLIGHT_STYLES[precommand]='fg=#AAB5D8'
-ZSH_HIGHLIGHT_STYLES[hashed-command]='fg=#D8DBE8'
-ZSH_HIGHLIGHT_STYLES[builtin]='fg=#D8DBE8'
-ZSH_HIGHLIGHT_STYLES[function]='fg=#D8DBE8'
-ZSH_HIGHLIGHT_STYLES[alias]='fg=#D8DBE8'
-ZSH_HIGHLIGHT_STYLES[suffix-alias]='fg=#D8DBE8'
-ZSH_HIGHLIGHT_STYLES[global-alias]='fg=#D8DBE8'
-ZSH_HIGHLIGHT_STYLES[path]='fg=#AEB8D7'
-ZSH_HIGHLIGHT_STYLES[path_prefix]='fg=#8E99B9'
-ZSH_HIGHLIGHT_STYLES[single-hyphen-option]='fg=#9BA7C8'
-ZSH_HIGHLIGHT_STYLES[double-hyphen-option]='fg=#9BA7C8'
-ZSH_HIGHLIGHT_STYLES[single-quoted-argument]='fg=#C7CDDC'
-ZSH_HIGHLIGHT_STYLES[double-quoted-argument]='fg=#C7CDDC'
-ZSH_HIGHLIGHT_STYLES[dollar-quoted-argument]='fg=#C7CDDC'
-ZSH_HIGHLIGHT_STYLES[redirection]='fg=#8792B0'
-ZSH_HIGHLIGHT_STYLES[globbing]='fg=#A4AFD0'
-ZSH_HIGHLIGHT_STYLES[history-expansion]='fg=#A4AFD0'
-ZSH_HIGHLIGHT_STYLES[comment]='fg=#656D82'
-ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=#596074'
+# Syntax colours live in highlight.zsh.
 # Bind the autosuggestion wrappers once, at the first prompt, instead of
 # rewrapping ~200 widgets before every prompt.
 typeset -g ZSH_AUTOSUGGEST_MANUAL_REBIND=1

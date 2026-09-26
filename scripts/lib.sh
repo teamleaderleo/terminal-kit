@@ -140,7 +140,7 @@ reload_cmux() {
 # Remove host state created by older terminal-kit versions.
 remove_retired_state() {
   local label agent
-  for label in com.terminal-kit.memory-auto; do
+  for label in com.terminal-kit.memory-auto com.teamleaderleo.terminal-kit-theme; do
     agent="$HOME/Library/LaunchAgents/$label.plist"
     [[ -e "$agent" ]] || continue
     launchctl bootout "gui/$(id -u)/$label" >/dev/null 2>&1 || true
@@ -151,4 +151,8 @@ remove_retired_state() {
     "$HOME/.local/lib/terminal-kit/terminal-kit-memoryd" \
     "$HOME/.local/lib/terminal-kit/memoryd-source.sha256"
   rmdir "$HOME/.local/lib/terminal-kit" >/dev/null 2>&1 || true
+  rm -f \
+    "$HOME/.config/terminal-kit/hints" \
+    "$HOME/.config/terminal-kit/hint-index" \
+    "$HOME/.config/terminal-kit/hints-layout-v2"
 }

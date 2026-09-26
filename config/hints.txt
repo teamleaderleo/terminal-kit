@@ -4,9 +4,8 @@
 ⌘T New surface
 ⌘W Close surface
 ⌘⇧T Reopen closed
-⌘Tab / ⌘⇧Tab Next / previous surface
-⌘⇧] / ⌘⇧[ Next / previous surface
-⌘⌥Tab macOS app switcher from cmux
+⌃Tab / ⌃⇧Tab Next / previous surface
+⌘⇧] / ⌘⇧[ Same, via Karabiner
 ⌘N New workspace
 ⌘B Toggle sidebar
 ⌘K Clear output
@@ -22,7 +21,7 @@ ports Listening ports
 after command Notify on finish
 scratch Daily note
 tk do task Agent worktree
-tk overview All workspaces
 tk keys Cheat sheet
 tk status Git state
-tk theme next
+tk theme next Next theme
+tk set Settings

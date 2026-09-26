@@ -43,82 +43,11 @@ wide() {
   fi
 }
 
-# Copy common project values, literal text, a file, or piped input to the macOS
-# clipboard. `clip remote` preserves the reusable Git transport. `clip web`
-# converts the same origin into an HTTPS browser URL.
+# `clip` is `tk copy` for the shell: clip path|branch|commit|remote|web|FILE|TEXT,
+# or `command | clip`.
+typeset -g _terminal_kit_copy_script="${${(%):-%N}:A:h}/../../scripts/copy.sh"
 clip() {
-  local mode="${1:-}" value label remote
-
-  if [[ -z "$mode" ]]; then
-    if [[ -t 0 ]]; then
-      print -u2 -- 'Usage: clip path|branch|commit|remote|web|FILE|TEXT'
-      print -u2 -- '       command | clip'
-      return 2
-    fi
-    command pbcopy || return
-    print -r -- 'copied stdin'
-    return 0
-  fi
-
-  case "$mode" in
-    path|pwd)
-      value="$(builtin pwd -P)"
-      label=path
-      ;;
-    branch)
-      value="$(command git rev-parse --abbrev-ref HEAD 2>/dev/null)" || {
-        print -u2 -- 'clip: outside a Git repository'
-        return 1
-      }
-      label=branch
-      ;;
-    commit|sha)
-      value="$(command git rev-parse HEAD 2>/dev/null)" || {
-        print -u2 -- 'clip: outside a Git repository'
-        return 1
-      }
-      label=commit
-      ;;
-    remote|repo|clone)
-      value="$(command git remote get-url origin 2>/dev/null)" || {
-        print -u2 -- 'clip: this repository has no origin remote'
-        return 1
-      }
-      label=remote
-      ;;
-    web|browser|url)
-      remote="$(command git remote get-url origin 2>/dev/null)" || {
-        print -u2 -- 'clip: this repository has no origin remote'
-        return 1
-      }
-      case "$remote" in
-        git@*:*)
-          remote="${remote#git@}"
-          value="https://${remote%%:*}/${remote#*:}"
-          ;;
-        ssh://git@*)
-          value="https://${remote#ssh://git@}"
-          ;;
-        *)
-          value="$remote"
-          ;;
-      esac
-      value="${value%.git}"
-      label=web
-      ;;
-    *)
-      if (( $# == 1 )) && [[ -f "$1" ]]; then
-        command pbcopy < "$1" || return
-        print -r -- "copied file: $1"
-        return 0
-      fi
-      value="$*"
-      label=text
-      ;;
-  esac
-
-  print -rn -- "$value" | command pbcopy || return
-  print -r -- "copied $label: $value"
+  /bin/bash "$_terminal_kit_copy_script" "$@"
 }
 
 # Compact, on-demand view of listening TCP ports. Pass a port number to filter.

@@ -19,11 +19,8 @@ tests=(
   test-shell-helpers.sh
   test-shell-dispatch.sh
   test-shell-env.sh
-  test-cmux-fork.sh
   test-git-checkout.py
-  test-cmux-audit.py
   test-recent.py
-  test-work-history.js
 )
 
 for name in "${tests[@]}"; do

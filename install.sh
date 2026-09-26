@@ -39,18 +39,6 @@ fi
 python3 "$ROOT/scripts/settings.py" _render
 glass_target="$HOME/.config/terminal-kit/glass.ghostty"
 
-# Automatic sidebar status hints arrived after the workspace row was first drawn,
-# which made row heights jump. Migrate the original experiment to off once, then
-# preserve any later explicit `tk hints on` choice through the version marker.
-hints_target="$HOME/.config/terminal-kit/hints"
-hints_layout_marker="$HOME/.config/terminal-kit/hints-layout-v2"
-if [[ ! -e "$hints_layout_marker" ]]; then
-  printf 'off\n' >"$hints_target"
-  : >"$hints_layout_marker"
-elif [[ ! -e "$hints_target" ]]; then
-  printf 'off\n' >"$hints_target"
-fi
-
 # GitHub Git transport is machine-local. SSH is the terminal-kit default so a
 # pasted https://github.com/... clone or remote still uses the configured SSH key.
 git_protocol_target="$HOME/.config/terminal-kit/git-protocol"

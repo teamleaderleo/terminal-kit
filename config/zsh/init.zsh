@@ -15,8 +15,6 @@ if [[ "${TERMINAL_KIT_SHELL_PID:-}" != "$$" ]]; then
   unset TERMINAL_KIT_HELPERS_LOADED
   unset TERMINAL_KIT_HIGHLIGHTING_LOADED
   unset TERMINAL_KIT_STARSHIP_LOADED
-  unset TERMINAL_KIT_HINT_ACTIVE
-  unset TERMINAL_KIT_HINT_WORKSPACE
 fi
 
 typeset -g TERMINAL_KIT_SHELL_PID="$$"
@@ -86,45 +84,13 @@ fi
 # at its end. Keep it after Starship so highlighting remains the final widget wrapper.
 source "$_terminal_kit_zsh_dir/terminal.zsh"
 
-# terminal.zsh registers the title hooks. Cache the Git-derived project title by
-# working directory so precmd can restore titles after child programs without
-# spawning `git rev-parse` after every command. chpwd naturally refreshes the cache.
-typeset -g _TERMINAL_KIT_PROJECT_TITLE_PWD=''
-typeset -g _TERMINAL_KIT_PROJECT_TITLE=''
-_terminal_kit_project_title() {
-  local title root
-  if [[ "$_TERMINAL_KIT_PROJECT_TITLE_PWD" != "$PWD" || -z "$_TERMINAL_KIT_PROJECT_TITLE" ]]; then
-    if [[ "$PWD" == "$HOME" ]]; then
-      title='~'
-    elif root="$(command git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)"; then
-      title="${root:t}"
-    else
-      title="${PWD:t}"
-      [[ -n "$title" ]] || title='/'
-    fi
-
-    title="${title//$'\e'/}"
-    title="${title//$'\a'/}"
-    title="${title//$'\n'/ }"
-    typeset -g _TERMINAL_KIT_PROJECT_TITLE_PWD="$PWD"
-    typeset -g _TERMINAL_KIT_PROJECT_TITLE="$title"
-  fi
-  printf '\e]2;%s\a' "$_TERMINAL_KIT_PROJECT_TITLE"
-}
-_terminal_kit_project_title
-
 source "$_terminal_kit_zsh_dir/highlight.zsh"
 
-# Optional fresh-surface hints remain available, but are disabled by default because
-# late sidebar metadata changes row height after the workspace has already appeared.
-source "$_terminal_kit_zsh_dir/hints.zsh"
-
 # Remove export attributes applied by older revisions so new cmux workspaces
-# load their own helper, prompt, highlighting, and hint hooks.
+# load their own helper, prompt, and highlighting hooks.
 typeset +x TERMINAL_KIT_HELPERS_LOADED 2>/dev/null || true
 typeset +x TERMINAL_KIT_HIGHLIGHTING_LOADED 2>/dev/null || true
 typeset +x TERMINAL_KIT_STARSHIP_LOADED 2>/dev/null || true
-typeset +x TERMINAL_KIT_HINT_ACTIVE TERMINAL_KIT_HINT_WORKSPACE 2>/dev/null || true
 
 # bat's base16 theme uses the terminal ANSI palette, so files and Markdown adapt
 # when cmux rotates themes. Respect an explicit user choice when one already exists.
