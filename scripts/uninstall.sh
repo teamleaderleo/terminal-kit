@@ -20,10 +20,20 @@ fi
 
 remove_retired_state
 
-if command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
+if command -v jq >/dev/null 2>&1; then
+  /bin/bash "$ROOT/scripts/karabiner.sh" remove --quiet || warn "could not remove the Karabiner rule"
+fi
+
+if [[ -z "${TERMINAL_KIT_NO_RELOAD:-}" ]] && command -v tmux >/dev/null 2>&1 && tmux list-sessions >/dev/null 2>&1; then
   tmux source-file "$HOME/.tmux.conf" >/dev/null 2>&1 || true
 fi
 
-log "removed managed include blocks and the terminal-kit command"
-log "left the repository, local preferences, and cmux file in place"
-log "backups: $BACKUP_DIR"
+log "removed the managed blocks, the terminal-kit command, and the Karabiner rule"
+log "left in place: this repository, ~/.config/cmux/cmux.json and dock.json,"
+log "  ~/.config/terminal-kit (settings), task worktrees and receipts under"
+log "  ~/.local/share/terminal-kit and ~/.local/state/terminal-kit, and backups"
+if [[ -n "$(ls -A "$BACKUP_DIR" 2>/dev/null)" ]]; then
+  log "backups: $BACKUP_DIR"
+else
+  rmdir "$BACKUP_DIR"
+fi

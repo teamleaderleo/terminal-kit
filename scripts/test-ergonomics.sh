@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 test_root="$(mktemp -d)"
@@ -43,7 +45,7 @@ fi
 grep -Fq 'config set git_protocol ssh --host github.com' "$TEST_GH_LOG"
 grep -Fxq 'ssh' "$HOME/.config/terminal-kit/git-protocol"
 explicit_https='https://github.com/example/project.git'
-[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]] || fail_at $LINENO
 
 /bin/bash "$ROOT/scripts/git.sh" https >/dev/null
 if git config --global --get-all 'url.git@github.com:.insteadOf' 2>/dev/null \
@@ -53,27 +55,27 @@ if git config --global --get-all 'url.git@github.com:.insteadOf' 2>/dev/null \
 fi
 grep -Fq 'config set git_protocol https --host github.com' "$TEST_GH_LOG"
 grep -Fxq 'https' "$HOME/.config/terminal-kit/git-protocol"
-[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]] || fail_at $LINENO
 /bin/bash "$ROOT/scripts/git.sh" ssh >/dev/null
 grep -Fxq 'ssh' "$HOME/.config/terminal-kit/git-protocol"
-[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+[[ "$(git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]] || fail_at $LINENO
 
 # Legacy/default terminal editor choices migrate to micro while custom choices stay intact.
 editor_values="$(
   EDITOR=nano VISUAL=vim GIT_EDITOR=vi GH_EDITOR='' SUDO_EDITOR=/usr/bin/nano \
     /bin/zsh -c "source '$ROOT/config/zsh/env.zsh'; printf '%s|%s|%s|%s|%s' \"\$EDITOR\" \"\$VISUAL\" \"\$GIT_EDITOR\" \"\$GH_EDITOR\" \"\$SUDO_EDITOR\""
 )"
-[[ "$editor_values" == 'micro|micro|micro|micro|micro' ]]
+[[ "$editor_values" == 'micro|micro|micro|micro|micro' ]] || fail_at $LINENO
 custom_editor="$(EDITOR=helix /bin/zsh -c "source '$ROOT/config/zsh/env.zsh'; printf '%s' \"\$EDITOR\"")"
-[[ "$custom_editor" == helix ]]
+[[ "$custom_editor" == helix ]] || fail_at $LINENO
 
 # `clip remote` stays reusable for Git; `clip web` is the browser form.
 git -C "$test_root/repo" init -q
 git -C "$test_root/repo" remote add origin git@github.com:example/project.git
 /bin/zsh -c "cd '$test_root/repo'; source '$ROOT/config/zsh/tools.zsh'; clip remote >/dev/null"
-[[ "$(cat "$TEST_CLIPBOARD")" == 'git@github.com:example/project.git' ]]
+[[ "$(cat "$TEST_CLIPBOARD")" == 'git@github.com:example/project.git' ]] || fail_at $LINENO
 /bin/zsh -c "cd '$test_root/repo'; source '$ROOT/config/zsh/tools.zsh'; clip web >/dev/null"
-[[ "$(cat "$TEST_CLIPBOARD")" == 'https://github.com/example/project' ]]
+[[ "$(cat "$TEST_CLIPBOARD")" == 'https://github.com/example/project' ]] || fail_at $LINENO
 
 # A persisted activation under /tmp is guaranteed to go stale across reboots. The
 # repair removes only that narrow source/dot-command form and preserves ordinary
@@ -93,6 +95,34 @@ if grep -Fq '/tmp/' "$HOME/.zshrc"; then
   printf 'terminal-kit: temporary zsh source survived cleanup\n' >&2
   exit 1
 fi
-[[ -n "$(find "$test_root/backups" -type f -print -quit)" ]]
+[[ -n "$(find "$test_root/backups" -type f -print -quit)" ]] || fail_at $LINENO
+
+# A begin marker without its end marker must not swallow the rest of the file.
+managed="$HOME/managed.conf"
+printf 'keep-before\n# >>> terminal-kit: demo >>>\nold-body\nkeep-after-1\nkeep-after-2\n' > "$managed"
+printf 'new-body\n' | replace_managed_block "$managed" demo
+grep -Fxq keep-before "$managed"
+grep -Fxq keep-after-1 "$managed"
+grep -Fxq keep-after-2 "$managed"
+grep -Fxq new-body "$managed"
+[[ "$(grep -c '^# >>> terminal-kit: demo >>>$' "$managed")" == 1 ]] || fail_at $LINENO
+[[ "$(grep -c '^# <<< terminal-kit: demo <<<$' "$managed")" == 1 ]] || fail_at $LINENO
+# A complete block is replaced in place and re-running changes nothing.
+printf 'newer-body\n' | replace_managed_block "$managed" demo
+if grep -Fxq new-body "$managed"; then fail_at $LINENO; fi
+managed_sum="$(shasum "$managed")"
+printf 'newer-body\n' | replace_managed_block "$managed" demo
+[[ "$(shasum "$managed")" == "$managed_sum" ]] || fail_at $LINENO
+remove_managed_block "$managed" demo
+if grep -Fq 'terminal-kit: demo' "$managed"; then fail_at $LINENO; fi
+grep -Fxq keep-after-2 "$managed"
+
+# Only the newest backup directories are kept.
+mkdir -p "$HOME/.config/terminal-kit-backups"
+for stamp in 20260101-000001 20260101-000002 20260101-000003 20260101-000004-karabiner; do
+  mkdir -p "$HOME/.config/terminal-kit-backups/$stamp"
+done
+prune_backups 2
+[[ "$(ls "$HOME/.config/terminal-kit-backups" | tr '\n' ' ')" == '20260101-000003 20260101-000004-karabiner ' ]] || fail_at $LINENO
 
 printf 'terminal-kit: Git transport, editor, pager, and startup repair checks passed\n'

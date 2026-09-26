@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 trap 'printf "terminal-kit agent test failed at line %s\n" "$LINENO" >&2' ERR
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -56,21 +58,21 @@ jq -n \
 printf '%s\n' "$id" > "$state/last"
 
 context="$(cd "$repo" && "$ROOT/bin/terminal-kit" agent context --json)"
-[[ "$(printf '%s' "$context" | jq -r '.protocol')" == 'terminal-kit-agent/v1' ]]
-[[ "$(printf '%s' "$context" | jq -r '.repository.root')" == "$repo" ]]
-[[ "$(printf '%s' "$context" | jq -r '.work.id')" == "$id" ]]
+[[ "$(printf '%s' "$context" | jq -r '.protocol')" == 'terminal-kit-agent/v1' ]] || fail_at $LINENO
+[[ "$(printf '%s' "$context" | jq -r '.repository.root')" == "$repo" ]] || fail_at $LINENO
+[[ "$(printf '%s' "$context" | jq -r '.work.id')" == "$id" ]] || fail_at $LINENO
 printf '%s' "$context" | jq -r '.policy' | grep -Fq 'terminal-kit agent checkpoint'
 printf '%s' "$context" | jq -e '.repository.guidance | type == "array"' >/dev/null
 
 (cd "$repo" && "$ROOT/bin/terminal-kit" agent checkpoint working "implementing the thing" --proof "baseline inspected" --next "run checks") >/dev/null
-[[ "$(jq -r '.state' "$receipt")" == working ]]
-[[ "$(jq -r '.summary' "$receipt")" == 'implementing the thing' ]]
-[[ "$(jq -r '.proof' "$receipt")" == 'baseline inspected' ]]
-[[ "$(jq -r '.next' "$receipt")" == 'run checks' ]]
+[[ "$(jq -r '.state' "$receipt")" == working ]] || fail_at $LINENO
+[[ "$(jq -r '.summary' "$receipt")" == 'implementing the thing' ]] || fail_at $LINENO
+[[ "$(jq -r '.proof' "$receipt")" == 'baseline inspected' ]] || fail_at $LINENO
+[[ "$(jq -r '.next' "$receipt")" == 'run checks' ]] || fail_at $LINENO
 
 (cd "$repo" && "$ROOT/bin/terminal-kit" agent checkpoint done "finished the thing" --proof "tests green") >/dev/null
-[[ "$(jq -r '.state' "$receipt")" == done ]]
-[[ "$(wc -l < "$state/$id.events.jsonl" | tr -d '[:space:]')" == 2 ]]
+[[ "$(jq -r '.state' "$receipt")" == done ]] || fail_at $LINENO
+[[ "$(wc -l < "$state/$id.events.jsonl" | tr -d '[:space:]')" == 2 ]] || fail_at $LINENO
 jq -e 'select(.state == "working")' "$state/$id.events.jsonl" >/dev/null
 jq -e 'select(.state == "done")' "$state/$id.events.jsonl" >/dev/null
 grep -Fq 'workspace status set done' "$scratch/cmux.log"

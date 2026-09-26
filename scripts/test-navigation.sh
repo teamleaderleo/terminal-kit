@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
@@ -7,9 +9,9 @@ bash -n "$ROOT/scripts/apply.sh" "$ROOT/scripts/perf.sh"
 
 # The portable path stays direct in cmux; Cmd-Tab remains the macOS alias layer.
 if command -v jq >/dev/null 2>&1; then
-  [[ "$(jq -r '.shortcuts.bindings.nextSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+tab' ]]
-  [[ "$(jq -r '.shortcuts.bindings.prevSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+shift+tab' ]]
-  [[ "$(jq -r '.terminal.showTextBoxOnNewTerminals' "$ROOT/config/cmux/cmux.json.example")" == 'false' ]]
+  [[ "$(jq -r '.shortcuts.bindings.nextSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+tab' ]] || fail_at $LINENO
+  [[ "$(jq -r '.shortcuts.bindings.prevSurface' "$ROOT/config/cmux/cmux.json.example")" == 'ctrl+shift+tab' ]] || fail_at $LINENO
+  [[ "$(jq -r '.terminal.showTextBoxOnNewTerminals' "$ROOT/config/cmux/cmux.json.example")" == 'false' ]] || fail_at $LINENO
 fi
 
 # A failed bare-name cd can fall through to an exact project basename without

@@ -18,7 +18,7 @@ Everything terminal-kit writes outside its own checkout, and how task recovery w
 
 A managed block sits between `# >>> terminal-kit: NAME >>>` and `# <<< terminal-kit: NAME <<<`. Everything outside it is yours.
 
-Before replacing a file, terminal-kit copies it to `~/.config/terminal-kit-backups/<timestamp>/`.
+Before replacing a file, terminal-kit copies it to `~/.config/terminal-kit-backups/<timestamp>/`. `tk apply` keeps the newest 10 of those directories.
 
 ## Local state
 

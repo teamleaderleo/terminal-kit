@@ -43,6 +43,30 @@ prune_ephemeral_zsh_sources() {
   fi
 }
 
+# Print FILE without the begin..end block. A begin marker with no matching end
+# marker (a hand-edited or truncated file) drops only the marker line, never the
+# lines after it.
+strip_managed_block() {
+  local file="$1" begin="$2" end="$3"
+  awk -v begin="$begin" -v end="$end" '
+    { lines[NR] = $0 }
+    END {
+      i = 1
+      while (i <= NR) {
+        if (lines[i] == begin) {
+          j = i + 1
+          while (j <= NR && lines[j] != end) j++
+          if (j <= NR) { i = j + 1; continue }
+          i++
+          continue
+        }
+        if (lines[i] != end) print lines[i]
+        i++
+      }
+    }
+  ' "$file"
+}
+
 replace_managed_block() {
   local file="$1"
   local name="$2"
@@ -65,11 +89,7 @@ replace_managed_block() {
   output="$(mktemp)"
   cat > "$body"
 
-  awk -v begin="$begin" -v end="$end" '
-    $0 == begin { skipping = 1; next }
-    $0 == end   { skipping = 0; next }
-    !skipping   { print }
-  ' "$file" > "$filtered"
+  strip_managed_block "$file" "$begin" "$end" > "$filtered"
 
   awk '
     NF { last = NR }
@@ -106,11 +126,7 @@ remove_managed_block() {
   raw="$(mktemp)"
   output="$(mktemp)"
 
-  awk -v begin="$begin" -v end="$end" '
-    $0 == begin { skipping = 1; next }
-    $0 == end   { skipping = 0; next }
-    !skipping   { print }
-  ' "$file" > "$raw"
+  strip_managed_block "$file" "$begin" "$end" > "$raw"
 
   awk '
     NF { last = NR }
@@ -155,4 +171,14 @@ remove_retired_state() {
     "$HOME/.config/terminal-kit/hints" \
     "$HOME/.config/terminal-kit/hint-index" \
     "$HOME/.config/terminal-kit/hints-layout-v2"
+}
+
+# Keep only the newest backup directories.
+prune_backups() {
+  local root="$HOME/.config/terminal-kit-backups" keep="${1:-10}" dir
+  [[ -d "$root" ]] || return 0
+  find "$root" -mindepth 1 -maxdepth 1 -type d -print | sort -r | awk -v keep="$keep" 'NR > keep' \
+    | while IFS= read -r dir; do
+        rm -rf -- "$dir"
+      done
 }

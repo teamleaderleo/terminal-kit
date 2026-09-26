@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 trap 'printf "terminal-kit Karabiner test failed at line %s\n" "$LINENO" >&2' ERR
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -73,30 +75,35 @@ export TERMINAL_KIT_KARABINER_ASSET="$asset"
 "$ROOT/bin/terminal-kit" karabiner apply >/dev/null
 jq empty "$live"
 cmp -s "$ROOT/config/karabiner/terminal-kit.json" "$asset"
-[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "terminal-kit: browser-style cmux surface switching")) | length' "$live")" == 1 ]]
-[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "local keep-me rule")) | length' "$live")" == 1 ]]
-[[ "$(jq -r '.profiles[0].devices[0].identifiers.vendor_id' "$live")" == 456 ]]
+[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "terminal-kit: browser-style cmux surface switching")) | length' "$live")" == 1 ]] || fail_at $LINENO
+[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "local keep-me rule")) | length' "$live")" == 1 ]] || fail_at $LINENO
+[[ "$(jq -r '.profiles[0].devices[0].identifiers.vendor_id' "$live")" == 456 ]] || fail_at $LINENO
 
 before="$(shasum "$live" "$asset")"
 "$ROOT/bin/terminal-kit" karabiner apply >/dev/null
 after="$(shasum "$live" "$asset")"
-[[ "$before" == "$after" ]]
+[[ "$before" == "$after" ]] || fail_at $LINENO
 
 # An older copy of the rule is replaced, not duplicated.
-[[ "$(jq -r '.profiles[0].complex_modifications.rules[] | select(.description == "terminal-kit: browser-style cmux surface switching") | .manipulators | map(.from.key_code) | join(",")' "$live")" == close_bracket,open_bracket ]]
+[[ "$(jq -r '.profiles[0].complex_modifications.rules[] | select(.description == "terminal-kit: browser-style cmux surface switching") | .manipulators | map(.from.key_code) | join(",")' "$live")" == close_bracket,open_bracket ]] || fail_at $LINENO
 
 # Later local edits survive a sync.
 tmp="$(mktemp)"
 jq '.profiles[0].complex_modifications.rules += [{"description":"later local rule","manipulators":[]}]' "$live" > "$tmp"
 mv "$tmp" "$live"
 "$ROOT/bin/terminal-kit" karabiner sync >/dev/null
-[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "later local rule")) | length' "$live")" == 1 ]]
-[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "terminal-kit: browser-style cmux surface switching")) | length' "$live")" == 1 ]]
-[[ "$(jq -r '.profiles[0].simple_modifications[0].to[0].key_code' "$live")" == left_control ]]
-[[ "$(jq -r '.profiles[0].devices[0].identifiers.product_id' "$live")" == 123 ]]
+[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "later local rule")) | length' "$live")" == 1 ]] || fail_at $LINENO
+[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "terminal-kit: browser-style cmux surface switching")) | length' "$live")" == 1 ]] || fail_at $LINENO
+[[ "$(jq -r '.profiles[0].simple_modifications[0].to[0].key_code' "$live")" == left_control ]] || fail_at $LINENO
+[[ "$(jq -r '.profiles[0].devices[0].identifiers.product_id' "$live")" == 123 ]] || fail_at $LINENO
 
 status="$("$ROOT/bin/terminal-kit" karabiner status)"
 grep -Fq 'profile:     Default profile' <<< "$status"
 grep -Fq 'cmux alias:  true' <<< "$status"
+
+"$ROOT/bin/terminal-kit" karabiner remove >/dev/null
+[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "terminal-kit: browser-style cmux surface switching")) | length' "$live")" == 0 ]] || fail_at $LINENO
+[[ "$(jq -r '.profiles[0].complex_modifications.rules | map(select(.description == "local keep-me rule")) | length' "$live")" == 1 ]] || fail_at $LINENO
+[[ ! -e "$asset" ]] || fail_at $LINENO
 
 printf 'terminal-kit Karabiner tests passed\n'

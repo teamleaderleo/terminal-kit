@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 trap 'printf "terminal-kit: test-update.sh failed at line %s\n" "$LINENO" >&2' ERR
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -24,7 +26,7 @@ kit="$home/Projects/terminal-kit"
 
 run() { HOME="$home" PATH="$scratch/bin:/usr/bin:/bin" "$kit/bin/terminal-kit" "$@"; }
 
-[[ "$(run update)" == *'up to date'* ]]
+[[ "$(run update)" == *'up to date'* ]] || fail_at $LINENO
 
 git_quiet -C "$scratch/seed" remote add origin "$scratch/origin.git"
 printf 'note\n' > "$scratch/seed/incoming.txt"
@@ -34,13 +36,13 @@ git_quiet -C "$scratch/seed" push origin main
 
 before="$(git -C "$kit" rev-parse HEAD)"
 check_output="$(run update --check)"
-[[ "$check_output" == *'incoming change'* ]]
-[[ "$(git -C "$kit" rev-parse HEAD)" == "$before" ]]
-[[ ! -e "$home/.zshrc" ]]
+[[ "$check_output" == *'incoming change'* ]] || fail_at $LINENO
+[[ "$(git -C "$kit" rev-parse HEAD)" == "$before" ]] || fail_at $LINENO
+[[ ! -e "$home/.zshrc" ]] || fail_at $LINENO
 
 run update >/dev/null
-[[ "$(git -C "$kit" rev-parse HEAD)" == "$(git -C "$scratch/seed" rev-parse HEAD)" ]]
-[[ -e "$kit/incoming.txt" ]]
+[[ "$(git -C "$kit" rev-parse HEAD)" == "$(git -C "$scratch/seed" rev-parse HEAD)" ]] || fail_at $LINENO
+[[ -e "$kit/incoming.txt" ]] || fail_at $LINENO
 grep -Fq '# >>> terminal-kit: zsh >>>' "$home/.zshrc"
 
 # A diverged local branch is never merged or reset.
@@ -50,6 +52,6 @@ git_quiet -C "$scratch/seed" commit -am 'second change'
 git_quiet -C "$scratch/seed" push origin main
 local_head="$(git -C "$kit" rev-parse HEAD)"
 if run update >/dev/null 2>&1; then exit 1; fi
-[[ "$(git -C "$kit" rev-parse HEAD)" == "$local_head" ]]
+[[ "$(git -C "$kit" rev-parse HEAD)" == "$local_head" ]] || fail_at $LINENO
 
 printf 'terminal-kit update tests passed\n'

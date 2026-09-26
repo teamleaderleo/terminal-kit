@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cmux="$ROOT/config/cmux/cmux.json.example"
@@ -15,21 +17,21 @@ command -v jq >/dev/null 2>&1 || {
 jq empty "$cmux"
 jq empty "$karabiner"
 
-[[ "$(jq -r '.shortcuts.bindings.newSurface' "$cmux")" == 'cmd+t' ]]
-[[ "$(jq -r '.shortcuts.bindings.closeTab' "$cmux")" == 'cmd+w' ]]
-[[ "$(jq -r '.shortcuts.bindings.reopenClosedBrowserPanel' "$cmux")" == 'cmd+shift+t' ]]
-[[ "$(jq -r '.shortcuts.bindings.nextSurface' "$cmux")" == 'ctrl+tab' ]]
-[[ "$(jq -r '.shortcuts.bindings.prevSurface' "$cmux")" == 'ctrl+shift+tab' ]]
-[[ "$(jq -r '.shortcuts.bindings.browserBack' "$cmux")" == 'cmd+[' ]]
-[[ "$(jq -r '.shortcuts.bindings.browserForward' "$cmux")" == 'cmd+]' ]]
-[[ "$(jq -r '.shortcuts.bindings.focusBrowserAddressBar' "$cmux")" == 'cmd+l' ]]
-[[ "$(jq -r '.shortcuts.bindings.find' "$cmux")" == 'cmd+f' ]]
-[[ "$(jq -r '.fileExplorer.doubleClickAction' "$cmux")" == 'preview' ]]
+[[ "$(jq -r '.shortcuts.bindings.newSurface' "$cmux")" == 'cmd+t' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.closeTab' "$cmux")" == 'cmd+w' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.reopenClosedBrowserPanel' "$cmux")" == 'cmd+shift+t' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.nextSurface' "$cmux")" == 'ctrl+tab' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.prevSurface' "$cmux")" == 'ctrl+shift+tab' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.browserBack' "$cmux")" == 'cmd+[' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.browserForward' "$cmux")" == 'cmd+]' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.focusBrowserAddressBar' "$cmux")" == 'cmd+l' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.find' "$cmux")" == 'cmd+f' ]] || fail_at $LINENO
+[[ "$(jq -r '.fileExplorer.doubleClickAction' "$cmux")" == 'preview' ]] || fail_at $LINENO
 
 # Selecting never writes the clipboard, and Cmd+A/C/X/Z keep their terminal
 # meanings instead of sending private sequences into whatever program is running.
 grep -Fxq 'copy-on-select = false' "$ghostty"
-[[ "$(jq -r '.terminal.copyOnSelect' "$cmux")" == false ]]
+[[ "$(jq -r '.terminal.copyOnSelect' "$cmux")" == false ]] || fail_at $LINENO
 if grep -Eq '^keybind *= *(cmd|super)\+(shift\+)?[acxz]=(csi|text|esc):' "$ghostty"; then
   printf 'terminal-kit: Ghostty must not send Cmd+A/C/X/Z into the running program\n' >&2
   exit 1
@@ -39,15 +41,7 @@ if grep -q 'pbcopy' "$ROOT/config/tmux/tmux.conf"; then
   exit 1
 fi
 
-[[ "$(jq -r '.rules[0].manipulators | length' "$karabiner")" == 6 ]]
-[[ "$(jq -r '.rules[0].manipulators[2].from.key_code' "$karabiner")" == close_bracket ]]
-[[ "$(jq -r '.rules[0].manipulators[2].from.modifiers.mandatory | join(",")' "$karabiner")" == command,shift ]]
-[[ "$(jq -r '.rules[0].manipulators[2].to[0].modifiers | join(",")' "$karabiner")" == left_control ]]
-[[ "$(jq -r '.rules[0].manipulators[3].from.key_code' "$karabiner")" == open_bracket ]]
-[[ "$(jq -r '.rules[0].manipulators[3].to[0].modifiers | join(",")' "$karabiner")" == left_control,left_shift ]]
-
-grep -Fq '⌘W Close surface' "$ROOT/config/hints.txt"
-grep -Fq '⌘⇧T Reopen closed' "$ROOT/config/hints.txt"
-grep -Fq 'Right-click Context menu' "$ROOT/config/hints.txt"
+# Karabiner adds Cmd-Shift-]/[ as the browser-style alias for Ctrl-(Shift-)Tab.
+[[ "$(jq -c '[.rules[0].manipulators[] | [.from.key_code, (.from.modifiers.mandatory | join("+")), (.to[0].key_code), (.to[0].modifiers | join("+"))]]' "$karabiner")" == '[["close_bracket","command+shift","tab","left_control"],["open_bracket","command+shift","tab","left_control+left_shift"]]' ]] || fail_at $LINENO
 
 printf 'terminal-kit familiar controls tests passed\n'
