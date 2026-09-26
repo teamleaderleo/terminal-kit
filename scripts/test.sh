@@ -28,6 +28,7 @@ done
 if command -v zsh >/dev/null 2>&1; then
   zsh -n \
     "$ROOT/config/zsh/env.zsh" \
+    "$ROOT/config/zsh/cache.zsh" \
     "$ROOT/config/zsh/init.zsh" \
     "$ROOT/config/zsh/terminal.zsh" \
     "$ROOT/config/zsh/tools.zsh" \
