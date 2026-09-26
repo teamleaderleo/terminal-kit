@@ -20,15 +20,14 @@ notify-on-command-finish-after = 15s
 working-directory = home
 
 # Clipboard and screen selection.
-# Dragging output copies it immediately. Right-click keeps the familiar context
-# menu, so Copy/Paste stay available without sacrificing ordinary selection.
-# Cmd+Shift+C is the explicit screen-copy key.
+# Selecting text never touches the clipboard; Cmd+C copies the selection, as in
+# any other macOS app. Right-click keeps the familiar Copy/Paste context menu.
 # Deliberate keyboard pastes may contain multiple lines without a confirmation prompt.
 clipboard-read = ask
 clipboard-write = allow
 clipboard-trim-trailing-spaces = true
 clipboard-paste-protection = false
-copy-on-select = clipboard
+copy-on-select = false
 right-click-action = context-menu
 mouse-shift-capture = never
 selection-clear-on-typing = true
@@ -38,13 +37,8 @@ selection-clear-on-copy = false
 # leaving the right Option key available for ordinary macOS symbol entry.
 macos-option-as-alt = left
 
-# macOS-style prompt editing. Zsh owns the custom CSI sequences below.
-# Cmd+A/C/X/Z and Cmd+Shift+Z act on the editable command line.
-keybind = cmd+a=csi:25~
-keybind = cmd+c=csi:26~
-keybind = cmd+x=csi:28~
-keybind = cmd+z=csi:29~
-keybind = cmd+shift+z=csi:31~
+# Cmd+A/C/Z keep Ghostty's own screen meanings. Keys that must reach the shell
+# use standard encodings, so programs other than Zsh never receive private codes.
 
 # Cursor movement and selection.
 keybind = cmd+left=text:\x01
@@ -70,7 +64,6 @@ keybind = option+backspace=text:\x17
 keybind = option+delete=esc:d
 
 # Cmd+V remains a real terminal paste, so it also works inside running programs.
-# Mouse-selected output is already copied automatically; this key is the manual fallback.
 keybind = cmd+v=paste_from_clipboard
 keybind = performable:cmd+shift+c=copy_to_clipboard
 

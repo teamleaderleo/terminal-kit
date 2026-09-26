@@ -12,7 +12,7 @@
     "windowTitleTemplate": "{activeWorkspace} — {activeDirectory}"
   },
   "terminal": {
-    "copyOnSelect": true,
+    "copyOnSelect": false,
     "showScrollBar": false,
     "scrollSpeed": 1.4,
     "showTextBoxOnNewTerminals": false,
