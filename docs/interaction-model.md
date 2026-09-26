@@ -9,8 +9,10 @@ terminal-kit should make cmux feel like a browser and Finder where those convent
 - `Cmd-Shift-T` reopens the last closed surface/workspace.
 - `Ctrl-Tab` / `Ctrl-Shift-Tab` move between surfaces.
 - `Cmd-Shift-]` / `Cmd-Shift-[` are accepted as browser-style next/previous-tab aliases on macOS.
-- `Cmd-C`, `Cmd-V`, and `Cmd-A` keep their ordinary editing/clipboard roles at the shell prompt.
-- Right-click opens a context menu. Selection still copies automatically.
+- `Cmd-C`, `Cmd-V`, `Cmd-A`, and `Cmd-Z` keep their ordinary terminal roles everywhere, including inside TUIs: Cmd-C copies the screen selection, Cmd-A selects the screen.
+- Selecting text never writes the clipboard (copy-on-select is off in Ghostty, cmux, and tmux). Only an explicit copy does, and an empty copy never replaces it.
+- At the Zsh prompt, Shift-arrows select command-line text, typing or Backspace replaces the selection, `Option-W` copies it, and `Ctrl-X Ctrl-A` selects the whole line. These are standard Emacs keys, so other programs never receive private escape sequences.
+- Right-click opens a context menu with Copy and Paste.
 - The cmux Files sidebar is the pointer-first file browser; its double-click action is preview.
 
 ## Pointer direction

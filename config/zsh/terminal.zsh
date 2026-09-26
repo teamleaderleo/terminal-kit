@@ -38,15 +38,19 @@ _terminal_kit_project_title() {
   printf '\e]2;%s\a' "$title"
 }
 
-# Keep the previous real command available to the external clipboard helper.
-# The copy helper itself is deliberately ignored so clicking Copy Cmd does not
-# replace the command it is trying to copy.
+# Remember the previous real command for `tk copy command`. It is exported only
+# to that helper, so ordinary child processes never see the last command line.
 _terminal_kit_record_command() {
   local command_text="$1"
   case "$command_text" in
-    terminal-kit\ copy\ *|tk\ copy\ *) return 0 ;;
+    terminal-kit\ copy\ *|tk\ copy\ *)
+      [[ -n "${_terminal_kit_last_command:-}" ]] \
+        && typeset -gx TERMINAL_KIT_LAST_COMMAND="$_terminal_kit_last_command"
+      return 0
+      ;;
   esac
-  typeset -gx TERMINAL_KIT_LAST_COMMAND="$command_text"
+  typeset -g _terminal_kit_last_command="$command_text"
+  unset TERMINAL_KIT_LAST_COMMAND
 }
 
 autoload -Uz add-zsh-hook
@@ -163,27 +167,28 @@ _terminal_kit_select_end_of_line() {
 zle -N _terminal_kit_select_end_of_line
 
 _terminal_kit_select_all() {
+  (( ${#BUFFER} )) || return 0
   MARK=0
   CURSOR=${#BUFFER}
   REGION_ACTIVE=1
 }
 zle -N _terminal_kit_select_all
 
+# Only an explicit copy of a non-empty selection writes the clipboard.
+_terminal_kit_region_has_text() {
+  (( REGION_ACTIVE && MARK != CURSOR ))
+}
+
 _terminal_kit_copy_region() {
-  (( REGION_ACTIVE )) || return 0
-  zle copy-region-as-kill
-  print -rn -- "$CUTBUFFER" | command pbcopy
-  zle deactivate-region
+  if _terminal_kit_region_has_text; then
+    zle copy-region-as-kill
+    [[ -n "$CUTBUFFER" ]] && print -rn -- "$CUTBUFFER" | command pbcopy
+    zle deactivate-region
+  else
+    zle copy-region-as-kill
+  fi
 }
 zle -N _terminal_kit_copy_region
-
-_terminal_kit_cut_region() {
-  (( REGION_ACTIVE )) || return 0
-  zle kill-region
-  zle -f kill
-  print -rn -- "$CUTBUFFER" | command pbcopy
-}
-zle -N _terminal_kit_cut_region
 
 _terminal_kit_backward_delete_char_or_region() {
   if (( REGION_ACTIVE )); then
@@ -319,12 +324,11 @@ _terminal_kit_down_or_deselect() {
 }
 zle -N _terminal_kit_down_or_deselect
 
-# Command-key sequences sent by Ghostty and cmux.
-bindkey '\e[25~' _terminal_kit_select_all
-bindkey '\e[26~' _terminal_kit_copy_region
-bindkey '\e[28~' _terminal_kit_cut_region
-bindkey '\e[29~' undo
-bindkey '\e[31~' redo
+# Prompt selection uses standard Emacs keys that other programs understand too:
+# Option+W copies the selection (then Backspace to cut), and Control+X Control+A
+# selects the whole command line. Shift+arrows extend a selection as before.
+bindkey '\ew' _terminal_kit_copy_region
+bindkey '^X^A' _terminal_kit_select_all
 
 # Cmd+Left/Right and their Ctrl+A/Ctrl+E shell equivalents.
 bindkey '^A' _terminal_kit_beginning_or_collapse

@@ -141,6 +141,8 @@ case "$command_name" in
   test)
     /bin/bash "$ROOT/scripts/test-copy.sh"
     /bin/bash "$ROOT/scripts/test-ergonomics.sh"
+    /bin/bash "$ROOT/scripts/test-familiar-controls.sh"
+    /bin/bash "$ROOT/scripts/test-prompt-clipboard.sh"
     exec /bin/bash "$ROOT/scripts/test.sh" "$@"
     ;;
   publish)

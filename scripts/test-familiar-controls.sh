@@ -26,14 +26,18 @@ jq empty "$karabiner"
 [[ "$(jq -r '.shortcuts.bindings.find' "$cmux")" == 'cmd+f' ]]
 [[ "$(jq -r '.fileExplorer.doubleClickAction' "$cmux")" == 'preview' ]]
 
-grep -Fxq 'right-click-action = context-menu' "$ghostty"
-grep -Fxq 'copy-on-select = clipboard' "$ghostty"
-grep -Fxq 'keybind = cmd+v=paste_from_clipboard' "$ghostty"
-grep -Fxq 'keybind = cmd+a=csi:25~' "$ghostty"
-
-grep -Fq '_terminal_kit_select_all() {' "$zsh"
-grep -Fxq 'zle -N _terminal_kit_select_all' "$zsh"
-grep -Fxq "bindkey '\\e[25~' _terminal_kit_select_all" "$zsh"
+# Selecting never writes the clipboard, and Cmd+A/C/X/Z keep their terminal
+# meanings instead of sending private sequences into whatever program is running.
+grep -Fxq 'copy-on-select = false' "$ghostty"
+[[ "$(jq -r '.terminal.copyOnSelect' "$cmux")" == false ]]
+if grep -Eq '^keybind *= *(cmd|super)\+(shift\+)?[acxz]=(csi|text|esc):' "$ghostty"; then
+  printf 'terminal-kit: Ghostty must not send Cmd+A/C/X/Z into the running program\n' >&2
+  exit 1
+fi
+if grep -q 'pbcopy' "$ROOT/config/tmux/tmux.conf"; then
+  printf 'terminal-kit: tmux copies must reach the clipboard once, through set-clipboard\n' >&2
+  exit 1
+fi
 
 [[ "$(jq -r '.rules[0].manipulators | length' "$karabiner")" == 6 ]]
 [[ "$(jq -r '.rules[0].manipulators[2].from.key_code' "$karabiner")" == close_bracket ]]

@@ -12,6 +12,7 @@
 ⌘K Clear output
 ⌘↑ / ⌘↓ Previous / next prompt
 ⌘ triple-click Select command output
+⌥W Copy prompt selection
 Right-click Context menu
 y Browse files
 lg Git dashboard
