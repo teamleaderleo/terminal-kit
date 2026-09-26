@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Never reload the live cmux, Ghostty, or tmux from a fake-HOME test run.
@@ -84,11 +86,11 @@ after="$(shasum \
   "$test_root/home/.config/cmux/cmux.json" \
   "$test_root/home/.config/cmux/dock.json")"
 
-[[ "$before" == "$after" ]]
-[[ "$(grep -c '^# >>> terminal-kit: environment >>>$' "$test_root/home/.zshenv")" == 1 ]]
-[[ "$(grep -c '^# >>> terminal-kit: zsh >>>$' "$test_root/home/.zshrc")" == 1 ]]
-[[ "$(grep -c '^# >>> terminal-kit: tmux >>>$' "$test_root/home/.tmux.conf")" == 1 ]]
-[[ "$(grep -c '^# >>> terminal-kit: ghostty >>>$' "$test_root/home/.config/ghostty/config")" == 1 ]]
+[[ "$before" == "$after" ]] || fail_at $LINENO
+[[ "$(grep -c '^# >>> terminal-kit: environment >>>$' "$test_root/home/.zshenv")" == 1 ]] || fail_at $LINENO
+[[ "$(grep -c '^# >>> terminal-kit: zsh >>>$' "$test_root/home/.zshrc")" == 1 ]] || fail_at $LINENO
+[[ "$(grep -c '^# >>> terminal-kit: tmux >>>$' "$test_root/home/.tmux.conf")" == 1 ]] || fail_at $LINENO
+[[ "$(grep -c '^# >>> terminal-kit: ghostty >>>$' "$test_root/home/.config/ghostty/config")" == 1 ]] || fail_at $LINENO
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/env.zsh" "$test_root/home/.zshenv"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/config" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$test_root/home/.config/ghostty/config"
@@ -101,7 +103,7 @@ if HOME="$test_root/home" git config --global --get-all \
   exit 1
 fi
 explicit_https='https://github.com/example/repository.git'
-[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]] || fail_at $LINENO
 git_status="$(HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/.local/bin/terminal-kit" git current)"
 grep -Fq 'terminal-kit: saved GitHub protocol ssh' <<< "$git_status"
@@ -133,7 +135,7 @@ if HOME="$test_root/home" git config --global --get-all \
   printf 'terminal-kit: git https recreated legacy GitHub rewrite\n' >&2
   exit 1
 fi
-[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]] || fail_at $LINENO
 
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/.local/bin/terminal-kit" git ssh >/dev/null
@@ -144,7 +146,7 @@ if HOME="$test_root/home" git config --global --get-all \
   printf 'terminal-kit: git ssh recreated legacy GitHub rewrite\n' >&2
   exit 1
 fi
-[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]]
+[[ "$(HOME="$test_root/home" git ls-remote --get-url "$explicit_https")" == "$explicit_https" ]] || fail_at $LINENO
 
 tk_home() {
   HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
@@ -158,13 +160,13 @@ print(json.dumps(v))' "$test_root/home/.config/cmux/cmux.json" "$1"
 state_dir="$test_root/home/.config/terminal-kit"
 
 # A fresh install stores no overrides and renders the template defaults.
-[[ "$(tk_home set scroll)" == 1.4 ]]
-[[ "$(tk_home set prompt)" == minimal ]]
-[[ "$(cmux_value terminal.scrollSpeed)" == 1.4 ]]
-[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 12 ]]
-[[ "$(cmux_value fileEditor.wordWrap)" == true ]]
-[[ "$(cmux_value sidebar.showPullRequests)" == false ]]
-[[ "$(cmux_value '$schema')" == *cmux.schema.json* ]]
+[[ "$(tk_home set scroll)" == 1.4 ]] || fail_at $LINENO
+[[ "$(tk_home set prompt)" == minimal ]] || fail_at $LINENO
+[[ "$(cmux_value terminal.scrollSpeed)" == 1.4 ]] || fail_at $LINENO
+[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 12 ]] || fail_at $LINENO
+[[ "$(cmux_value fileEditor.wordWrap)" == true ]] || fail_at $LINENO
+[[ "$(cmux_value sidebar.showPullRequests)" == false ]] || fail_at $LINENO
+[[ "$(cmux_value '$schema')" == *cmux.schema.json* ]] || fail_at $LINENO
 grep -Fq 'background-blur = macos-glass-regular' "$state_dir/glass.ghostty"
 
 # Pre-settings.json installs keep their choices: legacy per-setting files are
@@ -179,43 +181,43 @@ printf '# terminal-kit glass preset: clear\nbackground-opacity = 0.92\n' > "$sta
 HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
   "$test_root/home/Projects/terminal-kit/install.sh" --skip-tools >/dev/null
 for legacy in scroll-speed editor-wrap prompt memory-mode memory-auto; do
-  [[ ! -e "$state_dir/$legacy" ]]
+  [[ ! -e "$state_dir/$legacy" ]] || fail_at $LINENO
 done
-[[ "$(tk_home set scroll)" == 1.8 ]]
-[[ "$(tk_home set wrap)" == wide ]]
-[[ "$(tk_home set prompt)" == detailed ]]
-[[ "$(tk_home set memory)" == normal ]]
-[[ "$(tk_home set glass)" == clear ]]
-[[ "$(cmux_value terminal.scrollSpeed)" == 1.8 ]]
-[[ "$(cmux_value fileEditor.wordWrap)" == false ]]
+[[ "$(tk_home set scroll)" == 1.8 ]] || fail_at $LINENO
+[[ "$(tk_home set wrap)" == wide ]] || fail_at $LINENO
+[[ "$(tk_home set prompt)" == detailed ]] || fail_at $LINENO
+[[ "$(tk_home set memory)" == normal ]] || fail_at $LINENO
+[[ "$(tk_home set glass)" == clear ]] || fail_at $LINENO
+[[ "$(cmux_value terminal.scrollSpeed)" == 1.8 ]] || fail_at $LINENO
+[[ "$(cmux_value fileEditor.wordWrap)" == false ]] || fail_at $LINENO
 grep -Fq 'background-blur = macos-glass-clear' "$state_dir/glass.ghostty"
 # The shell reads the prompt mode straight from settings.json.
 grep -Fq '"prompt": "detailed"' "$state_dir/settings.json"
 
 # tk set changes one key and re-renders; an unchanged value rewrites nothing.
 tk_home set memory lean >/dev/null
-[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 2 ]]
-[[ "$(cmux_value terminal.agentHibernation.enabled)" == true ]]
+[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 2 ]] || fail_at $LINENO
+[[ "$(cmux_value terminal.agentHibernation.enabled)" == true ]] || fail_at $LINENO
 tk_home set sidebar details >/dev/null
-[[ "$(cmux_value sidebar.showPullRequests)" == true ]]
-[[ "$(cmux_value terminal.scrollSpeed)" == 1.8 ]]
+[[ "$(cmux_value sidebar.showPullRequests)" == true ]] || fail_at $LINENO
+[[ "$(cmux_value terminal.scrollSpeed)" == 1.8 ]] || fail_at $LINENO
 cmux_stamp="$(stat -f '%i %m' "$test_root/home/.config/cmux/cmux.json")"
 sleep 1
 tk_home set sidebar details >/dev/null
-[[ "$(stat -f '%i %m' "$test_root/home/.config/cmux/cmux.json")" == "$cmux_stamp" ]]
+[[ "$(stat -f '%i %m' "$test_root/home/.config/cmux/cmux.json")" == "$cmux_stamp" ]] || fail_at $LINENO
 tk_home set memory default >/dev/null
-[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 12 ]]
+[[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 12 ]] || fail_at $LINENO
 if tk_home set scroll 9 2>/dev/null; then exit 1; fi
 if tk_home set memory ultra 2>/dev/null; then exit 1; fi
 if tk_home set nonsense 1 2>/dev/null; then exit 1; fi
 if tk_home scroll fast 2>/dev/null; then exit 1; fi
-[[ "$(tk_home set scroll)" == 1.8 ]]
+[[ "$(tk_home set scroll)" == 1.8 ]] || fail_at $LINENO
 tk_home set >/dev/null
 
 # A hand edit to cmux.json is backed up before the renderer replaces it.
 printf '{}\n' > "$test_root/home/.config/cmux/cmux.json"
 tk_home set scroll 1.4 >/dev/null
-[[ "$(cmux_value terminal.scrollSpeed)" == 1.4 ]]
+[[ "$(cmux_value terminal.scrollSpeed)" == 1.4 ]] || fail_at $LINENO
 grep -rlq '^{}$' "$test_root/home/.config/terminal-kit-backups"
 
 grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/init.zsh" "$test_root/home/.zshrc"
@@ -223,7 +225,7 @@ grep -Fq "$test_root/home/Projects/terminal-kit/config/tmux/tmux.conf" "$test_ro
 cmp -s \
   "$test_root/home/Projects/terminal-kit/config/cmux/dock.json.example" \
   "$test_root/home/.config/cmux/dock.json"
-[[ "$(tk_home path)" == "$test_root/home/Projects/terminal-kit" ]]
+[[ "$(tk_home path)" == "$(cd "$test_root/home/Projects/terminal-kit" && pwd -P)" ]] || fail_at $LINENO
 grep -Fq 'tk keys' < <(tk_home keys)
 grep -Fq 'terminal-kit performance settings' < <(tk_home perf status)
 
@@ -260,27 +262,27 @@ FAKE_CMUX
   work_id="$(tr -d '[:space:]' < "$test_root/home/.local/state/terminal-kit/work/last")"
   work_receipt="$test_root/home/.local/state/terminal-kit/work/$work_id.json"
   work_path="$(jq -r '.work_path' "$work_receipt")"
-  [[ -d "$work_path" ]]
+  [[ -d "$work_path" ]] || fail_at $LINENO
   grep -Fxq local < <(tail -n 1 "$work_path/file.txt")
   grep -Fxq untracked "$work_path/note.txt"
-  [[ "$(jq -r '.seeded_dirty' "$work_receipt")" == true ]]
-  [[ "$(jq -r '.state' "$work_receipt")" == launched ]]
+  [[ "$(jq -r '.seeded_dirty' "$work_receipt")" == true ]] || fail_at $LINENO
+  [[ "$(jq -r '.state' "$work_receipt")" == launched ]] || fail_at $LINENO
 
   printf 'agent\n' >> "$work_path/file.txt"
   printf 'new\n' > "$work_path/new.txt"
   HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
     "$test_root/home/.local/bin/terminal-kit" work undo "$work_id" >/dev/null
-  [[ ! -e "$work_path" ]]
-  [[ "$(jq -r '.state' "$work_receipt")" == undone ]]
+  [[ ! -e "$work_path" ]] || fail_at $LINENO
+  [[ "$(jq -r '.state' "$work_receipt")" == undone ]] || fail_at $LINENO
   recovery_head="$(jq -r '.recovery_head_ref' "$work_receipt")"
   git -C "$work_repo" show-ref --verify --quiet "$recovery_head"
 
   HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
     "$test_root/home/.local/bin/terminal-kit" work restore "$work_id" >/dev/null
-  [[ -d "$work_path" ]]
+  [[ -d "$work_path" ]] || fail_at $LINENO
   grep -Fq agent "$work_path/file.txt"
   grep -Fxq new "$work_path/new.txt"
-  [[ "$(jq -r '.state' "$work_receipt")" == restored ]]
+  [[ "$(jq -r '.state' "$work_receipt")" == restored ]] || fail_at $LINENO
   if grep -Fq agent "$work_repo/file.txt"; then
     printf 'terminal-kit: agent work leaked into source checkout\n' >&2
     exit 1
@@ -292,8 +294,8 @@ FAKE_CMUX
     "$test_root/home/.local/bin/terminal-kit" work "$work_repo/file.txt" "inspect this file" >/dev/null
   file_work_id="$(tr -d '[:space:]' < "$test_root/home/.local/state/terminal-kit/work/last")"
   file_receipt="$test_root/home/.local/state/terminal-kit/work/$file_work_id.json"
-  [[ "$(jq -r '.repo_root' "$file_receipt")" == "$(cd "$work_repo" && pwd -P)" ]]
-  [[ "$(jq -r '.reference' "$file_receipt")" == "$source_file_reference" ]]
+  [[ "$(jq -r '.repo_root' "$file_receipt")" == "$(cd "$work_repo" && pwd -P)" ]] || fail_at $LINENO
+  [[ "$(jq -r '.reference' "$file_receipt")" == "$source_file_reference" ]] || fail_at $LINENO
   grep -Fq 'inspect this file' < <(jq -r '.prompt' "$file_receipt")
   HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
     "$test_root/home/.local/bin/terminal-kit" work undo "$file_work_id" >/dev/null
@@ -305,11 +307,22 @@ FAKE_CMUX
     "$test_root/home/.local/bin/terminal-kit" work "$github_reference" >/dev/null
   url_work_id="$(tr -d '[:space:]' < "$test_root/home/.local/state/terminal-kit/work/last")"
   url_receipt="$test_root/home/.local/state/terminal-kit/work/$url_work_id.json"
-  [[ "$(jq -r '.target' "$url_receipt")" == 'example/work-fixture' ]]
-  [[ "$(jq -r '.reference' "$url_receipt")" == "$github_reference" ]]
+  [[ "$(jq -r '.target' "$url_receipt")" == 'example/work-fixture' ]] || fail_at $LINENO
+  [[ "$(jq -r '.reference' "$url_receipt")" == "$github_reference" ]] || fail_at $LINENO
   grep -Fq "$github_reference" < <(jq -r '.prompt' "$url_receipt")
   HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
     "$test_root/home/.local/bin/terminal-kit" work undo "$url_work_id" >/dev/null
 fi
+
+# Uninstall removes every managed block and the command, and keeps user lines.
+printf 'export USER_LINE=1\n' >> "$test_root/home/.zshrc"
+HOME="$test_root/home" PATH="$test_root/bin:/usr/bin:/bin" \
+  /bin/bash "$test_root/home/Projects/terminal-kit/scripts/uninstall.sh" >/dev/null
+for host in .zshenv .zshrc .tmux.conf .config/ghostty/config; do
+  if grep -Fq '# >>> terminal-kit:' "$test_root/home/$host"; then fail_at $LINENO; fi
+done
+grep -Fxq 'export USER_LINE=1' "$test_root/home/.zshrc"
+[[ ! -e "$test_root/home/.local/bin/terminal-kit" ]] || fail_at $LINENO
+[[ -e "$test_root/home/.config/cmux/cmux.json" ]] || fail_at $LINENO
 
 printf 'terminal-kit install and work tests passed\n'

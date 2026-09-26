@@ -19,6 +19,7 @@ Usage: terminal-kit karabiner <command>
 
   status          Show whether the terminal-kit rule is in the selected profile
   apply | sync    Add or refresh the terminal-kit rule in the selected profile
+  remove          Take the rule out of every profile (used by uninstall)
 
 The rule maps Cmd-Shift-] / Cmd-Shift-[ to Ctrl-Tab / Ctrl-Shift-Tab inside cmux.
 Everything else in your Karabiner config is left alone.
@@ -133,6 +134,29 @@ apply_settings() {
   rm -f "$tmp"
 }
 
+remove_settings() {
+  need_jq
+  rm -f "$ASSET_TARGET"
+  [[ -r "$LIVE_CONFIG" ]] || return 0
+  validate_live_config
+  local tmp
+  tmp="$(mktemp -t terminal-kit-karabiner.XXXXXX)"
+  jq --arg managed_description "$MANAGED_DESCRIPTION" '
+    .profiles |= map(
+      if .complex_modifications.rules then
+        .complex_modifications.rules |= map(select((.description // "") != $managed_description))
+      else . end
+    )
+  ' "$LIVE_CONFIG" > "$tmp"
+  if ! cmp -s "$tmp" "$LIVE_CONFIG"; then
+    ensure_backup_dir
+    backup_file "$LIVE_CONFIG"
+    cp "$tmp" "$LIVE_CONFIG"
+    say "removed the terminal-kit Karabiner rule"
+  fi
+  rm -f "$tmp"
+}
+
 show_status() {
   need_jq
   printf 'terminal-kit Karabiner\n'
@@ -163,6 +187,10 @@ case "$command_name" in
     if [[ "${1:-}" == --quiet ]]; then quiet=true; shift; fi
     (( $# == 0 )) || die "unexpected Karabiner arguments: $*"
     apply_settings
+    ;;
+  remove)
+    if [[ "${1:-}" == --quiet ]]; then quiet=true; shift; fi
+    remove_settings
     ;;
   status)
     (( $# == 0 )) || die "unexpected Karabiner arguments: $*"

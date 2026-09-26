@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 command -v zsh >/dev/null || { printf 'SKIP shell dispatch: zsh unavailable\n'; exit 0; }
 zsh_bin="$(command -v zsh)"
@@ -82,18 +84,18 @@ case "$OPERATION" in
 esac
 print -r -- 'returned to caller'
 ZSH
-    [[ ! -e "$RESTART_LOG" ]]
+    [[ ! -e "$RESTART_LOG" ]] || fail_at $LINENO
     case "$operation" in
       failure)
-        [[ "$result" == 17 ]]
+        [[ "$result" == 17 ]] || fail_at $LINENO
         if grep -Fq 'exec zsh' "$test_root/output"; then exit 1; fi
         ;;
       update|install)
-        [[ "$result" == 0 ]]
+        [[ "$result" == 0 ]] || fail_at $LINENO
         grep -Fq 'run exec zsh' "$test_root/output"
         ;;
       *)
-        [[ "$result" == 0 ]]
+        [[ "$result" == 0 ]] || fail_at $LINENO
         if grep -Fq 'exec zsh' "$test_root/output"; then exit 1; fi
         ;;
     esac
@@ -103,7 +105,7 @@ ZSH
       failure) expected=update ;;
       *) expected="$operation" ;;
     esac
-    [[ "$(cat "$DISPATCH_LOG")" == "$expected" ]]
+    [[ "$(cat "$DISPATCH_LOG")" == "$expected" ]] || fail_at $LINENO
   done
 done
 printf 'terminal-kit ports and shell dispatch checks passed\n'

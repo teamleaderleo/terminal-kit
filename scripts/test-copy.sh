@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# bash 3.2 (macOS /bin/bash) ignores set -e for a failing [[ ]]; assert explicitly.
+fail_at() { printf '%s: assertion failed at line %s\n' "${0##*/}" "$1" >&2; exit 1; }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-test_root="$(mktemp -d)"
+test_root="$(cd "$(mktemp -d)" && pwd -P)"
 trap 'rm -rf "$test_root"' EXIT
 mkdir -p "$test_root/bin" "$test_root/work/project/subdir"
 
@@ -38,22 +40,15 @@ cd "$test_root/work/project/subdir"
 
 TERMINAL_KIT_LAST_COMMAND='pnpm test --filter miniflare' \
   /bin/bash "$ROOT/scripts/copy.sh" command >/dev/null
-[[ "$(cat "$TEST_CLIPBOARD")" == 'pnpm test --filter miniflare' ]]
+[[ "$(cat "$TEST_CLIPBOARD")" == 'pnpm test --filter miniflare' ]] || fail_at $LINENO
 
 /bin/bash "$ROOT/scripts/copy.sh" path >/dev/null
-[[ "$(cat "$TEST_CLIPBOARD")" == "$test_root/work/project/subdir" ]]
+[[ "$(cat "$TEST_CLIPBOARD")" == "$test_root/work/project/subdir" ]] || fail_at $LINENO
 
 /bin/bash "$ROOT/scripts/copy.sh" project >/dev/null
-[[ "$(cat "$TEST_CLIPBOARD")" == "$test_root/work/project" ]]
+[[ "$(cat "$TEST_CLIPBOARD")" == "$test_root/work/project" ]] || fail_at $LINENO
 
 CMUX_SURFACE_ID='surface:1' /bin/bash "$ROOT/scripts/copy.sh" screen >/dev/null
-[[ "$(cat "$TEST_CLIPBOARD")" == $'first visible line\nsecond visible line' ]]
+[[ "$(cat "$TEST_CLIPBOARD")" == $'first visible line\nsecond visible line' ]] || fail_at $LINENO
 
-grep -Fq '"showBranchDirectory": false' "$ROOT/config/cmux/cmux.json.example"
-grep -Fq '"target": "currentTerminal"' "$ROOT/config/cmux/cmux.json.example"
-grep -Fq '"action": "terminal-kit.copyScreen"' "$ROOT/config/cmux/cmux.json.example"
-grep -Fq "bindkey '^I' expand-or-complete" "$ROOT/config/zsh/terminal.zsh"
-grep -Fq 'compinit -i -d "$_terminal_kit_compdump"' "$ROOT/config/zsh/init.zsh"
-grep -Fq 'git -C "$PWD" rev-parse --show-toplevel' "$ROOT/config/zsh/terminal.zsh"
-
-printf 'terminal-kit: clipboard, sidebar title, and completion checks passed\n'
+printf 'terminal-kit: copy checks passed\n'

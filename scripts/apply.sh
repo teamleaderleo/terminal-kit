@@ -53,4 +53,5 @@ APPLESCRIPT
   fi
 fi
 
+prune_backups 10
 log "settings applied"
