@@ -45,8 +45,9 @@ Agents bootstrap with `tk agent context --json` and record durable progress with
 | Update and repair | `tk`, `tk update`, `tk apply`, `tk tools`, `tk doctor`, `tk test`, `tk uninstall` | [`bin/terminal-kit`](bin/terminal-kit), [`scripts/apply.sh`](scripts/apply.sh), [`scripts/doctor.sh`](scripts/doctor.sh) |
 | Work and agent state | `tk do`, `tk work`, `tk agent` | [`scripts/work.sh`](scripts/work.sh), [`scripts/agent.sh`](scripts/agent.sh), [`config/agent-policy.json`](config/agent-policy.json) |
 | Git and clipboard | `tk status`, `tk git`, `tk copy` | [`scripts/git.sh`](scripts/git.sh), [`scripts/copy.sh`](scripts/copy.sh) |
-| cmux controls and fork | `tk theme`, `tk glass`, `tk scroll`, `tk sidebar`, `tk editor`, `tk overview`, `tk hints`, `tk keys`, `tk cmux` | [`scripts/theme.sh`](scripts/theme.sh), [`scripts/glass.sh`](scripts/glass.sh), [`scripts/scroll.sh`](scripts/scroll.sh), [`scripts/sidebar.sh`](scripts/sidebar.sh), [`scripts/editor.sh`](scripts/editor.sh), [`scripts/overview.sh`](scripts/overview.sh), [`scripts/hints.sh`](scripts/hints.sh), [`scripts/cmux-fork.sh`](scripts/cmux-fork.sh) |
-| Shell and resources | `tk prompt`, `tk perf`, `tk memory` | [`scripts/prompt.sh`](scripts/prompt.sh), [`scripts/perf.sh`](scripts/perf.sh), [`scripts/memory.sh`](scripts/memory.sh) |
+| Settings | `tk set` (scroll, wrap, prompt, memory, sidebar, glass) | [`scripts/settings.py`](scripts/settings.py) |
+| cmux controls and fork | `tk theme`, `tk overview`, `tk hints`, `tk keys`, `tk cmux` | [`scripts/theme.sh`](scripts/theme.sh), [`scripts/overview.sh`](scripts/overview.sh), [`scripts/hints.sh`](scripts/hints.sh), [`scripts/cmux-fork.sh`](scripts/cmux-fork.sh) |
+| Shell and resources | `tk perf` | [`scripts/perf.sh`](scripts/perf.sh) |
 | Keyboard mappings | `tk karabiner` | [`config/karabiner/README.md`](config/karabiner/README.md), [`scripts/karabiner.sh`](scripts/karabiner.sh) |
 | Repository access | `tk publish`, `tk edit`, `tk path` | [`bin/terminal-kit`](bin/terminal-kit), [`scripts/publish.sh`](scripts/publish.sh) |
 
@@ -72,7 +73,7 @@ Machine-local preferences stay outside Git. The full ownership map, backup direc
 
 `tk` reloads the live tmux server while keeping sessions, panes, and running programs alive, then asks cmux and Ghostty to reload settings. Existing shells pick up shell changes after `exec zsh`, `source ~/.zshrc`, or opening a fresh workspace.
 
-Memory controls reclaim off-screen renderers while keeping the shell process, PTY, scrollback, and terminal state alive. Agent hibernation applies only to supported, restorable coding agents; ordinary shells and arbitrary running commands stay live.
+`tk set memory lean` makes cmux release off-screen renderers sooner and hibernate idle, restorable coding agents; shells and running commands stay live. `normal` is the default.
 
 ## Interaction and appearance
 
@@ -85,32 +86,6 @@ Memory controls reclaim off-screen renderers while keeping the shell process, PT
 ## Public-repo safety
 
 Keep machine credentials and private values outside this repo: tokens, SSH private keys, cloud credentials, work-only hostnames, private aliases, and command history belong in machine-local config outside terminal-kit-managed blocks.
-
-### Turn the cmux/Ghostty customization on or off
-
-Use `tk customization off`, `tk customization on`, or `tk customization toggle`.
-`tk customization status` reports the current profile. This switches shared
-cmux/Ghostty configuration; it does not isolate different cmux app builds.
-
-The first switch saves the current configuration and derives an off profile by
-removing matching Terminal Kit preset settings and its Ghostty include blocks.
-Unrelated settings and values you customized are retained, so off is not a factory
-reset. Later switches preserve edits made independently in both profiles. State
-and recovery data live in `~/.config/terminal-kit/customization/`.
-
-Agent credentials, hooks, history, running processes, shell setup, Karabiner and
-tmux are unaffected. Select cmux's **Default Workspaces** sidebar separately if a
-custom sidebar is active. The command reloads the reachable cmux instance; reload other cmux/Ghostty
-instances separately.
-Install/apply refuse to reapply customization while the off profile is active.
-Python 3 is required. Invalid JSON and symlinked managed config files are rejected
-before switching. Keep the saved profile directory to retain the on configuration.
-
-### Sidebar density trials
-
-`tk sidebar quiet` keeps workspace titles and agent attention while hiding descriptions, paths, logs and custom metadata. `tk sidebar details` brings back paths, PRs, ports, progress and descriptions, with notification text limited to one line. Both preserve your theme, shortcuts, Git watching preference and live processes. These are shared cmux settings, not per-window settings. Switch between them from the cmux command palette after installing the updated configuration.
-
-Use these presets with customization on. They deliberately change the listed sidebar visibility preferences; switching presets does not restore earlier custom values. Neither preset changes renderer caching or animation timing, so perceived smoothness is not a measured performance result.
 
 ### Claude and Codex together
 

@@ -14,18 +14,12 @@ Backups created while changing managed host state go to `~/.config/terminal-kit-
 | --- | --- |
 | `config/ghostty/config` | Ghostty and cmux behavior, home-directory default, and keybindings |
 | `config/ghostty/appearance` | Ghostty and cmux theme fallback and typography |
-| `~/.config/terminal-kit/glass.ghostty` | Machine-local native glass preset |
-| `~/.config/terminal-kit/scroll-speed` | Machine-local cmux scroll multiplier |
-| `~/.config/terminal-kit/prompt` | Machine-local prompt mode |
+| `~/.config/terminal-kit/settings.json` | All `tk set` choices (only values that differ from the defaults) |
+| `~/.config/terminal-kit/glass.ghostty` | Rendered from `glass`; included by Ghostty and cmux |
 | `~/.config/terminal-kit/hints` | Machine-local automatic-hint switch |
 | `~/.config/terminal-kit/hint-index` | Machine-local hint rotation position |
-| `~/.config/terminal-kit/editor-wrap` | Machine-local cmux editor mode |
 | `~/.config/terminal-kit/git-protocol` | Machine-local GitHub Git transport choice |
-| `~/.config/terminal-kit/memory-mode` | Machine-local effective renderer and agent-memory policy |
-| `~/.config/terminal-kit/memory-auto` | Machine-local automatic memory-controller switch |
-| `~/Library/LaunchAgents/com.terminal-kit.memory-auto.plist` | Per-user event-driven memory daemon, only when enabled |
-| `tools/memoryd/main.swift` | Native macOS normal/warning/critical pressure listener |
-| `config/cmux/cmux.json.example` | Rendered to `~/.config/cmux/cmux.json` with local scroll, editor, and memory settings |
+| `config/cmux/cmux.json.example` | Template; `scripts/settings.py` renders it plus the settings overlay to `~/.config/cmux/cmux.json` |
 | `config/cmux/dock.json.example` | Synced to `~/.config/cmux/dock.json` |
 | `config/hints.txt` | Compact cmux and terminal-kit hint catalogue |
 | `config/starship/terminal-kit.toml` | Calm minimal prompt |
@@ -39,7 +33,6 @@ Backups created while changing managed host state go to `~/.config/terminal-kit-
 | `config/zsh/highlight.zsh` | Subdued sage, salmon, and indigo syntax colours |
 | `scripts/git.sh` | Saved GitHub SSH/HTTPS preference and legacy rewrite cleanup |
 | `scripts/perf.sh` | Shell benchmarks, Zsh profiling, and cmux resource reports |
-| `scripts/memory.sh` | Manual presets plus LaunchAgent build and control logic |
 
 ## Agent task receipts and recovery
 

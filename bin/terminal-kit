@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# launchd jobs receive a minimal PATH. Keep terminal-kit functional when it is
-# invoked by the automatic memory daemon rather than an interactive shell.
+# Keep terminal-kit functional when launched from cmux actions or other
+# non-login contexts that receive a minimal PATH.
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${PATH:-}"
 
 resolve_script_dir() {
@@ -39,16 +39,6 @@ case "$command_name" in
     ;;
   duo)
     exec /bin/bash "$ROOT/scripts/duo.sh" "$@"
-    ;;
-  customization)
-    python3 "$ROOT/scripts/customization.py" "$@"
-    if [[ "${1:-status}" != status ]]; then
-      if command -v cmux >/dev/null 2>&1 && cmux reload-config >/dev/null 2>&1; then
-        printf 'Reloaded cmux configuration.\n'
-      else
-        printf 'Reload cmux/Ghostty configuration to display the selected profile.\n'
-      fi
-    fi
     ;;
   install)
     exec /bin/bash "$ROOT/install.sh" "$@"
@@ -96,17 +86,23 @@ case "$command_name" in
   theme|themes)
     exec /bin/bash "$ROOT/scripts/theme.sh" "$@"
     ;;
-  glass)
-    exec /bin/bash "$ROOT/scripts/glass.sh" "$@"
+  set|settings)
+    source "$ROOT/scripts/lib.sh"
+    watched=("$HOME/.config/cmux/cmux.json" "$HOME/.config/terminal-kit/glass.ghostty")
+    before="$(cat "${watched[@]}" 2>/dev/null | cksum)"
+    python3 "$ROOT/scripts/settings.py" "$@"
+    if [[ "$(cat "${watched[@]}" 2>/dev/null | cksum)" != "$before" ]]; then
+      reload_cmux
+    fi
     ;;
-  scroll)
-    exec /bin/bash "$ROOT/scripts/scroll.sh" "$@"
-    ;;
-  sidebar)
-    exec /bin/bash "$ROOT/scripts/sidebar.sh" "$@"
-    ;;
-  editor)
-    exec /bin/bash "$ROOT/scripts/editor.sh" "$@"
+  glass|scroll|sidebar|editor|prompt|memory|ram)
+    case "$command_name" in
+      editor) key=wrap ;;
+      ram) key=memory ;;
+      *) key="$command_name" ;;
+    esac
+    printf 'terminal-kit: `tk %s` moved to `tk set %s <value>`; run `tk set` to list settings\n' "$command_name" "$key" >&2
+    exit 2
     ;;
   copy|clipboard)
     exec /bin/bash "$ROOT/scripts/copy.sh" "$@"
@@ -123,14 +119,8 @@ case "$command_name" in
   keys|cheatsheet)
     exec /bin/bash "$ROOT/scripts/hints.sh" list
     ;;
-  prompt)
-    exec /bin/bash "$ROOT/scripts/prompt.sh" "$@"
-    ;;
   perf|performance)
     exec /bin/bash "$ROOT/scripts/perf.sh" "$@"
-    ;;
-  memory|ram)
-    exec /bin/bash "$ROOT/scripts/memory.sh" "$@"
     ;;
   tools)
     exec /bin/bash "$ROOT/scripts/install-tools.sh" "$@"
@@ -175,21 +165,16 @@ Usage: terminal-kit <command>
   cmux         Update, warm-build, or launch the canonical cmux checkout
   apply        Reload current files without pulling Git
   install      Repair includes and install missing tools
+  set          List or change settings: scroll, wrap, prompt, memory, sidebar, glass
   theme        Browse, test, set, rotate, or automate cmux themes
-  glass        Switch native macOS glass presets
-  scroll       Tune cmux mouse-wheel and trackpad scroll speed
   recent       Find and resume existing Claude/Codex conversations
   duo          Open Claude and Codex side by side for a project
-  sidebar      Tune the minimum width of cmux's left workspace sidebar
-  editor       Toggle wrapping or horizontal scrolling in cmux's text editor
   copy         Copy the last command, visible screen, current path, or project path
   overview     Browse every cmux window and workspace in one full-screen view
   template     Save a live cmux workspace as a layout template, or re-create one
   hints        Control temporary hints in cmux workspace rows
   keys         Print the compact hotkey and command cheat sheet
-  prompt       Choose minimal, detailed, or disabled prompt mode
   perf         Benchmark and profile shell and cmux performance
-  memory       Choose renderer reclamation and agent hibernation policy
   tools        Install recommended Homebrew packages
   doctor       Check files and commands
   test         Run repository checks

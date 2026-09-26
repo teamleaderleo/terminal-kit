@@ -1,9 +1,9 @@
 {
   "controls": [
     {
-      "id": "memory",
-      "title": "Memory",
-      "command": "terminal-kit memory menu",
+      "id": "tasks",
+      "title": "Tasks",
+      "command": "cmux top",
       "height": 280
     },
     {

@@ -12,18 +12,6 @@ if command -v jq >/dev/null 2>&1; then
   [[ "$(jq -r '.terminal.showTextBoxOnNewTerminals' "$ROOT/config/cmux/cmux.json.example")" == 'false' ]]
 fi
 
-grep -Fq 'navigation-cache-v1' "$ROOT/scripts/apply.sh"
-grep -Fq 'maxWarmRenderers: 12' "$ROOT/scripts/apply.sh"
-grep -Fq "printf 'normal\\n' > \"\$memory_state\"" "$ROOT/scripts/apply.sh"
-grep -Fq 'Cmd-Tab alias is missing from Karabiner' "$ROOT/scripts/apply.sh"
-grep -Fq 'cmux config doctor' "$ROOT/scripts/apply.sh"
-
-grep -Fq 'Usage: terminal-kit perf <command>' "$ROOT/scripts/perf.sh"
-grep -Fq 'nav          Compare live cmux surface/tab and workspace switch control latency' "$ROOT/scripts/perf.sh"
-grep -Fq 'focus-panel' "$ROOT/scripts/perf.sh"
-grep -Fq 'select-workspace' "$ROOT/scripts/perf.sh"
-grep -Fq 'not the final painted frame' "$ROOT/scripts/perf.sh"
-
 # A failed bare-name cd can fall through to an exact project basename without
 # changing any successful native cd behavior.
 if command -v zsh >/dev/null 2>&1; then

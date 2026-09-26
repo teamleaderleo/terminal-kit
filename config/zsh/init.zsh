@@ -54,14 +54,17 @@ fi
 
 source "$_terminal_kit_zsh_dir/tools.zsh"
 
-# The default prompt shows only the directory and prompt character. A local mode
-# can opt into Git branch/status details or disable Starship entirely.
+# Prompt mode comes from `tk set prompt` (settings.json, written by settings.py
+# as indented JSON). Match the literal pair instead of spawning a JSON parser.
 _terminal_kit_prompt_state="minimal"
-if [[ -r "$HOME/.config/terminal-kit/prompt" ]]; then
-  IFS= read -r _terminal_kit_prompt_state < "$HOME/.config/terminal-kit/prompt" || true
-  _terminal_kit_prompt_state="${_terminal_kit_prompt_state//[[:space:]]/}"
+if [[ -r "$HOME/.config/terminal-kit/settings.json" ]]; then
+  _terminal_kit_settings="$(<"$HOME/.config/terminal-kit/settings.json")"
+  case "$_terminal_kit_settings" in
+    *'"prompt": "detailed"'*) _terminal_kit_prompt_state="detailed" ;;
+    *'"prompt": "off"'*) _terminal_kit_prompt_state="off" ;;
+  esac
+  unset _terminal_kit_settings
 fi
-[[ "$_terminal_kit_prompt_state" == "on" ]] && _terminal_kit_prompt_state="minimal"
 _terminal_kit_starship_config="$_terminal_kit_zsh_dir/../starship/terminal-kit.toml"
 [[ "$_terminal_kit_prompt_state" == "detailed" ]] \
   && _terminal_kit_starship_config="$_terminal_kit_zsh_dir/../starship/detailed.toml"

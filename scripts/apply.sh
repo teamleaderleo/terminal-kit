@@ -4,11 +4,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT/scripts/lib.sh"
 
-if [[ -f "$HOME/.config/terminal-kit/customization/state.json" ]] && python3 "$ROOT/scripts/customization.py" status | grep -q ": off$"; then
-  log "customization is off; use terminal-kit customization on before apply"
-  exit 0
-fi
-
 if command -v zsh >/dev/null 2>&1; then
   zsh -n "$ROOT/config/zsh/terminal.zsh"
 fi
@@ -22,58 +17,18 @@ if command -v tmux >/dev/null 2>&1; then
   fi
   tmux -L "$check_socket" kill-server >/dev/null 2>&1 || true
 
-  if tmux list-sessions >/dev/null 2>&1; then
+  if [[ -z "${TERMINAL_KIT_NO_RELOAD:-}" ]] && tmux list-sessions >/dev/null 2>&1; then
     tmux source-file "$HOME/.tmux.conf"
     log "reloaded tmux without closing sessions"
   fi
 fi
 
-# The cmux renderer cache is global across workspaces and surfaces. The original
-# balanced preset kept only six renderers warm, which is small enough that a
-# normal multi-project sidebar can evict an older terminal after 15 seconds and
-# force a renderer rebuild on the next click. Migrate that original untouched
-# default once to the existing normal preset (12 warm / 30 seconds). Explicit
-# lean/ultra/automatic choices remain untouched.
-nav_cache_marker="$HOME/.config/terminal-kit/navigation-cache-v1"
-memory_state="$HOME/.config/terminal-kit/memory-mode"
-auto_state="$HOME/.config/terminal-kit/memory-auto"
 cmux_config="$HOME/.config/cmux/cmux.json"
-if command -v jq >/dev/null 2>&1 \
-  && [[ -r "$cmux_config" && -r "$memory_state" && ! -e "$nav_cache_marker" ]]; then
-  memory_mode="$(tr -d '[:space:]' < "$memory_state")"
-  automatic_mode="off"
-  [[ -r "$auto_state" ]] && automatic_mode="$(tr -d '[:space:]' < "$auto_state")"
-  if [[ "$memory_mode" == balanced && "$automatic_mode" != on ]]; then
-    temporary="$(mktemp -t terminal-kit-navigation-cache)"
-    jq '
-      .terminal.rendererRealization = {
-        enabled: true,
-        idleSeconds: 30,
-        maxWarmRenderers: 12
-      }
-      | .terminal.agentHibernation = {
-          enabled: false,
-          idleSeconds: 5,
-          maxLiveTerminals: 12
-        }
-    ' "$cmux_config" > "$temporary"
-    jq empty "$temporary"
-    mv "$temporary" "$cmux_config"
-    printf 'normal\n' > "$memory_state"
-    mkdir -p "$(dirname "$nav_cache_marker")"
-    : > "$nav_cache_marker"
-    log "kept 12 recent terminal renderers warm for smoother navigation"
-  else
-    mkdir -p "$(dirname "$nav_cache_marker")"
-    : > "$nav_cache_marker"
-  fi
-fi
+python3 "$ROOT/scripts/settings.py" _render
 
-if command -v cmux >/dev/null 2>&1 && cmux ping >/dev/null 2>&1; then
-  cmux reload-config >/dev/null 2>&1 || cmux config reload >/dev/null 2>&1 || true
-  if cmux config doctor >/dev/null 2>&1; then
-    log "reloaded cmux"
-  else
+if [[ -z "${TERMINAL_KIT_NO_RELOAD:-}" ]] && command -v cmux >/dev/null 2>&1 && cmux ping >/dev/null 2>&1; then
+  reload_cmux
+  if ! cmux config doctor >/dev/null 2>&1; then
     warn "cmux reloaded, but its config doctor reported a problem"
   fi
 fi
@@ -119,7 +74,7 @@ elif [[ -d "/Applications/Karabiner-Elements.app" ]]; then
   warn "Karabiner is installed but has no readable config; Cmd-Tab alias may be unavailable"
 fi
 
-if [[ "$(uname -s)" == "Darwin" ]] && pgrep -x Ghostty >/dev/null 2>&1; then
+if [[ -z "${TERMINAL_KIT_NO_RELOAD:-}" && "$(uname -s)" == "Darwin" ]] && pgrep -x Ghostty >/dev/null 2>&1; then
   if osascript >/dev/null 2>&1 <<'APPLESCRIPT'
 tell application "Ghostty"
   if (count of terminals) > 0 then

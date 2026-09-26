@@ -20,13 +20,13 @@
     "textBoxMaxLines": 6,
     "rendererRealization": {
       "enabled": true,
-      "idleSeconds": 15,
-      "maxWarmRenderers": 6
+      "idleSeconds": 30,
+      "maxWarmRenderers": 12
     },
     "agentHibernation": {
       "enabled": false,
       "idleSeconds": 5,
-      "maxLiveTerminals": 8
+      "maxLiveTerminals": 12
     }
   },
   "sidebar": {
@@ -146,13 +146,13 @@
       "name": "Sidebar: Quiet",
       "description": "Keep titles and agent attention; hide supporting detail",
       "keywords": ["sidebar", "density", "quiet"],
-      "command": "terminal-kit sidebar quiet"
+      "command": "terminal-kit set sidebar quiet"
     },
     {
       "name": "Sidebar: Details",
       "description": "Show paths, PRs and bounded notifications without changing theme",
       "keywords": ["sidebar", "density", "details"],
-      "command": "terminal-kit sidebar details"
+      "command": "terminal-kit set sidebar details"
     },
     {
       "name": "Workspace: Overview",
@@ -197,30 +197,6 @@
       "command": "terminal-kit theme test"
     },
     {
-      "name": "Glass: Cycle",
-      "description": "Cycle regular, clear, immersive, and opaque presets",
-      "keywords": ["glass", "opacity", "blur", "liquid"],
-      "command": "terminal-kit glass cycle"
-    },
-    {
-      "name": "Scroll: Cycle Speed",
-      "description": "Cycle precise, balanced, brisk, and fast terminal scrolling",
-      "keywords": ["scroll", "mouse", "wheel", "speed", "mos"],
-      "command": "terminal-kit scroll cycle"
-    },
-    {
-      "name": "Sidebar: Compact Minimum",
-      "description": "Allow the workspace sidebar to shrink to 180 points after restart",
-      "keywords": ["sidebar", "tabs", "compact", "width"],
-      "command": "terminal-kit sidebar compact"
-    },
-    {
-      "name": "Editor: Toggle Word Wrap",
-      "description": "Switch the built-in editor between wrapping and horizontal scrolling",
-      "keywords": ["editor", "wrap", "horizontal", "scroll", "wide"],
-      "command": "terminal-kit editor toggle"
-    },
-    {
       "name": "Hints: Show Next",
       "description": "Explicitly place one shortcut hint in the current workspace row",
       "keywords": ["hints", "keys", "shortcuts", "learn", "sidebar"],
@@ -242,13 +218,13 @@
       "name": "Prompt: Minimal",
       "description": "Use the calm directory-only shell prompt",
       "keywords": ["prompt", "minimal", "calm", "git"],
-      "command": "terminal-kit prompt minimal"
+      "command": "terminal-kit set prompt minimal"
     },
     {
       "name": "Prompt: Detailed",
       "description": "Show Git branch and repository state in the shell prompt",
       "keywords": ["prompt", "detailed", "git", "branch", "status"],
-      "command": "terminal-kit prompt detailed"
+      "command": "terminal-kit set prompt detailed"
     },
     {
       "name": "Performance: Benchmark Shell",
@@ -257,46 +233,22 @@
       "command": "terminal-kit perf shell"
     },
     {
-      "name": "Memory: Choose Mode",
-      "description": "Choose automatic, normal, balanced, lean, or ultra memory policy",
-      "keywords": ["memory", "ram", "idle", "hibernate", "renderer"],
-      "command": "terminal-kit memory menu"
-    },
-    {
-      "name": "Memory: Automatic On",
-      "description": "Follow native macOS normal, warning, and critical memory pressure",
-      "keywords": ["memory", "automatic", "pressure", "ram", "kernel"],
-      "command": "terminal-kit memory auto on"
-    },
-    {
-      "name": "Memory: Automatic Off",
-      "description": "Stop automatic changes and keep the current effective policy",
-      "keywords": ["memory", "automatic", "off", "manual", "ram"],
-      "command": "terminal-kit memory auto off"
-    },
-    {
-      "name": "Memory: Balanced",
-      "description": "Keep six terminal renderers warm without hibernating agents",
-      "keywords": ["memory", "balanced", "renderer", "ram"],
-      "command": "terminal-kit memory balanced"
+      "name": "Memory: Normal",
+      "description": "Keep twelve terminal renderers warm; agents stay live",
+      "keywords": ["memory", "normal", "renderer", "ram"],
+      "command": "terminal-kit set memory normal"
     },
     {
       "name": "Memory: Lean",
       "description": "Keep two renderers warm and hibernate idle agents above four",
       "keywords": ["memory", "lean", "hibernate", "ram"],
-      "command": "terminal-kit memory lean"
-    },
-    {
-      "name": "Memory: Ultra",
-      "description": "Keep one renderer warm and hibernate idle agents above two",
-      "keywords": ["memory", "ultra", "hibernate", "ram"],
-      "command": "terminal-kit memory ultra"
+      "command": "terminal-kit set memory lean"
     },
     {
       "name": "Memory: Task Manager",
       "description": "Show actual CPU and memory use by cmux surface",
       "keywords": ["memory", "task manager", "top", "cpu", "ram"],
-      "command": "terminal-kit memory top"
+      "command": "cmux top"
     },
     {
       "name": "Cloud VMs: List",
