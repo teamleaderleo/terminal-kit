@@ -208,6 +208,8 @@ tk_home set sidebar details >/dev/null
 tk_home set memory default >/dev/null
 [[ "$(cmux_value terminal.rendererRealization.maxWarmRenderers)" == 12 ]] || fail_at $LINENO
 if tk_home set scroll 9 2>/dev/null; then exit 1; fi
+# cmux caps terminal.scrollSpeed at 3; its config doctor rejects anything higher.
+if tk_home set scroll 3.5 2>/dev/null; then exit 1; fi
 if tk_home set memory ultra 2>/dev/null; then exit 1; fi
 if tk_home set nonsense 1 2>/dev/null; then exit 1; fi
 if tk_home scroll fast 2>/dev/null; then exit 1; fi
