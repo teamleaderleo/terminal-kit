@@ -24,7 +24,7 @@ GLASS = {
 
 # key: (default, allowed values or None for a number, description)
 SETTINGS = {
-    'scroll': (1.4, None, 'cmux scroll speed multiplier, 0.25 to 4'),
+    'scroll': (1.4, None, 'cmux scroll speed multiplier, 0.25 to 3'),
     'wrap': ('wrap', ('wrap', 'wide'), 'cmux text editor: wrap long lines or scroll sideways'),
     'prompt': ('minimal', ('minimal', 'detailed', 'off'), 'shell prompt (applies after exec zsh)'),
     'memory': ('normal', ('normal', 'lean'), 'lean frees idle renderers and hibernates idle agents'),
@@ -83,8 +83,8 @@ def parse(key, raw):
             value = float(raw)
         except (TypeError, ValueError):
             raise SettingError(f'{key} must be a number') from None
-        if not 0.25 <= value <= 4:
-            raise SettingError(f'{key} must be between 0.25 and 4')
+        if not 0.25 <= value <= 3:
+            raise SettingError(f'{key} must be between 0.25 and 3')
         return int(value) if value == int(value) else value
     raw = str(raw).strip().lower()
     if raw not in allowed:

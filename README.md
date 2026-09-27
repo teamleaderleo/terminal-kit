@@ -42,7 +42,7 @@ Shell helpers: `y` (yazi), `lg` (lazygit), `bt` (btop), `ll` (eza), `ports`, `af
 
 | Key | Values | Default |
 | --- | --- | --- |
-| `scroll` | 0.25 to 4 | 1.4 |
+| `scroll` | 0.25 to 3 | 1.4 |
 | `wrap` | `wrap`, `wide` | `wrap` |
 | `prompt` | `minimal`, `detailed`, `off` | `minimal` |
 | `memory` | `normal`, `lean` | `normal` |
