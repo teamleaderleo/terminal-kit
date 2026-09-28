@@ -9,7 +9,7 @@ Everything terminal-kit writes outside its own checkout, and how task recovery w
 | `~/.zshenv` | Managed block sourcing `config/zsh/env.zsh` |
 | `~/.zshrc` | Managed block sourcing `config/zsh/init.zsh`; drops stale `source /tmp/.../env` lines |
 | `~/.tmux.conf` | Managed block sourcing `config/tmux/tmux.conf` |
-| `~/.config/ghostty/config` and `~/Library/Application Support/com.mitchellh.ghostty/config` | Managed block including `config/ghostty/config`, `config/ghostty/appearance`, and the glass file |
+| `~/.config/ghostty/config` | Managed block including `config/ghostty/config`, `config/ghostty/appearance`, and the glass file. Install removes the copy older versions wrote to `~/Library/Application Support/com.mitchellh.ghostty/config`, because loading both files includes each file twice and Ghostty reports a cycle. |
 | `~/.config/cmux/cmux.json` | Whole file, rendered by `scripts/settings.py` from `config/cmux/cmux.json.example` plus your settings |
 | `~/.config/cmux/dock.json` | Whole file, copied from `config/cmux/dock.json.example` |
 | `~/.config/karabiner/karabiner.json` | Adds or refreshes one rule (from `config/karabiner/terminal-kit.json`) in the selected profile; also copies it to `assets/complex_modifications/` |
