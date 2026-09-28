@@ -66,11 +66,11 @@ $ghostty_appearance_include
 $ghostty_glass_include
 EOF_GHOSTTY
 
-replace_managed_block "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "ghostty" <<EOF_GHOSTTY_MAC
-$ghostty_behaviour_include
-$ghostty_appearance_include
-$ghostty_glass_include
-EOF_GHOSTTY_MAC
+# Ghostty and cmux load both ~/.config/ghostty/config and Ghostty's
+# Application Support config. Including the same files from both makes the
+# second include a "cycle detected" config error, so keep the block in one
+# place and remove the copy older installs wrote there.
+remove_managed_block "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "ghostty"
 
 replace_managed_block "$HOME/.tmux.conf" "tmux" <<EOF_TMUX
 source-file "$ROOT/config/tmux/tmux.conf"
