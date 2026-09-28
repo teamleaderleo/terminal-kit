@@ -11,16 +11,18 @@ unfocused-split-opacity = 0.96
 
 # Slightly larger and thicker macOS text improves distance legibility without
 # turning the terminal into a bold display face.
-font-family = Menlo
+font-family = ""
+font-family = "JetBrains Mono"
 font-size = 13
+adjust-cell-height = 8%
 font-thicken = true
 font-thicken-strength = 32
 sidebar-font-size = 14
 surface-tab-bar-font-size = 11
 
 # Balanced padding keeps the grid centred as panes are resized.
-window-padding-x = 12
-window-padding-y = 10
+window-padding-x = 14
+window-padding-y = 12
 window-padding-balance = true
 window-padding-color = extend
 window-inherit-font-size = true
