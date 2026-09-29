@@ -22,14 +22,14 @@ typeset +x TERMINAL_KIT_SHELL_PID 2>/dev/null || true
 
 # Let an existing Zsh framework keep ownership of completion. Plain terminal-kit
 # shells use the existing compdump on ordinary launches and do a full discovery
-# pass only when the dump is missing or older than a day. This avoids repeating
-# compinit's directory/security scan on every new terminal while still picking up
-# newly installed completions automatically.
+# pass only when the dump is missing or older than a week. A longer refresh
+# window keeps the first visible prompt responsive while still picking up new
+# completions without manual cleanup.
 if (( ! $+_comps )); then
   autoload -Uz compinit
   _terminal_kit_compdump="${ZDOTDIR:-$HOME}/.zcompdump"
   typeset -a _terminal_kit_stale_compdump
-  _terminal_kit_stale_compdump=(${~_terminal_kit_compdump}(N.mh+24))
+  _terminal_kit_stale_compdump=(${~_terminal_kit_compdump}(N.mh+168))
   if [[ -s "$_terminal_kit_compdump" ]] && (( ${#_terminal_kit_stale_compdump} == 0 )); then
     compinit -C -d "$_terminal_kit_compdump"
   else
