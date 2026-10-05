@@ -66,6 +66,12 @@ $ghostty_appearance_include
 $ghostty_glass_include
 EOF_GHOSTTY
 
+# cmux-only keys (sidebar and tab-bar font sizes) would be "unknown field"
+# errors in Ghostty, so only cmux's own config includes them.
+replace_managed_block "$HOME/Library/Application Support/com.cmuxterm.app/config.ghostty" "cmux" <<EOF_CMUX
+config-file = "$ROOT/config/cmux/appearance.ghostty"
+EOF_CMUX
+
 # Ghostty and cmux load both ~/.config/ghostty/config and Ghostty's
 # Application Support config. Including the same files from both makes the
 # second include a "cycle detected" config error, so keep the block in one
