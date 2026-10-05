@@ -1,0 +1,4 @@
+# cmux-only keys. Ghostty rejects them as unknown fields, so they live here
+# and load only from cmux's own config (Application Support/com.cmuxterm.app).
+sidebar-font-size = 14
+surface-tab-bar-font-size = 11

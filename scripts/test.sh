@@ -95,6 +95,13 @@ grep -Fq "$test_root/home/Projects/terminal-kit/config/zsh/env.zsh" "$test_root/
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/config" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/Projects/terminal-kit/config/ghostty/appearance" "$test_root/home/.config/ghostty/config"
 grep -Fq "$test_root/home/.config/terminal-kit/glass.ghostty" "$test_root/home/.config/ghostty/config"
+cmux_config="$test_root/home/Library/Application Support/com.cmuxterm.app/config.ghostty"
+[[ "$(grep -c '^# >>> terminal-kit: cmux >>>$' "$cmux_config")" == 1 ]] || fail_at $LINENO
+grep -Fq "$test_root/home/Projects/terminal-kit/config/cmux/appearance.ghostty" "$cmux_config"
+if grep -Eq '^(sidebar|surface-tab-bar)-font-size' "$test_root/home/Projects/terminal-kit/config/ghostty/appearance"; then
+  printf 'terminal-kit: cmux-only keys in the shared Ghostty appearance\n' >&2
+  exit 1
+fi
 grep -Fq 'background-blur = macos-glass-regular' "$test_root/home/.config/terminal-kit/glass.ghostty"
 grep -Fxq 'ssh' "$test_root/home/.config/terminal-kit/git-protocol"
 if HOME="$test_root/home" git config --global --get-all \
