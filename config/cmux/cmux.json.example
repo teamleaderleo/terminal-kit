@@ -65,7 +65,6 @@
   "shortcuts": {
     "showModifierHoldHints": true,
     "bindings": {
-      "newSurface": "cmd+t",
       "closeTab": "cmd+w",
       "reopenClosedBrowserPanel": "cmd+shift+t",
       "nextSurface": "ctrl+tab",

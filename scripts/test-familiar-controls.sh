@@ -17,7 +17,7 @@ command -v jq >/dev/null 2>&1 || {
 jq empty "$cmux"
 jq empty "$karabiner"
 
-[[ "$(jq -r '.shortcuts.bindings.newSurface' "$cmux")" == 'cmd+t' ]] || fail_at $LINENO
+[[ "$(jq -r '.shortcuts.bindings.newSurface // "unset"' "$cmux")" == 'unset' ]] || fail_at $LINENO  # cmux's own Cmd-T opens New Tab in cmux-next
 [[ "$(jq -r '.shortcuts.bindings.closeTab' "$cmux")" == 'cmd+w' ]] || fail_at $LINENO
 [[ "$(jq -r '.shortcuts.bindings.reopenClosedBrowserPanel' "$cmux")" == 'cmd+shift+t' ]] || fail_at $LINENO
 [[ "$(jq -r '.shortcuts.bindings.nextSurface' "$cmux")" == 'ctrl+tab' ]] || fail_at $LINENO
