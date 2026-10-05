@@ -128,19 +128,6 @@
       "icon": { "type": "symbol", "name": "folder.badge.gearshape" }
     }
   },
-  "ui": {
-    "surfaceTabBar": {
-      "buttons": [
-        "cmux.newTerminal",
-        "cmux.newBrowser",
-        "cmux.splitRight",
-        "cmux.splitDown",
-        { "action": "terminal-kit.copyCommand", "title": "Copy Cmd" },
-        { "action": "terminal-kit.copyScreen", "title": "Copy Screen" },
-        { "action": "terminal-kit.copyPath", "title": "Copy Path" }
-      ]
-    }
-  },
   "commands": [
     {
       "name": "Sidebar: Quiet",
